@@ -79,43 +79,7 @@ function renderPips() {
 }
 
 function renderHub() {
-  var world = getCurrentWorld();
-  var zone = getCurrentZone();
-  var statusEl = document.getElementById('hub-status');
-  var detailEl = document.getElementById('hub-detail');
-  if (Game.state === 'fighting') {
-    var wn = world ? world.name : '';
-    var zn = zone ? zone.name : '';
-    var total = world ? world.zones[Game.currentZone].encounters.length : 0;
-    statusEl.textContent = wn + ' · ' + zn + ' — Encounter ' + (Game.currentEncounter+1) + '/' + total;
-    detailEl.textContent = 'Mode: ' + (Game.mode==='auto'?'AUTO':'MANUAL') + ' | Acc: ' + Game.wizard.accuracy + '% | PP: ' + Game.wizard.powerPipChance + '%';
-  } else if (Game.state === 'resting') {
-    statusEl.textContent = 'Resting — ' + Game.wizard.mana + '/' + Game.wizard.maxMana + ' mana, ' + Game.wizard.hp + '/' + Game.wizard.maxHp + ' HP';
-    detailEl.textContent = zone ? 'Will return to ' + zone.name + ' when recovered.' : '';
-  } else if (Game.state === 'complete') {
-    statusEl.textContent = 'Prototype Complete!';
-    detailEl.textContent = '"You\'ve taken your first steps." — Silas Stillwater';
-  } else {
-    statusEl.textContent = 'Idle'; detailEl.textContent = '';
-  }
-  var buffsEl = document.getElementById('hub-buffs');
-  var b = [];
-  if (Game.wizard.damage > 0) b.push('⚔ Dmg +' + Game.wizard.damage + '%');
-  if (Game.wizard.accuracy > 70) b.push('🎯 Acc ' + Game.wizard.accuracy + '%');
-  if (Game.wizard.resist > 0) b.push('🛡 Res ' + Game.wizard.resist + '%');
-  if (Game.wizard.maxHp > Game.wizard.baseHp) b.push('♥ HP +' + (Game.wizard.maxHp - Game.wizard.baseHp));
-  if (Game.wizard.blade) b.push('⚔ Blade +' + Game.wizard.blade.percent + '%');
-  if (Game.wizard.shield) {
-    var sl = Game.wizard.shield.schools ? Game.wizard.shield.schools.join('/') : 'all';
-    b.push('🛡 Shield -' + Game.wizard.shield.percent + '% (' + sl + ')');
-  }
-  if (Game.wizard.accuracyCharm) b.push('🎯 Charm +' + Game.wizard.accuracyCharm.percent + '%');
-  if (Game.combat && Game.combat.global && Game.combat.global.stormDmgBonus) b.push('⚡ Global +' + Game.combat.global.stormDmgBonus + '%');
-  if (Game.wizard._eventDmgBuff) b.push('✨ Event +' + Game.wizard._eventDmgBuff + '% Dmg');
-  if (Game.wizard._eventAccBuff) b.push('✨ Event ' + (Game.wizard._eventAccBuff>0?'+':'') + Game.wizard._eventAccBuff + '% Acc');
-  buffsEl.textContent = b.length > 0 ? b.join('  |  ') : 'No active buffs';
-
-  // Hub activity log
+  // Hub merged into Wizard tab — activity log rendered here
   var hubLogEl = document.getElementById('hub-log');
   if (hubLogEl && Game.hubLog) {
     var hlh = '';
@@ -126,32 +90,6 @@ function renderHub() {
     }
     hubLogEl.innerHTML = hlh;
     hubLogEl.scrollTop = hubLogEl.scrollHeight;
-  }
-
-  // Event banners
-  var eventContainer = document.getElementById('hub-events');
-  if (!eventContainer) {
-    eventContainer = document.createElement('div');
-    eventContainer.id = 'hub-events';
-    buffsEl.parentNode.parentNode.insertBefore(eventContainer, buffsEl.parentNode.nextSibling);
-  }
-  if (Game.events && Game.events.active.length > 0) {
-    var eh = '';
-    for (var ei = 0; ei < Game.events.active.length; ei++) {
-      var evt = Game.events.active[ei];
-      eh += '<div class="event-banner"><div class="event-text">' + evt.name + ' — ' + evt.desc + '</div>';
-      if (evt.instant) {
-        eh += '<button onclick="respondToEvent('+ei+');updateUI();">Accept</button>';
-      } else if (evt.buff && !evt._accepted) {
-        eh += '<button onclick="respondToEvent('+ei+');updateUI();">Accept</button>';
-      } else {
-        eh += '<span style="font-size:10px;color:var(--text-dim)">' + (evt.ticksLeft||0) + ' ticks left</span>';
-      }
-      eh += '</div>';
-    }
-    eventContainer.innerHTML = eh;
-  } else {
-    eventContainer.innerHTML = '';
   }
 }
 
@@ -436,6 +374,42 @@ function renderGear() {
   var w = Game.wizard;
   var rank = RANKS[w.rankIndex] || RANKS[0];
   var world = getCurrentWorld();
+  var zone = getCurrentZone();
+
+  // Status + Events section
+  var statusEl = document.getElementById('wizard-status');
+  if (statusEl) {
+    var sh = '';
+    // Event banners
+    if (Game.events && Game.events.active.length > 0) {
+      for (var evi = 0; evi < Game.events.active.length; evi++) {
+        var evt = Game.events.active[evi];
+        sh += '<div class="event-banner"><div class="event-text">' + evt.name + ' — ' + evt.desc + '</div>';
+        if (evt.instant) sh += '<button onclick="respondToEvent('+evi+');updateUI();">Accept</button>';
+        else if (evt.buff) sh += '<button onclick="respondToEvent('+evi+');updateUI();">Accept</button>';
+        sh += '</div>';
+      }
+    }
+    // Status line
+    var statusText = '', detailText = '';
+    if (Game.state === 'fighting') {
+      var wn = world ? world.name : ''; var zn = zone ? zone.name : '';
+      var total = world ? world.zones[Game.currentZone].encounters.length : 0;
+      statusText = wn + ' · ' + zn + ' — Encounter ' + (Game.currentEncounter+1) + '/' + total;
+      detailText = 'Mode: ' + (Game.mode==='auto'?'AUTO':'MANUAL') + (Game.farming?' (Farming)':'');
+    } else if (Game.state === 'resting') {
+      statusText = 'Resting — ' + w.mana + '/' + w.maxMana + ' mana, ' + w.hp + '/' + w.maxHp + ' HP';
+    } else if (Game.state === 'waiting_boss') {
+      statusText = 'Boss ahead! Check Combat tab.';
+    } else if (Game.state === 'complete') {
+      statusText = 'Campaign Complete';
+    }
+    if (statusText) {
+      sh += '<div style="font-size:12px;color:var(--storm);margin-bottom:2px">' + statusText + '</div>';
+      if (detailText) sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">' + detailText + '</div>';
+    }
+    statusEl.innerHTML = sh;
+  }
 
   // Wizard profile
   var prof = document.getElementById('wizard-profile');
@@ -458,6 +432,17 @@ function renderGear() {
     ph += '<div title="Ignores this % of enemy resist." style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Pierce</div><div style="color:var(--fire)">' + (w.pierce||0) + '%</div></div>';
     ph += '<div title="Chance to block enemy critical hits." style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Crit Block</div><div style="color:var(--death)">' + (w.critBlock||0) + '%</div></div>';
     ph += '</div>';
+    // Active buffs inline
+    var b = [];
+    if (w.blade) b.push('⚔ Blade +' + w.blade.percent + '%');
+    if (w.shield) { var sl = w.shield.schools ? w.shield.schools.join('/') : 'all'; b.push('🛡 Shield -' + w.shield.percent + '% (' + sl + ')'); }
+    if (w.accuracyCharm) b.push('🎯 Charm +' + w.accuracyCharm.percent + '%');
+    if (Game.combat && Game.combat.global && Game.combat.global.stormDmgBonus) b.push('⚡ Global +' + Game.combat.global.stormDmgBonus + '%');
+    if (w._eventDmgBuff) b.push('✨ +' + w._eventDmgBuff + '% Dmg');
+    if (w._eventAccBuff) b.push('✨ ' + (w._eventAccBuff>0?'+':'') + w._eventAccBuff + '% Acc');
+    if (b.length > 0) {
+      ph += '<div style="margin-top:8px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + b.join('  |  ') + '</div>';
+    }
     ph += '</div>';
     prof.innerHTML = ph;
   }

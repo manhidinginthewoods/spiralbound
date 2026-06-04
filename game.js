@@ -8,7 +8,7 @@ const Game = {
   wizard: null, combat: null,
   currentWorld: 0, currentZone: 0, currentEncounter: 0,
   deck: [], rules: [], log: [], gold: 0, tick: 0,
-  mode: 'auto', state: 'idle', phase: 'none', round: 0,
+  mode: 'manual', state: 'idle', phase: 'none', round: 0,
   tickInterval: null, TICK_MS: 800, MAX_LOG: 200,
   garden: null, snacks: 0,
   reagents: {},

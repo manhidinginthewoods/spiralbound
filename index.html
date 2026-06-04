@@ -32,8 +32,7 @@
 
   <!-- TAB BAR -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="hub" onclick="switchTab('hub')">Hub</button>
-    <button class="tab-btn" data-tab="gear" onclick="switchTab('gear')">Wizard</button>
+    <button class="tab-btn active" data-tab="gear" onclick="switchTab('gear')">Wizard</button>
     <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')">Combat</button>
     <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Spellbook</button>
     <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">Shop</button>
@@ -43,33 +42,26 @@
     <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Map</button>
   </div>
 
-  <!-- ===== HUB TAB ===== -->
-  <div class="tab-content active" id="tab-hub">
-    <div class="status-box">
-      <h3>Status</h3>
-      <div class="status-line" id="hub-status">Loading...</div>
-      <div class="status-detail" id="hub-detail"></div>
-    </div>
-
-    <div class="status-box">
-      <h3>Active Buffs</h3>
-      <div class="status-detail" id="hub-buffs">No active buffs</div>
-    </div>
-
-    <div class="status-box">
+  <!-- ===== WIZARD TAB (was Hub + Gear) ===== -->
+  <div class="tab-content active" id="tab-gear">
+    <div id="wizard-status"></div>
+    <div id="wizard-profile"></div>
+    <div class="section-head" style="margin-top:12px">Equipped Gear</div>
+    <div id="gear-equipped"></div>
+    <div class="status-box" style="margin-top:12px">
       <h3>Activity Log</h3>
-      <div class="combat-log" id="hub-log" style="height:180px"></div>
+      <div class="combat-log" id="hub-log" style="height:160px"></div>
     </div>
-
-    <div class="status-box">
+    <div class="section-head" style="margin-top:12px">Inventory</div>
+    <div id="gear-inventory"></div>
+    <div class="status-box" style="margin-top:12px">
       <h3>Quick Actions</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="saveGame(); addLog('Game saved.', 'system'); updateUI();">Save</button>
+        <button class="btn" onclick="saveGame(); addHubLog('Game saved.', 'system'); updateUI();">Save</button>
         <button class="btn" onclick="if(confirm('Reset all progress?')) resetGame();">Reset</button>
         <button class="btn" onclick="document.getElementById('dev-menu').style.display=document.getElementById('dev-menu').style.display==='none'?'block':'none'">Dev Menu</button>
       </div>
     </div>
-
     <div class="status-box" id="dev-menu" style="display:none">
       <h3>Dev / Testing</h3>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -118,15 +110,6 @@
   <!-- ===== SPELLBOOK TAB ===== -->
   <div class="tab-content" id="tab-deck">
     <div id="spellbook-content"></div>
-  </div>
-
-  <!-- ===== WIZARD TAB ===== -->
-  <div class="tab-content" id="tab-gear">
-    <div id="wizard-profile"></div>
-    <div class="section-head" style="margin-top:16px">Equipped Gear</div>
-    <div id="gear-equipped"></div>
-    <div class="section-head" style="margin-top:16px">Inventory</div>
-    <div id="gear-inventory"></div>
   </div>
 
   <!-- ===== SHOP TAB ===== -->
