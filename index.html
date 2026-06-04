@@ -182,7 +182,8 @@
       } catch(e) {
         console.error('Boot error:', e);
         document.getElementById('hub-status').textContent = 'Save corrupted. Resetting...';
-        setTimeout(function(){ resetGame(); }, 1000);
+        localStorage.removeItem('spiralbound_save');
+        setTimeout(function(){ location.reload(); }, 500);
       }
     });
   </script>
