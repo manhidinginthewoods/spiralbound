@@ -2033,7 +2033,7 @@ function loadGame() {
     if (!Game.wizard.enchantments) Game.wizard.enchantments = {};
     recalcStats();
     return true;
-  } catch(e) { return false; }
+  } catch(e) { console.error('Load error:', e); return false; }
 }
 function resetGame() {
   localStorage.removeItem('spiralbound_save');

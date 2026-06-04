@@ -164,19 +164,25 @@
   <script>
     // Boot
     window.addEventListener('load', () => {
-      if (!loadGame()) {
-        initGame();
-      } else {
-        // Resume
-        addLog('Save loaded. Resuming...', 'system');
-        if (Game.state === 'fighting' || Game.state === 'resting') {
-          if (Game.tickInterval) clearInterval(Game.tickInterval);
-          Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
-          if (Game.state === 'fighting' && !Game.combat) {
-            startEncounter();
+      try {
+        if (!loadGame()) {
+          initGame();
+        } else {
+          // Resume
+          addLog('Save loaded. Resuming...', 'system');
+          if (Game.state === 'fighting' || Game.state === 'resting') {
+            if (Game.tickInterval) clearInterval(Game.tickInterval);
+            Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+            if (Game.state === 'fighting' && !Game.combat) {
+              startEncounter();
+            }
           }
+          updateUI();
         }
-        updateUI();
+      } catch(e) {
+        console.error('Boot error:', e);
+        document.getElementById('hub-status').textContent = 'Save corrupted. Resetting...';
+        setTimeout(function(){ resetGame(); }, 1000);
       }
     });
   </script>
