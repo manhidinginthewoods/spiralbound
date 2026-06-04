@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spiralbound</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="game-header">
+    <div class="game-title">SPIRAL<span>BOUND</span></div>
+    <div class="header-stats">
+      <span>Gold: <span class="stat-val" id="gold-display">0</span></span>
+      <span>Rank: <span class="stat-val" id="rank-display">Novice</span></span>
+    </div>
+  </div>
+
+  <!-- RESOURCE BARS -->
+  <div class="resource-panel">
+    <div class="resource-bar">
+      <div class="bar-label"><span>HP</span><span id="hp-text">400/400</span></div>
+      <div class="bar-track"><div class="bar-fill hp" id="hp-fill" style="width:100%"></div></div>
+    </div>
+    <div class="resource-bar">
+      <div class="bar-label"><span>Mana</span><span id="mana-text">15/15</span></div>
+      <div class="bar-track"><div class="bar-fill mana" id="mana-fill" style="width:100%"></div></div>
+    </div>
+    <div class="pip-display" id="pip-container">
+      <span class="pip-label">Pips:</span>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="hub" onclick="switchTab('hub')">Hub</button>
+    <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')">Combat</button>
+    <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Deck</button>
+    <button class="tab-btn" data-tab="gear" onclick="switchTab('gear')">Gear</button>
+    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">Shop</button>
+    <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Map</button>
+  </div>
+
+  <!-- ===== HUB TAB ===== -->
+  <div class="tab-content active" id="tab-hub">
+    <div class="status-box">
+      <h3>Status</h3>
+      <div class="status-line" id="hub-status">Loading...</div>
+      <div class="status-detail" id="hub-detail"></div>
+    </div>
+
+    <div class="status-box">
+      <h3>Active Buffs</h3>
+      <div class="status-detail" id="hub-buffs">No active buffs</div>
+    </div>
+
+    <div class="status-box">
+      <h3>Quick Actions</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="saveGame(); addLog('Game saved.', 'system'); updateUI();">Save</button>
+        <button class="btn" onclick="if(confirm('Reset all progress?')) resetGame();">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== COMBAT TAB ===== -->
+  <div class="tab-content" id="tab-combat">
+    <div class="section-head">Enemies</div>
+    <div class="enemy-panel" id="enemy-panel"></div>
+
+    <div class="section-head" style="margin-top:12px">Combat Log</div>
+    <div class="combat-log" id="combat-log"></div>
+
+    <div class="combat-controls">
+      <button class="btn" id="mode-btn" onclick="toggleMode()">⚙ AUTO</button>
+      <span id="phase-display" style="font-size:12px;padding:6px;color:var(--text-dim)"></span>
+    </div>
+
+    <div class="spell-hand" id="spell-hand" style="display:none"></div>
+  </div>
+
+  <!-- ===== DECK TAB ===== -->
+  <div class="tab-content" id="tab-deck">
+    <div class="section-head">Priority Rules</div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:10px">
+      Rules evaluate top-to-bottom each round. First matching rule fires. Last rule should always be "Always → cheap spell".
+    </p>
+    <div class="rule-list" id="rule-list"></div>
+    <button class="btn" style="margin-top:10px" onclick="addRule()">+ Add Rule</button>
+
+    <div class="section-head" style="margin-top:20px">Deck Configuration</div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:10px">
+      Add or remove spells from your deck. Only equipped spells can be used in combat and assigned to priority rules.
+    </p>
+    <div id="deck-config"></div>
+
+    <div class="section-head" style="margin-top:20px">Spell Reference</div>
+    <div id="deck-spells" style="font-size:12px;color:var(--text-dim)">
+    </div>
+  </div>
+
+  <!-- ===== GEAR TAB ===== -->
+  <div class="tab-content" id="tab-gear">
+    <div class="section-head">Equipped Gear</div>
+    <div id="gear-equipped"></div>
+
+    <div class="section-head" style="margin-top:16px">Inventory</div>
+    <div id="gear-inventory"></div>
+
+    <div class="section-head" style="margin-top:16px">Stat Summary</div>
+    <div id="gear-stats"></div>
+  </div>
+
+  <!-- ===== SHOP TAB ===== -->
+  <div class="tab-content" id="tab-shop">
+    <div class="section-head" id="shop-title">Shop</div>
+    <div id="shop-vendor"></div>
+
+    <div class="section-head" style="margin-top:16px" id="bazaar-title">Bazaar</div>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Items from all worlds you've visited.</p>
+    <div id="shop-bazaar"></div>
+  </div>
+
+  <!-- ===== MAP TAB ===== -->
+  <div class="tab-content" id="tab-map">
+    <div class="world-map" id="world-map"></div>
+  </div>
+
+  <script src="game.js"></script>
+  <script src="ui.js"></script>
+  <script>
+    // Boot
+    window.addEventListener('load', () => {
+      if (!loadGame()) {
+        initGame();
+      } else {
+        // Resume
+        addLog('Save loaded. Resuming...', 'system');
+        if (Game.state === 'fighting' || Game.state === 'resting') {
+          if (Game.tickInterval) clearInterval(Game.tickInterval);
+          Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+          if (Game.state === 'fighting' && !Game.combat) {
+            startEncounter();
+          }
+        }
+        updateUI();
+      }
+
+      // Render deck spells list
+      const deckSpellsEl = document.getElementById('deck-spells');
+      let spellHtml = '';
+      for (const id of Game.deck) {
+        const s = SPELLS[id];
+        if (!s) continue;
+        spellHtml += `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--storm)">${s.name}</span>
+          <span style="color:var(--text-dim)"> — ${s.pips}p ${s.type} — ${s.desc}</span>
+        </div>`;
+      }
+      deckSpellsEl.innerHTML = spellHtml;
+    });
+  </script>
+
+</body>
+</html>
