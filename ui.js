@@ -38,6 +38,7 @@ function selectTarget(index) {
 function updateUI() {
   if (!Game.wizard) return;
   document.getElementById('gold-display').textContent = Game.gold;
+  document.getElementById('snacks-display').textContent = Game.snacks;
   document.getElementById('rank-display').textContent = Game.wizard.rank;
   var hpPct = (Game.wizard.hp / Game.wizard.maxHp * 100).toFixed(0);
   var manaPct = (Game.wizard.mana / Game.wizard.maxMana * 100).toFixed(0);
@@ -51,6 +52,7 @@ function updateUI() {
   if (_deckDirty) { renderDeck(); _deckDirty = false; }
   if (_gearDirty || Game.gold !== _lastGold) { _gearDirty = false; renderGear(); }
   if (_shopDirty || Game.gold !== _lastGold) { _shopDirty = false; _lastGold = Game.gold; renderShop(); }
+  renderGarden();
   renderMap();
   if (Game.tick % 60 === 0) saveGame();
 }
@@ -316,6 +318,112 @@ function renderShop() {
       bazaarEl.innerHTML = h2 || '<div style="color:var(--text-dim);font-size:12px">No additional items available.</div>';
     }
   }
+}
+
+var _gardenDirty = true;
+function renderGarden() {
+  var el = document.getElementById('garden-content');
+  if (!el) return;
+  if (!Game.garden) { el.innerHTML = '<div style="color:var(--text-dim)">Garden not initialized.</div>'; return; }
+  if (!Game.garden.unlocked) {
+    el.innerHTML = '<div class="section-head">Garden</div><div style="color:var(--text-dim);font-size:12px">Gardening unlocks when you reach Solara (World 2).</div>';
+    return;
+  }
+
+  var h = '<div class="section-head">Garden Plots</div>';
+  h += '<div style="margin-bottom:8px"><button class="btn" onclick="tendAll()">Tend All (3g each)</button> <span style="color:var(--text-dim);font-size:11px">Snacks: '+Game.snacks+' | Reagents: '+Game.reagents+'</span></div>';
+
+  for (var i = 0; i < Game.garden.plots.length; i++) {
+    var plot = Game.garden.plots[i];
+    var borderColor = 'var(--border)';
+    if (plot.wilting) borderColor = 'var(--fizzle)';
+    else if (plot.needsTending) borderColor = 'var(--gold)';
+    else if (plot.stage === 'mature' || plot.stage === 'elder') borderColor = 'var(--heal)';
+
+    h += '<div style="background:var(--bg-card);border:2px solid '+borderColor+';border-radius:4px;padding:10px;margin-bottom:8px">';
+    h += '<div style="font-size:13px;color:var(--text-bright);margin-bottom:4px">Plot ' + (i+1) + '</div>';
+
+    if (!plot.seedId) {
+      // Empty plot — show planting options
+      h += '<div style="color:var(--text-dim);font-size:12px;margin-bottom:6px">Empty</div>';
+      var seedKeys = Object.keys(Game.garden.seeds);
+      var hasSeeds = false;
+      for (var s = 0; s < seedKeys.length; s++) {
+        if (Game.garden.seeds[seedKeys[s]] > 0) {
+          var seed = SEEDS[seedKeys[s]];
+          if (seed) {
+            hasSeeds = true;
+            h += '<button class="btn" onclick="plantSeed('+i+',\''+seedKeys[s]+'\')" style="font-size:10px;padding:2px 8px;margin-right:4px;margin-bottom:2px">Plant '+seed.name+' ('+Game.garden.seeds[seedKeys[s]]+')</button>';
+          }
+        }
+      }
+      if (!hasSeeds) h += '<div style="color:var(--text-dim);font-size:11px">No seeds. Buy from Barlow Rootwise in the Shop, or find drops from enemies.</div>';
+    } else {
+      var seed = SEEDS[plot.seedId];
+      var stageName = plot.stage ? plot.stage.charAt(0).toUpperCase()+plot.stage.slice(1) : '?';
+      var stageColor = 'var(--text-dim)';
+      if (plot.stage==='mature') stageColor = 'var(--heal)';
+      if (plot.stage==='elder') stageColor = 'var(--crit)';
+      if (plot.wilting) stageColor = 'var(--fizzle)';
+
+      h += '<div style="font-size:12px;margin-bottom:4px"><span style="color:var(--storm)">'+(seed?seed.name:'?')+'</span> — <span style="color:'+stageColor+'">'+stageName+'</span>';
+      if (plot.wilting) h += ' <span style="color:var(--fizzle)">⚠ WILTING</span>';
+      else if (plot.needsTending) h += ' <span style="color:var(--gold)">⚠ Needs tending</span>';
+      h += '</div>';
+
+      // Progress bar
+      if (seed && plot.stage && plot.stage !== 'elder') {
+        var maxTicks = seed.growth[plot.stage] || 100;
+        var pct = Math.min(100, (plot.ticks/maxTicks*100)).toFixed(0);
+        h += '<div class="bar-track" style="margin-bottom:6px"><div class="bar-fill" style="width:'+pct+'%;background:var(--heal)"></div></div>';
+      }
+
+      // Action buttons
+      if (plot.needsTending) {
+        h += '<button class="btn" onclick="tendPlot('+i+')" style="font-size:10px;padding:2px 8px;margin-right:4px">Tend (3g)</button>';
+      }
+      if (plot.stage === 'mature') {
+        h += '<button class="btn primary" onclick="harvestPlot('+i+',false)" style="font-size:10px;padding:2px 8px;margin-right:4px">Harvest (Mature)</button>';
+      }
+      if (plot.stage === 'elder') {
+        h += '<button class="btn primary" onclick="harvestPlot('+i+',true)" style="font-size:10px;padding:2px 8px;margin-right:4px">Harvest (Elder) ★</button>';
+      }
+      h += '<button class="btn" onclick="plowPlot('+i+')" style="font-size:10px;padding:2px 8px;color:var(--fizzle)">Plow</button>';
+    }
+    h += '</div>';
+  }
+
+  // Seed inventory
+  h += '<div class="section-head" style="margin-top:12px">Seed Inventory</div>';
+  var seedKeys2 = Object.keys(Game.garden.seeds);
+  var anySeeds = false;
+  for (var j = 0; j < seedKeys2.length; j++) {
+    if (Game.garden.seeds[seedKeys2[j]] > 0) {
+      var sd = SEEDS[seedKeys2[j]];
+      if (sd) {
+        anySeeds = true;
+        h += '<div style="font-size:12px;padding:3px 0;color:var(--text-dim)"><span style="color:var(--text-bright)">'+sd.name+'</span> x'+Game.garden.seeds[seedKeys2[j]]+' — '+sd.desc+'</div>';
+      }
+    }
+  }
+  if (!anySeeds) h += '<div style="font-size:12px;color:var(--text-dim)">No seeds in inventory.</div>';
+
+  // Seed shop (Barlow Rootwise)
+  var seedShop = SEED_SHOP[Game.currentWorld];
+  if (seedShop) {
+    h += '<div class="section-head" style="margin-top:12px">'+seedShop.vendor+'</div>';
+    for (var k = 0; k < seedShop.items.length; k++) {
+      var ss = SEEDS[seedShop.items[k]];
+      if (!ss) continue;
+      var canBuy = Game.gold >= ss.cost;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:3px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:12px">';
+      h += '<span><span style="color:var(--text-bright)">'+ss.name+'</span> <span style="color:var(--text-dim)">— '+ss.desc+'</span></span>';
+      h += '<button class="btn" onclick="buySeed(\''+ss.id+'\')" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+ss.cost+' gold</button>';
+      h += '</div>';
+    }
+  }
+
+  el.innerHTML = h;
 }
 
 function renderMap() {

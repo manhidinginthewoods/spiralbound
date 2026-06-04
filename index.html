@@ -13,6 +13,7 @@
     <div class="game-title">SPIRAL<span>BOUND</span></div>
     <div class="header-stats">
       <span>Gold: <span class="stat-val" id="gold-display">0</span></span>
+      <span>Snacks: <span class="stat-val" id="snacks-display">0</span></span>
       <span>Rank: <span class="stat-val" id="rank-display">Novice</span></span>
     </div>
   </div>
@@ -39,6 +40,7 @@
     <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Deck</button>
     <button class="tab-btn" data-tab="gear" onclick="switchTab('gear')">Gear</button>
     <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">Shop</button>
+    <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')">Garden</button>
     <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Map</button>
   </div>
 
@@ -120,6 +122,11 @@
     <div class="section-head" style="margin-top:16px" id="bazaar-title">Bazaar</div>
     <p style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Items from all worlds you've visited.</p>
     <div id="shop-bazaar"></div>
+  </div>
+
+  <!-- ===== GARDEN TAB ===== -->
+  <div class="tab-content" id="tab-garden">
+    <div id="garden-content"></div>
   </div>
 
   <!-- ===== MAP TAB ===== -->

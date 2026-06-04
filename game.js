@@ -1,6 +1,6 @@
 /* ========================================
-   SPIRALBOUND — Game Engine v0.6
-   + Solara (World 2)
+   SPIRALBOUND — Game Engine v0.7
+   + Gardening system
    + Rank-up system (Novice → Apprentice)
    + Power pips
    + New spells (Charybdis)
@@ -27,6 +27,9 @@ const Game = {
   tickInterval: null,
   TICK_MS: 800,
   MAX_LOG: 200,
+  garden: null,
+  snacks: 0,
+  reagents: 0,
 };
 
 // ===== RANKS =====
@@ -161,6 +164,183 @@ function getBazaarItems() {
     if (shop) items.push(...shop.items);
   }
   return [...new Set(items)];
+}
+
+// ===== SEEDS =====
+const SEEDS = {
+  dandelweed: { id:'dandelweed', name:'Dandelweed', rank:1, cost:10,
+    growth:{seedling:40,young:80,mature:120}, needFreq:60,
+    matureReward:function(){ return {gold:Math.floor(Math.random()*10)+5, reagents:1}; },
+    elderReward:function(){ return {gold:Math.floor(Math.random()*20)+15, reagents:3, seedReturn:Math.random()<0.9?'dandelweed':null}; },
+    desc:'Basic plant. Produces gold and reagents.'
+  },
+  sunsprout: { id:'sunsprout', name:'Sunsprout', rank:1, cost:15,
+    growth:{seedling:50,young:100,mature:150}, needFreq:55,
+    matureReward:function(){ return {snacks:1, gold:Math.floor(Math.random()*5)+2}; },
+    elderReward:function(){ return {snacks:3, gold:Math.floor(Math.random()*10)+5, seedReturn:Math.random()<0.85?'sunsprout':null}; },
+    desc:'Produces snacks for pet training.'
+  },
+  lazy_tuber: { id:'lazy_tuber', name:'Lazy Tuber', rank:3, cost:0,
+    growth:{seedling:80,young:160,mature:240}, needFreq:50,
+    matureReward:function(){ return {snacks:2, gold:Math.floor(Math.random()*15)+10, reagents:1}; },
+    elderReward:function(){ return {snacks:5, gold:Math.floor(Math.random()*30)+20, reagents:4, seedReturn:'lazy_tuber'}; },
+    desc:'Premium plant. Guaranteed self-seed at Elder. Rare drop in Solara.', dropOnly:true
+  },
+};
+
+const SEED_SHOP = {
+  1: { vendor:'Barlow Rootwise', items:['dandelweed','sunsprout'] },
+};
+
+// ===== GARDEN FUNCTIONS =====
+function createGarden() {
+  return {
+    plots: [
+      {seedId:null, stage:null, ticks:0, needsTending:false, needTicks:0, wilting:false, wiltTicks:0, matureHarvests:0},
+      {seedId:null, stage:null, ticks:0, needsTending:false, needTicks:0, wilting:false, wiltTicks:0, matureHarvests:0},
+    ],
+    seeds: {dandelweed:2, sunsprout:1},
+    unlocked: false,
+  };
+}
+
+function plantSeed(plotIndex, seedId) {
+  var g = Game.garden;
+  if (!g || plotIndex >= g.plots.length) return;
+  var plot = g.plots[plotIndex];
+  if (plot.seedId) return;
+  var seed = SEEDS[seedId];
+  if (!seed) return;
+  if ((g.seeds[seedId]||0) <= 0) return;
+  g.seeds[seedId]--;
+  plot.seedId = seedId;
+  plot.stage = 'seedling';
+  plot.ticks = 0;
+  plot.needsTending = false;
+  plot.needTicks = 0;
+  plot.wilting = false;
+  plot.wiltTicks = 0;
+  plot.matureHarvests = 0;
+  addLog('Planted ' + seed.name + ' in plot ' + (plotIndex+1), 'system');
+  saveGame();
+}
+
+function tendPlot(plotIndex) {
+  var plot = Game.garden.plots[plotIndex];
+  if (!plot || !plot.needsTending) return;
+  if (Game.gold < 3) { addLog('Need 3 gold to tend plant.', 'info'); return; }
+  Game.gold -= 3;
+  plot.needsTending = false;
+  plot.needTicks = 0;
+  if (plot.wilting) { plot.wilting = false; plot.wiltTicks = 0; addLog('Plant revived!', 'system'); }
+  saveGame();
+}
+
+function tendAll() {
+  var tended = 0;
+  for (var i = 0; i < Game.garden.plots.length; i++) {
+    if (Game.garden.plots[i].needsTending && Game.gold >= 3) { tendPlot(i); tended++; }
+  }
+  if (tended > 0) addLog('Tended ' + tended + ' plant(s).', 'system');
+}
+
+function harvestPlot(plotIndex, asElder) {
+  var plot = Game.garden.plots[plotIndex];
+  if (!plot || !plot.seedId) return;
+  var seed = SEEDS[plot.seedId];
+  if (!seed) return;
+
+  if (asElder && plot.stage === 'elder') {
+    var r = seed.elderReward();
+    if (r.gold) { Game.gold += r.gold; addLog('Harvested (Elder): +' + r.gold + ' gold', 'system'); }
+    if (r.snacks) { Game.snacks += r.snacks; addLog('  +' + r.snacks + ' snack(s)', 'system'); }
+    if (r.reagents) { Game.reagents += r.reagents; addLog('  +' + r.reagents + ' reagent(s)', 'system'); }
+    if (r.seedReturn) {
+      Game.garden.seeds[r.seedReturn] = (Game.garden.seeds[r.seedReturn]||0) + 1;
+      addLog('  +1 ' + SEEDS[r.seedReturn].name + ' seed!', 'crit');
+    }
+    // Plant dies
+    plot.seedId = null; plot.stage = null; plot.ticks = 0;
+    plot.needsTending = false; plot.wilting = false;
+  } else if (plot.stage === 'mature') {
+    var r2 = seed.matureReward();
+    if (r2.gold) { Game.gold += r2.gold; addLog('Harvested: +' + r2.gold + ' gold', 'system'); }
+    if (r2.snacks) { Game.snacks += r2.snacks; addLog('  +' + r2.snacks + ' snack(s)', 'system'); }
+    if (r2.reagents) { Game.reagents += r2.reagents; addLog('  +' + r2.reagents + ' reagent(s)', 'system'); }
+    plot.matureHarvests++;
+    plot.ticks = 0; // Reset growth toward elder
+  }
+  saveGame();
+}
+
+function plowPlot(plotIndex) {
+  var plot = Game.garden.plots[plotIndex];
+  if (!plot) return;
+  plot.seedId = null; plot.stage = null; plot.ticks = 0;
+  plot.needsTending = false; plot.wilting = false; plot.wiltTicks = 0;
+  addLog('Plowed plot ' + (plotIndex+1) + '.', 'info');
+  saveGame();
+}
+
+function buySeed(seedId) {
+  var seed = SEEDS[seedId];
+  if (!seed || seed.cost <= 0) return;
+  if (Game.gold < seed.cost) return;
+  Game.gold -= seed.cost;
+  Game.garden.seeds[seedId] = (Game.garden.seeds[seedId]||0) + 1;
+  addLog('Bought ' + seed.name + ' seed for ' + seed.cost + ' gold.', 'system');
+  saveGame();
+}
+
+function gardenTick() {
+  if (!Game.garden || !Game.garden.unlocked) return;
+  for (var i = 0; i < Game.garden.plots.length; i++) {
+    var plot = Game.garden.plots[i];
+    if (!plot.seedId || !plot.stage) continue;
+    var seed = SEEDS[plot.seedId];
+    if (!seed) continue;
+
+    // Don't grow if wilting
+    if (plot.wilting) {
+      plot.wiltTicks++;
+      if (plot.wiltTicks > 50) {
+        addLog('Plant in plot ' + (i+1) + ' died from neglect!', 'death');
+        plot.seedId = null; plot.stage = null; plot.ticks = 0;
+        plot.needsTending = false; plot.wilting = false; plot.wiltTicks = 0;
+      }
+      continue;
+    }
+
+    // Needs tending check
+    if (plot.needsTending) {
+      plot.needTicks++;
+      if (plot.needTicks > 40) {
+        plot.wilting = true;
+        plot.wiltTicks = 0;
+        addLog('Plant in plot ' + (i+1) + ' is wilting! Tend it soon.', 'fizzle');
+      }
+      continue; // Don't grow while needing attention
+    }
+
+    // Growth
+    plot.ticks++;
+    var g = seed.growth;
+    if (plot.stage === 'seedling' && plot.ticks >= g.seedling) {
+      plot.stage = 'young'; plot.ticks = 0;
+    } else if (plot.stage === 'young' && plot.ticks >= g.young) {
+      plot.stage = 'mature'; plot.ticks = 0;
+      addLog('Plot ' + (i+1) + ': ' + seed.name + ' is Mature! Ready to harvest.', 'system');
+    } else if (plot.stage === 'mature' && plot.ticks >= g.mature) {
+      plot.stage = 'elder'; plot.ticks = 0;
+      addLog('Plot ' + (i+1) + ': ' + seed.name + ' reached Elder! Harvest for best rewards.', 'crit');
+    }
+
+    // Random need generation
+    if (Math.random() < (1/seed.needFreq) && plot.stage !== 'elder') {
+      plot.needsTending = true;
+      plot.needTicks = 0;
+    }
+  }
 }
 
 // ===== WIZARD =====
@@ -354,6 +534,14 @@ function castSpell(spell, targetIndex=0) {
           Game.wizard.xp += spell.pips*3+3;
           // Boss drops
           if (target.boss) handleBossDrop(target);
+          // Seed drops (Solara enemies)
+          if (Game.currentWorld >= 1 && Game.garden && Game.garden.unlocked) {
+            if (Math.random() < 0.08) {
+              var seedDrop = Math.random() < 0.15 ? 'lazy_tuber' : (Math.random()<0.5?'dandelweed':'sunsprout');
+              Game.garden.seeds[seedDrop] = (Game.garden.seeds[seedDrop]||0) + 1;
+              addLog('  🌱 Seed drop: ' + SEEDS[seedDrop].name + '!', 'crit');
+            }
+          }
         }
       }
       break;
@@ -552,6 +740,12 @@ function advanceEncounter() {
         const nextWorld = WORLDS[Game.currentWorld];
         addLog(``, 'info');
         addLog(`Traveling to ${nextWorld.name}...`, 'system');
+        if (Game.currentWorld >= 1 && Game.garden && !Game.garden.unlocked) {
+          Game.garden.unlocked = true;
+          addLog(``, 'info');
+          addLog(`★ Gardening unlocked! Visit the Garden tab.`, 'crit');
+          addLog(`"The soil here is rich with old magic." — Barlow Rootwise`, 'info');
+        }
         addLog(`"I could tell you what's ahead. But I think you'd rather find out."`, 'system');
         addLog(`  — Headmaster Silas Stillwater`, 'info');
 
@@ -609,6 +803,8 @@ function gameTick() {
     }
   }
   if (Game.tick%60===0) saveGame();
+  // Garden grows every 2 ticks
+  if (Game.tick%2===0) gardenTick();
   updateUI();
 }
 
@@ -618,6 +814,7 @@ function saveGame() {
     wizard:Game.wizard, currentWorld:Game.currentWorld, currentZone:Game.currentZone,
     currentEncounter:Game.currentEncounter, gold:Game.gold, rules:Game.rules,
     deck:Game.deck, mode:Game.mode, state:Game.state, round:Game.round,
+    garden:Game.garden, snacks:Game.snacks, reagents:Game.reagents,
   }));
 }
 function loadGame() {
@@ -641,6 +838,9 @@ function loadGame() {
     Game.mode = d.mode||'auto';
     Game.state = d.state||'idle';
     Game.round = d.round||0;
+    Game.garden = d.garden||createGarden();
+    Game.snacks = d.snacks||0;
+    Game.reagents = d.reagents||0;
     return true;
   } catch(e) { return false; }
 }
@@ -655,6 +855,8 @@ function initGame() {
   Game.currentWorld=0; Game.currentZone=0; Game.currentEncounter=0;
   Game.gold=0; Game.log=[]; Game.tick=0; Game.round=0;
   Game.mode='auto'; Game.combat=null; Game.phase='none';
+  Game.snacks=0; Game.reagents=0;
+  Game.garden = createGarden();
   Game.deck = Game.wizard.learnedSpells.slice();
   Game.rules = [
     {conditionId:'no_blade',spellId:'galeblade'},
@@ -685,3 +887,6 @@ window.getPipValue=getPipValue; window.canAffordSpell=canAffordSpell;
 window.getAliveEnemies=getAliveEnemies; window.addLog=addLog;
 window.startEncounter=startEncounter; window.getCurrentWorld=getCurrentWorld; window.getCurrentZone=getCurrentZone;
 window.equipGear=equipGear; window.unequipGear=unequipGear; window.buyGear=buyGear; window.recalcStats=recalcStats;
+window.SEEDS=SEEDS; window.SEED_SHOP=SEED_SHOP; window.createGarden=createGarden;
+window.plantSeed=plantSeed; window.tendPlot=tendPlot; window.tendAll=tendAll;
+window.harvestPlot=harvestPlot; window.plowPlot=plowPlot; window.buySeed=buySeed;
