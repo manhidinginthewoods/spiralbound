@@ -19,13 +19,23 @@ const Game = {
   events: {active:[], lastEventTick:0},
   savedDecks: [],
   hubLog: [],
-  logMode: 'verbose', // 'verbose' or 'summary'
+  logMode: 'verbose',
+  graduatedSchools: [],
+  masteryAuras: {},
+  enrollmentCount: 0,
+  achievements: {},
+  stats: {encountersCleared:0, enemiesDefeated:0, spellsCast:0, fizzles:0, crits:0, goldEarned:0, deathCount:0},
 };
 
 // ===== SCHOOL STATS =====
 const SCHOOL_STATS = {
   storm: {baseAccuracy:70, hpScale:1.0, desc:'AoE damage king. 70% accuracy.'},
   fire:  {baseAccuracy:75, hpScale:1.0375, desc:'DoT specialist. 75% accuracy.'},
+  ice:   {baseAccuracy:80, hpScale:1.25, desc:'Tank. 80% accuracy. Highest HP/resist.'},
+  life:  {baseAccuracy:90, hpScale:1.15, desc:'Healer. 90% accuracy. Overheal → damage.'},
+  death: {baseAccuracy:85, hpScale:1.125, desc:'Drain. 85% accuracy. Damage heals self.'},
+  myth:  {baseAccuracy:80, hpScale:1.0625, desc:'Summoner. 80% accuracy. Minions + multi-hit.'},
+  balance:{baseAccuracy:85, hpScale:1.1, desc:'The Spiral. All mastery auras. Universal toolkit.'},
 };
 
 // ===== RANKS =====
@@ -53,13 +63,63 @@ const SCHOOL_SPELLS = {
   ],
   fire: [
     ['ember_fox','flame_sprite','fire_ward'],
-    ['scorchbeak','singe','blazeblade','blaze_snare','blaze_prism'],
+    ['scorchbeak','singe','blazeblade','blaze_snare','blaze_prism','flame_strike'],
     ['meteor_shower','self_ignite','hellhound'],
     ['salamander','kindling'],
     ['moloch','wyrm_pyre'],
     ['ifrit','ember_rain','detonate'],
     ['sun_viper'],
     ['zenith_of_flame'],
+  ],
+  ice: [
+    ['frost_scarab_s','sleet_viper','ice_ward'],
+    ['hailbrute','frost_armor','frostblade','frost_snare','frost_prism','cold_snap'],
+    ['rime_drake','avalanche'],
+    ['glacier_bear','legion_ward'],
+    ['titan','boreal_giant'],
+    ['pale_seraph','behemoth','permafrost'],
+    ['winter_sovereign'],
+    ['weaver','zenith_of_frost'],
+  ],
+  life: [
+    ['thorn_sprite_s','nymph','life_ward'],
+    ['bloomblade','bloom_snare','bloom_prism','verdant_strike','dewdrop_l'],
+    ['paladin','guiding_glow','mending_touch_l'],
+    ['oakwalker','restoration','sanctuary'],
+    ['verdant_knight','thornlord'],
+    ['dryad','genesis','sacred_grove'],
+    ['world_tree'],
+    ['zenith_of_bloom'],
+  ],
+  death: [
+    ['shadow_wisp_s','revenant','death_ward'],
+    ['nightfang','blight','graveblade','grave_snare','grave_prism'],
+    ['wight','curse_s','pall'],
+    ['skeletal_corsair','doom_snare_s','pestilence'],
+    ['shade','harvester'],
+    ['bone_wyrm','dark_covenant','virulent_plague'],
+    ['fossil_lord'],
+    ['zenith_of_graves'],
+  ],
+  myth: [
+    ['fang_bat','boggart','myth_ward'],
+    ['ettin','clay_golem','fableblade','fable_snare','fable_prism'],
+    ['manticore','legendcrest','shatter'],
+    ['stone_ogre','toadswarm','upheaval','war_troll'],
+    ['chimera','keeper_of_tales'],
+    ['cockatrice','gorgon'],
+    ['colossus_eternal'],
+    ['zenith_of_fables'],
+  ],
+  balance: [
+    ['sand_scarab','spectral_bolt','arcblade'],
+    ['dust_scorpion','chimeric_bolt','hex','arcspear','frailty'],
+    ['locust_tide','bladestorm','dark_shroud'],
+    ['sphinx','helping_hand','contagion'],
+    ['anubis','tri_edge'],
+    ['sovereign','adjudication'],
+    ['balance_ward'],
+    ['zenith_of_balance'],
   ],
 };
 
@@ -105,6 +165,7 @@ const SPELLS = {
   blazeblade:{id:'blazeblade',name:'Blazeblade',school:'fire',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Fire blade'},
   blaze_snare:{id:'blaze_snare',name:'Blaze Snare',school:'fire',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Fire trap'},
   blaze_prism:{id:'blaze_prism',name:'Blaze Prism',school:'fire',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'ice'},desc:'Converts Fire → Ice damage'},
+  flame_strike:{id:'flame_strike',name:'Flame Strike',school:'fire',pips:0,type:'charm',accuracy:100,mana:0,effect:{accuracyBuff:20},desc:'+20% accuracy charm'},
   // Initiate
   meteor_shower:{id:'meteor_shower',name:'Meteor Shower',school:'fire',pips:4,type:'damage',accuracy:75,mana:4,effect:{damage:[305,365],aoe:true},desc:'305-365 AoE Fire damage'},
   self_ignite:{id:'self_ignite',name:'Self-Ignite',school:'fire',pips:4,type:'damage',accuracy:100,mana:4,effect:{damage:[650,750],selfDamagePercent:20},desc:'650-750 dmg, costs 20% of your HP'},
@@ -123,6 +184,155 @@ const SPELLS = {
   sun_viper:{id:'sun_viper',name:'Sun Viper',school:'fire',pips:10,type:'damage',accuracy:75,mana:10,effect:{damage:[700,800],aoe:true,aoeSplitSingle:[400,500]},desc:'700-800 AoE + 400-500 extra to target'},
   // Archmage
   zenith_of_flame:{id:'zenith_of_flame',name:'Zenith of Flame',school:'fire',pips:11,type:'damage',accuracy:75,mana:11,effect:{damage:[1400,1600],conditional:'dot_bonus_100'},desc:'1400-1600 dmg (x2 if target has DoT)'},
+  // ===== ICE SPELLS =====
+  // Novice
+  frost_scarab_s:{id:'frost_scarab_s',name:'Frost Scarab',school:'ice',pips:1,type:'damage',accuracy:80,mana:1,effect:{damage:[75,105]},desc:'75-105 Ice damage'},
+  sleet_viper:{id:'sleet_viper',name:'Sleet Viper',school:'ice',pips:2,type:'damage',accuracy:80,mana:2,effect:{damage:[155,195]},desc:'155-195 Ice damage'},
+  ice_ward:{id:'ice_ward',name:'Ice Ward',school:'ice',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['fire','storm']},desc:'-70% Fire/Storm shield'},
+  // Apprentice
+  hailbrute:{id:'hailbrute',name:'Hailbrute',school:'ice',pips:3,type:'damage',accuracy:80,mana:3,effect:{damage:[240,290]},desc:'240-290 Ice damage'},
+  frost_armor:{id:'frost_armor',name:'Frost Armor',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:80},desc:'Absorb 80 damage per pip spent'},
+  frostblade:{id:'frostblade',name:'Frostblade',school:'ice',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Ice blade'},
+  frost_snare:{id:'frost_snare',name:'Frost Snare',school:'ice',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Ice trap'},
+  frost_prism:{id:'frost_prism',name:'Frost Prism',school:'ice',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'fire'},desc:'Converts Ice → Fire damage'},
+  cold_snap:{id:'cold_snap',name:'Cold Snap',school:'ice',pips:0,type:'charm',accuracy:100,mana:0,effect:{accuracyBuff:15},desc:'+15% accuracy charm'},
+  // Initiate
+  rime_drake:{id:'rime_drake',name:'Rime Drake',school:'ice',pips:4,type:'damage',accuracy:80,mana:4,effect:{damage:[330,390]},desc:'330-390 Ice damage'},
+  avalanche:{id:'avalanche',name:'Avalanche',school:'ice',pips:4,type:'damage',accuracy:80,mana:4,effect:{damage:[210,260],aoe:true},desc:'210-260 AoE Ice damage'},
+  // Journeyman
+  glacier_bear:{id:'glacier_bear',name:'Glacier Bear',school:'ice',pips:5,type:'damage',accuracy:80,mana:5,effect:{damage:[420,480]},desc:'420-480 Ice damage'},
+  legion_ward:{id:'legion_ward',name:'Legion Ward',school:'ice',pips:1,type:'shield',accuracy:100,mana:1,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield (costs 1 pip)'},
+  // Adept
+  titan:{id:'titan',name:'Titan',school:'ice',pips:6,type:'damage',accuracy:80,mana:6,effect:{damage:[510,580]},desc:'510-580 Ice damage'},
+  boreal_giant:{id:'boreal_giant',name:'Boreal Giant',school:'ice',pips:7,type:'damage',accuracy:80,mana:7,effect:{damage:[370,430],aoe:true,stun:1},desc:'370-430 AoE + 1 round stun'},
+  // Master
+  pale_seraph:{id:'pale_seraph',name:'Pale Seraph',school:'ice',pips:8,type:'damage',accuracy:80,mana:8,effect:{damage:[280,340],aoe:true,dot:{dmg:100,rounds:3}},desc:'280-340 AoE + 100 DoT/rd'},
+  behemoth:{id:'behemoth',name:'Behemoth',school:'ice',pips:9,type:'damage',accuracy:80,mana:9,effect:{damage:[650,730],stun:2},desc:'650-730 dmg + 2 round stun'},
+  permafrost:{id:'permafrost',name:'Permafrost',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:150},desc:'Absorb 150 damage per pip spent (upgraded)'},
+  // Grandmaster
+  winter_sovereign:{id:'winter_sovereign',name:'Winter Sovereign',school:'ice',pips:10,type:'damage',accuracy:80,mana:10,effect:{damage:[750,850]},desc:'750-850 Ice damage'},
+  // Archmage
+  weaver:{id:'weaver',name:'Weaver',school:'ice',pips:5,type:'damage',accuracy:80,mana:5,effect:{damage:[350,410],selfShield:{percent:50,schools:null}},desc:'350-410 dmg + -50% self shield'},
+  zenith_of_frost:{id:'zenith_of_frost',name:'Zenith of Frost',school:'ice',pips:11,type:'damage',accuracy:80,mana:11,effect:{damage:[1100,1300],conditional:'hp_bonus_90'},desc:'1100-1300 dmg (x2 if HP above 90%)'},
+  // ===== LIFE SPELLS =====
+  // Novice
+  thorn_sprite_s:{id:'thorn_sprite_s',name:'Thorn Sprite',school:'life',pips:1,type:'damage',accuracy:90,mana:1,effect:{damage:[65,95]},desc:'65-95 Life damage'},
+  nymph:{id:'nymph',name:'Nymph',school:'life',pips:2,type:'damage',accuracy:90,mana:2,effect:{damage:[130,170]},desc:'130-170 Life damage'},
+  life_ward:{id:'life_ward',name:'Life Ward',school:'life',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['death','myth']},desc:'-70% Death/Myth shield'},
+  // Apprentice
+  bloomblade:{id:'bloomblade',name:'Bloomblade',school:'life',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Life blade'},
+  bloom_snare:{id:'bloom_snare',name:'Bloom Snare',school:'life',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Life trap'},
+  bloom_prism:{id:'bloom_prism',name:'Bloom Prism',school:'life',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'death'},desc:'Converts Life → Death damage'},
+  verdant_strike:{id:'verdant_strike',name:'Verdant Strike',school:'life',pips:0,type:'charm',accuracy:100,mana:0,effect:{accuracyBuff:10},desc:'+10% accuracy charm'},
+  dewdrop_l:{id:'dewdrop_l',name:'Dewdrop',school:'life',pips:1,type:'heal',accuracy:100,mana:1,effect:{healPercent:15,hot:{heal:20,rounds:3}},desc:'Heal 15% HP + 20/rd HoT'},
+  // Initiate
+  paladin:{id:'paladin',name:'Paladin',school:'life',pips:4,type:'damage',accuracy:90,mana:4,effect:{damage:[280,340]},desc:'280-340 Life damage'},
+  guiding_glow:{id:'guiding_glow',name:'Guiding Glow',school:'life',pips:0,type:'charm',accuracy:100,mana:0,effect:{healBoost:50},desc:'+50% next heal boost'},
+  mending_touch_l:{id:'mending_touch_l',name:'Mending Touch',school:'life',pips:2,type:'heal',accuracy:100,mana:2,effect:{healPercent:30},desc:'Heal 30% HP'},
+  // Journeyman
+  oakwalker:{id:'oakwalker',name:'Oakwalker',school:'life',pips:5,type:'damage',accuracy:90,mana:5,effect:{damage:[360,420]},desc:'360-420 Life damage'},
+  restoration:{id:'restoration',name:'Restoration',school:'life',pips:4,type:'heal',accuracy:100,mana:4,effect:{healPercent:50},desc:'Heal 50% HP'},
+  sanctuary:{id:'sanctuary',name:'Sanctuary',school:'life',pips:2,type:'global',accuracy:100,mana:2,effect:{globalBonus:{healBoost:30}},desc:'+30% healing (global)'},
+  // Adept
+  verdant_knight:{id:'verdant_knight',name:'Verdant Knight',school:'life',pips:6,type:'damage',accuracy:90,mana:6,effect:{damage:[440,510]},desc:'440-510 Life damage'},
+  thornlord:{id:'thornlord',name:'Thornlord',school:'life',pips:7,type:'damage',accuracy:90,mana:7,effect:{damage:[300,360],aoe:true},desc:'300-360 AoE Life damage'},
+  // Master
+  dryad:{id:'dryad',name:'Dryad',school:'life',pips:9,type:'damage',accuracy:90,mana:9,effect:{damage:[580,660]},desc:'580-660 Life damage'},
+  genesis:{id:'genesis',name:'Genesis',school:'life',pips:8,type:'heal',accuracy:100,mana:8,effect:{healPercent:70,absorb:200},desc:'Heal 70% HP + 200 absorb'},
+  sacred_grove:{id:'sacred_grove',name:'Sacred Grove',school:'life',pips:3,type:'heal',accuracy:100,mana:3,effect:{healPercent:10,hot:{heal:50,rounds:4}},desc:'Heal 10% + 50/rd for 4 rounds'},
+  // Grandmaster
+  world_tree:{id:'world_tree',name:'World Tree',school:'life',pips:10,type:'damage',accuracy:90,mana:10,effect:{damage:[680,780]},desc:'680-780 Life damage'},
+  // Archmage
+  zenith_of_bloom:{id:'zenith_of_bloom',name:'Zenith of Bloom',school:'life',pips:11,type:'heal',accuracy:100,mana:11,effect:{healPercent:100,conditional:'overheal_bonus'},desc:'Full heal. Excess → +damage buff'},
+  // ===== DEATH SPELLS =====
+  // Novice
+  shadow_wisp_s:{id:'shadow_wisp_s',name:'Shadow Wisp',school:'death',pips:1,type:'damage',accuracy:85,mana:1,effect:{damage:[75,105],drain:true},desc:'75-105 Death drain (heals half)'},
+  revenant:{id:'revenant',name:'Revenant',school:'death',pips:2,type:'damage',accuracy:85,mana:2,effect:{damage:[150,190],drain:true},desc:'150-190 Death drain'},
+  death_ward:{id:'death_ward',name:'Death Ward',school:'death',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['life','myth']},desc:'-70% Life/Myth shield'},
+  // Apprentice
+  nightfang:{id:'nightfang',name:'Nightfang',school:'death',pips:3,type:'damage',accuracy:85,mana:3,effect:{damage:[235,285],drain:true},desc:'235-285 Death drain'},
+  blight:{id:'blight',name:'Blight',school:'death',pips:0,type:'charm',accuracy:100,mana:0,effect:{antiHeal:50},desc:'Anti-heal: enemy heals -50%'},
+  graveblade:{id:'graveblade',name:'Graveblade',school:'death',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Death blade'},
+  grave_snare:{id:'grave_snare',name:'Grave Snare',school:'death',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Death trap'},
+  grave_prism:{id:'grave_prism',name:'Grave Prism',school:'death',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'life'},desc:'Converts Death → Life damage'},
+  // Initiate
+  wight:{id:'wight',name:'Wight',school:'death',pips:4,type:'damage',accuracy:85,mana:4,effect:{damage:[340,400]},desc:'340-400 Death damage'},
+  curse_s:{id:'curse_s',name:'Curse',school:'death',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:30},desc:'+30% universal trap'},
+  pall:{id:'pall',name:'Pall',school:'death',pips:2,type:'global',accuracy:100,mana:2,effect:{globalBonus:{antiHeal:65}},desc:'Global: enemy heals -65%'},
+  // Journeyman
+  skeletal_corsair:{id:'skeletal_corsair',name:'Skeletal Corsair',school:'death',pips:5,type:'damage',accuracy:85,mana:5,effect:{damage:[430,500],drain:true},desc:'430-500 Death drain'},
+  doom_snare_s:{id:'doom_snare_s',name:'Doom Snare',school:'death',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:70,selfTrap:30},desc:'+70% trap + 30% self-trap (Feint)'},
+  pestilence:{id:'pestilence',name:'Pestilence',school:'death',pips:0,type:'debuff',accuracy:100,mana:0,effect:{weakness:20,aoeWeakness:true},desc:'AoE -20% enemy damage'},
+  // Adept
+  shade:{id:'shade',name:'Shade',school:'death',pips:6,type:'damage',accuracy:85,mana:6,effect:{damage:[530,610],drain:true},desc:'530-610 Death drain'},
+  harvester:{id:'harvester',name:'Harvester',school:'death',pips:7,type:'damage',accuracy:85,mana:7,effect:{damage:[350,420],aoe:true,drain:true},desc:'350-420 AoE Death drain'},
+  // Master
+  bone_wyrm:{id:'bone_wyrm',name:'Bone Wyrm',school:'death',pips:8,type:'damage',accuracy:85,mana:8,effect:{damage:[640,720]},desc:'640-720 Death damage'},
+  dark_covenant:{id:'dark_covenant',name:'Dark Covenant',school:'death',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:40,selfDamagePercent:25},desc:'+40% blade, costs 25% HP'},
+  virulent_plague:{id:'virulent_plague',name:'Virulent Plague',school:'death',pips:1,type:'debuff',accuracy:100,mana:1,effect:{weakness:40,aoeWeakness:true},desc:'AoE -40% enemy damage'},
+  // Grandmaster
+  fossil_lord:{id:'fossil_lord',name:'Fossil Lord',school:'death',pips:10,type:'damage',accuracy:85,mana:10,effect:{damage:[780,880],drain:true},desc:'780-880 Death drain'},
+  // Archmage
+  zenith_of_graves:{id:'zenith_of_graves',name:'Zenith of Graves',school:'death',pips:11,type:'damage',accuracy:85,mana:11,effect:{damage:[1200,1400],drain:true,conditional:'low_hp_bonus'},desc:'1200-1400 drain (x2 if YOUR HP below 25%)'},
+  // ===== MYTH SPELLS =====
+  // Novice
+  fang_bat:{id:'fang_bat',name:'Fang Bat',school:'myth',pips:1,type:'damage',accuracy:80,mana:1,effect:{damage:[85,115]},desc:'85-115 Myth damage'},
+  boggart:{id:'boggart',name:'Boggart',school:'myth',pips:2,type:'damage',accuracy:80,mana:2,effect:{damage:[170,210]},desc:'170-210 Myth damage'},
+  myth_ward:{id:'myth_ward',name:'Myth Ward',school:'myth',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['storm','fire']},desc:'-70% Storm/Fire shield'},
+  // Apprentice
+  ettin:{id:'ettin',name:'Ettin',school:'myth',pips:3,type:'damage',accuracy:80,mana:3,effect:{damage:[265,315]},desc:'265-315 Myth damage'},
+  clay_golem:{id:'clay_golem',name:'Clay Golem',school:'myth',pips:0,type:'summon',accuracy:100,mana:0,effect:{minion:{name:'Clay Golem',hp:200,damage:[15,25],accuracy:75}},desc:'Summon a Clay Golem minion'},
+  fableblade:{id:'fableblade',name:'Fableblade',school:'myth',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Myth blade'},
+  fable_snare:{id:'fable_snare',name:'Fable Snare',school:'myth',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Myth trap'},
+  fable_prism:{id:'fable_prism',name:'Fable Prism',school:'myth',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'storm'},desc:'Converts Myth → Storm damage'},
+  // Initiate
+  manticore:{id:'manticore',name:'Manticore',school:'myth',pips:4,type:'damage',accuracy:80,mana:4,effect:{damage:[195,235],multiHit:2},desc:'2 hits of 195-235 (pierces shields)'},
+  legendcrest:{id:'legendcrest',name:'Legendcrest',school:'myth',pips:2,type:'global',accuracy:100,mana:2,effect:{globalBonus:{mythDmgBonus:10}},desc:'+10% Myth damage (global)'},
+  shatter:{id:'shatter',name:'Shatter',school:'myth',pips:0,type:'debuff',accuracy:100,mana:0,effect:{shieldBreak:true},desc:'Remove all shields from target'},
+  // Journeyman
+  stone_ogre:{id:'stone_ogre',name:'Stone Ogre',school:'myth',pips:5,type:'damage',accuracy:80,mana:5,effect:{damage:[450,520]},desc:'450-520 Myth damage'},
+  toadswarm:{id:'toadswarm',name:'Toadswarm',school:'myth',pips:4,type:'damage',accuracy:80,mana:4,effect:{damage:[260,320],aoe:true},desc:'260-320 AoE Myth damage'},
+  upheaval:{id:'upheaval',name:'Upheaval',school:'myth',pips:5,type:'damage',accuracy:80,mana:5,effect:{damage:[200,260],aoe:true,stripAll:true},desc:'200-260 AoE + strip all blades/shields'},
+  war_troll:{id:'war_troll',name:'War Troll',school:'myth',pips:5,type:'summon',accuracy:100,mana:5,effect:{minion:{name:'War Troll',hp:500,damage:[35,55],accuracy:80}},desc:'Summon a War Troll minion'},
+  // Adept
+  chimera:{id:'chimera',name:'Chimera',school:'myth',pips:6,type:'damage',accuracy:80,mana:6,effect:{damage:[180,220],multiHit:3},desc:'3 hits of 180-220 (pierces shields)'},
+  keeper_of_tales:{id:'keeper_of_tales',name:'Keeper of Tales',school:'myth',pips:7,type:'damage',accuracy:80,mana:7,effect:{damage:[320,380],aoe:true,stripAll:true},desc:'320-380 AoE + strip all (signature)'},
+  // Master
+  cockatrice:{id:'cockatrice',name:'Cockatrice',school:'myth',pips:8,type:'damage',accuracy:80,mana:8,effect:{damage:[620,700],stun:1},desc:'620-700 dmg + 1 round stun'},
+  gorgon:{id:'gorgon',name:'Gorgon',school:'myth',pips:9,type:'damage',accuracy:80,mana:9,effect:{damage:[700,790],stun:2},desc:'700-790 dmg + 2 round stun'},
+  // Grandmaster
+  colossus_eternal:{id:'colossus_eternal',name:'Colossus Eternal',school:'myth',pips:10,type:'damage',accuracy:80,mana:10,effect:{damage:[820,920]},desc:'820-920 Myth damage'},
+  // Archmage
+  zenith_of_fables:{id:'zenith_of_fables',name:'Zenith of Fables',school:'myth',pips:11,type:'damage',accuracy:80,mana:11,effect:{damage:[1000,1200],conditional:'minion_bonus'},desc:'1000-1200 dmg (x2 if minion alive)'},
+  // ===== BALANCE SPELLS =====
+  // Novice
+  sand_scarab:{id:'sand_scarab',name:'Sand Scarab',school:'balance',pips:1,type:'damage',accuracy:85,mana:1,effect:{damage:[80,110]},desc:'80-110 Balance damage'},
+  spectral_bolt:{id:'spectral_bolt',name:'Spectral Bolt',school:'balance',pips:2,type:'damage',accuracy:85,mana:2,effect:{damage:[120,220]},desc:'120-220 random school damage'},
+  arcblade:{id:'arcblade',name:'Arcblade',school:'balance',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:25},desc:'+25% universal blade'},
+  // Apprentice
+  dust_scorpion:{id:'dust_scorpion',name:'Dust Scorpion',school:'balance',pips:2,type:'damage',accuracy:85,mana:2,effect:{damage:[155,195]},desc:'155-195 Balance damage'},
+  chimeric_bolt:{id:'chimeric_bolt',name:'Chimeric Bolt',school:'balance',pips:3,type:'damage',accuracy:85,mana:3,effect:{damage:[200,320]},desc:'200-320 random school damage'},
+  hex:{id:'hex',name:'Hex',school:'balance',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:30},desc:'+30% universal trap'},
+  arcspear:{id:'arcspear',name:'Arcspear',school:'balance',pips:0,type:'charm',accuracy:100,mana:0,effect:{accuracyBuff:20},desc:'+20% accuracy charm'},
+  frailty:{id:'frailty',name:'Frailty',school:'balance',pips:0,type:'debuff',accuracy:100,mana:0,effect:{weakness:25,aoeWeakness:false,singleTarget:true},desc:'-25% enemy damage (single target)'},
+  // Initiate
+  locust_tide:{id:'locust_tide',name:'Locust Tide',school:'balance',pips:3,type:'damage',accuracy:85,mana:3,effect:{damage:[180,230],aoe:true},desc:'180-230 AoE Balance damage'},
+  bladestorm:{id:'bladestorm',name:'Bladestorm',school:'balance',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:20,tripleStack:true},desc:'+20% blade x3 (triple self-blade)'},
+  dark_shroud:{id:'dark_shroud',name:'Dark Shroud',school:'balance',pips:0,type:'debuff',accuracy:100,mana:0,effect:{weakness:15,aoeWeakness:true},desc:'AoE -15% enemy damage'},
+  // Journeyman
+  sphinx:{id:'sphinx',name:'Sphinx',school:'balance',pips:6,type:'damage',accuracy:85,mana:6,effect:{damage:[480,550],weakness:20},desc:'480-550 dmg + -20% weakness'},
+  helping_hand:{id:'helping_hand',name:'Helping Hand',school:'balance',pips:5,type:'heal',accuracy:100,mana:5,effect:{healPercent:40},desc:'Heal 40% HP'},
+  contagion:{id:'contagion',name:'Contagion',school:'balance',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:25},desc:'+25% universal trap (spreads to adjacent)'},
+  // Adept
+  anubis:{id:'anubis',name:'Anubis',school:'balance',pips:8,type:'damage',accuracy:85,mana:8,effect:{damage:[620,710]},desc:'620-710 Balance damage'},
+  tri_edge:{id:'tri_edge',name:'Tri-Edge',school:'balance',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:35},desc:'+35% universal blade'},
+  // Master
+  sovereign:{id:'sovereign',name:'Sovereign',school:'balance',pips:10,type:'damage',accuracy:85,mana:10,effect:{damage:[780,880],weakness:30},desc:'780-880 dmg + -30% weakness'},
+  adjudication:{id:'adjudication',name:'Adjudication',school:'balance',pips:'X',type:'damage',accuracy:85,mana:0,effect:{damagePerPip:[100,100],dynamicMana:true},desc:'100 damage per pip to target (THE nuke)'},
+  // Grandmaster
+  balance_ward:{id:'balance_ward',name:'Balance Ward',school:'balance',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield'},
+  // Archmage
+  zenith_of_balance:{id:'zenith_of_balance',name:'Zenith of Balance',school:'balance',pips:11,type:'damage',accuracy:85,mana:11,effect:{damage:[1300,1500],conditional:'all_schools_bonus'},desc:'1300-1500 dmg (x2 if all 6 mastery auras)'},
 };
 
 // ===== ENEMIES =====
@@ -323,6 +533,327 @@ const WORLDS = [
   ]},
 ];
 
+// ===== THE SPIRAL (Balance Endgame) =====
+const SPIRAL_VOICE = {
+  1: '"You\'ve mastered six threads. Now weave them."',
+  5: '"The Spiral does not teach. It measures."',
+  10: '"You are still here. Good."',
+  25: '"The Convergence remembers what it was. Do you?"',
+  50: '"Entropy has noticed you."',
+  75: '"You are holding it together. That is all anyone can do."',
+  100: '"You cannot fix what was broken. You can only hold it together, one thread at a time, forever. That is enough."',
+};
+
+const ENTROPY_SPAWN = {
+  entropy_mote:{name:'Entropy Mote',schools:['storm','fire','ice','death','myth','life'],baseHp:800,baseDmg:[50,80],accuracy:82},
+  entropy_walker:{name:'Entropy Walker',schools:['storm','fire','ice','death','myth','life'],baseHp:1400,baseDmg:[70,110],accuracy:84},
+  entropy_titan:{name:'Entropy Titan',schools:['storm','fire','ice','death','myth','life'],baseHp:2200,baseDmg:[100,150],accuracy:86},
+  entropy_sovereign:{name:'Entropy Sovereign',schools:['storm','fire','ice','death','myth','life'],baseHp:3500,baseDmg:[130,190],accuracy:88},
+};
+
+const SPIRAL_SHARDS = {
+  shard_damage:{name:'Shard of Fury',stat:'damage',value:2,desc:'+2% damage permanently'},
+  shard_resist:{name:'Shard of Warding',stat:'resist',value:2,desc:'+2% resist permanently'},
+  shard_hp:{name:'Shard of Vitality',stat:'hp',value:50,desc:'+50 HP permanently'},
+  shard_accuracy:{name:'Shard of Focus',stat:'accuracy',value:1,desc:'+1% accuracy permanently'},
+  shard_crit:{name:'Shard of Fortune',stat:'crit',value:2,desc:'+2% crit permanently'},
+  shard_pip:{name:'Shard of Flow',stat:'powerPip',value:1,desc:'+1% power pip permanently'},
+};
+
+function generateSpiralCycle(cycleNum) {
+  var scaleMult = 1 + (cycleNum - 1) * 0.15;
+  var zones = [];
+  var zoneCount = Math.min(5 + Math.floor(cycleNum / 5), 12);
+
+  // Determine enemy tier based on cycle
+  var tierKey = cycleNum <= 10 ? 'entropy_mote' : cycleNum <= 25 ? 'entropy_walker' : cycleNum <= 50 ? 'entropy_titan' : 'entropy_sovereign';
+  var baseTier = ENTROPY_SPAWN[tierKey];
+
+  for (var z = 0; z < zoneCount; z++) {
+    var isBossZone = z === zoneCount - 1;
+    var encounters = [];
+
+    if (isBossZone) {
+      // Boss: scaled version of a random world boss
+      var bossSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
+      var bossHp = Math.floor(baseTier.baseHp * scaleMult * 8);
+      encounters.push(['_spiral_boss_' + cycleNum]);
+      // Register dynamic boss
+      ENEMIES['_spiral_boss_' + cycleNum] = {
+        name:'Entropy ' + (cycleNum <= 10 ? 'Core' : cycleNum <= 25 ? 'Nexus' : cycleNum <= 50 ? 'Archon' : 'Sovereign') + ' (C' + cycleNum + ')',
+        school: bossSchool, hp: bossHp, damage: [Math.floor(baseTier.baseDmg[0]*scaleMult*1.5), Math.floor(baseTier.baseDmg[1]*scaleMult*1.5)],
+        accuracy: Math.min(baseTier.accuracy + cycleNum, 98), boss: true, cheats: cycleNum >= 10 ? ['stacking_dot'] : []
+      };
+    } else {
+      var encCount = 3 + Math.floor(Math.random() * 3);
+      for (var e = 0; e < encCount; e++) {
+        var enemyCount = 1 + Math.floor(Math.random() * 2);
+        var enc = [];
+        for (var ec = 0; ec < enemyCount; ec++) {
+          var eSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
+          var eId = '_spiral_' + cycleNum + '_' + z + '_' + e + '_' + ec;
+          ENEMIES[eId] = {
+            name: baseTier.name + ' (' + eSchool + ')',
+            school: eSchool,
+            hp: Math.floor(baseTier.baseHp * scaleMult * (0.8 + Math.random() * 0.4)),
+            damage: [Math.floor(baseTier.baseDmg[0]*scaleMult), Math.floor(baseTier.baseDmg[1]*scaleMult)],
+            accuracy: baseTier.accuracy
+          };
+          enc.push(eId);
+        }
+        encounters.push(enc);
+      }
+    }
+
+    var zoneNames = ['The Fraying Edge','The Dissolution','Threads Unwinding','The Void Between',
+      'Echoes of Form','The Entropy Field','Reality\'s Seam','The Convergence Scar',
+      'The Unraveling','The Last Thread','The Spiral\'s Heart','The Final Weave'];
+    zones.push({ name: zoneNames[z % zoneNames.length], encounters: encounters });
+  }
+
+  return {
+    name: 'The Spiral — Cycle ' + cycleNum,
+    rank: 'Archmage',
+    zones: zones,
+    isSpiralCycle: true,
+    cycleNum: cycleNum
+  };
+}
+
+function awardSpiralShard() {
+  var shardKeys = Object.keys(SPIRAL_SHARDS);
+  var shardId = shardKeys[Math.floor(Math.random() * shardKeys.length)];
+  var shard = SPIRAL_SHARDS[shardId];
+  if (!Game.wizard.spiralShards) Game.wizard.spiralShards = {};
+  Game.wizard.spiralShards[shardId] = (Game.wizard.spiralShards[shardId] || 0) + 1;
+  // Apply permanent bonus
+  if (shard.stat === 'hp') Game.wizard.baseHp += shard.value;
+  else if (shard.stat === 'damage') Game.wizard._shardDmg = (Game.wizard._shardDmg||0) + shard.value;
+  else if (shard.stat === 'resist') Game.wizard._shardRes = (Game.wizard._shardRes||0) + shard.value;
+  else if (shard.stat === 'accuracy') Game.wizard._shardAcc = (Game.wizard._shardAcc||0) + shard.value;
+  else if (shard.stat === 'crit') Game.wizard._shardCrit = (Game.wizard._shardCrit||0) + shard.value;
+  else if (shard.stat === 'powerPip') Game.wizard._shardPip = (Game.wizard._shardPip||0) + shard.value;
+  recalcStats();
+  addLog('', 'info');
+  addLog('★ SPIRAL SHARD: ' + shard.name + ' — ' + shard.desc, 'crit');
+  addHubLog('Spiral Shard: ' + shard.name, 'crit');
+}
+
+function enterSpiral() {
+  if (!Game.spiralCycle) Game.spiralCycle = 1;
+  var cycle = generateSpiralCycle(Game.spiralCycle);
+  // Replace or add as a temporary world
+  Game._spiralWorld = cycle;
+  Game.currentZone = 0;
+  Game.currentEncounter = 0;
+  Game.wizard.hp = Game.wizard.maxHp;
+  Game.wizard.mana = Game.wizard.maxMana;
+  Game.wizard.pips = [];
+  Game.wizard.blade = null; Game.wizard.bladeStack = [];
+  Game.wizard.shield = null; Game.wizard.absorb = 0;
+  Game.wizard.accuracyCharm = null;
+  Game.combat = null;
+
+  // Spiral Voice
+  var voice = SPIRAL_VOICE[Game.spiralCycle];
+  addLog('', 'info');
+  addLog('━━━ THE SPIRAL — CYCLE ' + Game.spiralCycle + ' ━━━', 'system');
+  if (voice) { addLog(voice, 'system'); addLog('  — The Spiral\'s Voice', 'info'); }
+
+  // Visual theme
+  document.body.classList.add('spiral-theme');
+
+  Game.state = 'fighting';
+  startEncounter();
+  if (!Game.tickInterval) Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+}
+
+// ===== GRAND ENROLLMENT (Prestige) =====
+const MASTERY_AURAS = {
+  storm: {id:'storm',name:'Surge',desc:'Crits deal +50% bonus damage',effect:'crit_bonus'},
+  fire:  {id:'fire',name:'Ember',desc:'All damage applies 15 DoT for 2 rounds',effect:'auto_dot'},
+  ice:   {id:'ice',name:'Permafrost',desc:'30% chance shields persist after being hit',effect:'shield_persist'},
+  life:  {id:'life',name:'Regrowth',desc:'Passive +2% max HP regen per round',effect:'passive_regen'},
+  death: {id:'death',name:'Dark Harvest',desc:'All damage heals 10% of damage dealt',effect:'passive_drain'},
+  myth:  {id:'myth',name:'Architect',desc:'Passive minion deals 20 damage per round',effect:'passive_minion'},
+};
+
+const SILAS_ENROLLMENT = {
+  1: '"Back again. Good. I was starting to worry you\'d gotten comfortable."',
+  2: '"Three threads now. The Convergence stirs."',
+  3: '"You move faster than I did. That worries me, and relieves me."',
+  4: '"I can feel the threads tightening. Two left."',
+  5: '"One left. You know what\'s waiting on the other side. You\'ve always known, I think."',
+};
+
+function graduate() {
+  var school = Game.wizard.school;
+  if (school === 'balance') return;
+  if (Game.graduatedSchools.indexOf(school) !== -1) return;
+
+  Game.graduatedSchools.push(school);
+  Game.masteryAuras[school] = true;
+  Game.enrollmentCount++;
+
+  addLog('', 'info');
+  addLog('═══════════════════════════════', 'crit');
+  addLog('★ GRADUATION: ' + school.toUpperCase() + ' ★', 'crit');
+  addLog('Mastery Aura unlocked: ' + MASTERY_AURAS[school].name + ' — ' + MASTERY_AURAS[school].desc, 'crit');
+  addLog('═══════════════════════════════', 'crit');
+  addHubLog('GRADUATED ' + school.toUpperCase() + '! Aura: ' + MASTERY_AURAS[school].name, 'crit');
+
+  if (Game.graduatedSchools.length >= 6) {
+    addLog('', 'info');
+    addLog('★ ALL SIX SCHOOLS MASTERED ★', 'crit');
+    addLog('Balance has awakened. The Spiral calls.', 'system');
+    addHubLog('ALL 6 SCHOOLS GRADUATED — Balance unlocked!', 'crit');
+  }
+
+  saveGame();
+}
+
+function enrollNewSchool(school) {
+  if (Game.graduatedSchools.indexOf(school) !== -1 && school !== 'balance') {
+    addLog('Already graduated from ' + school + '.', 'info');
+    return;
+  }
+  if (school === 'balance' && Game.graduatedSchools.length < 6) {
+    addLog('Graduate all 6 schools to unlock Balance.', 'info');
+    return;
+  }
+
+  // Save carry-over data
+  var carryOver = {
+    graduatedSchools: Game.graduatedSchools.slice(),
+    masteryAuras: JSON.parse(JSON.stringify(Game.masteryAuras)),
+    enrollmentCount: Game.enrollmentCount,
+    petRoster: Game.petRoster,
+    pet: Game.pet,
+    craftingRank: Game.crafting.rank,
+    craftingXp: Game.crafting.xp,
+    hubLog: Game.hubLog,
+    spiralCycle: Game.spiralCycle || 1,
+  };
+
+  // Full reset
+  Game.wizard = createWizard(school);
+  Game.currentWorld = 0; Game.currentZone = 0; Game.currentEncounter = 0;
+  Game.gold = 0; Game.tick = 0; Game.round = 0;
+  Game.mode = 'manual'; Game.combat = null; Game.phase = 'none';
+  Game.snacks = 0; Game.reagents = getDefaultReagents();
+  Game.autoUnlocked = false;
+  Game.garden = createGarden();
+  Game.farming = false; Game.homeWorld = undefined; Game.homeZone = undefined; Game.homeEncounter = undefined;
+  Game.furthestWorld = 0; Game.furthestZone = 0;
+  Game.crafting = {rank: carryOver.craftingRank, xp: carryOver.craftingXp, queue: null, inventory:{enchantments:[],jewels:[]}};
+  Game.events = {active:[], lastEventTick:0};
+  Game.savedDecks = [];
+  Game._spiralWorld = null;
+
+  // Restore carry-over
+  Game.graduatedSchools = carryOver.graduatedSchools;
+  Game.masteryAuras = carryOver.masteryAuras;
+  Game.enrollmentCount = carryOver.enrollmentCount;
+  Game.petRoster = carryOver.petRoster;
+  Game.pet = carryOver.pet;
+  Game.hubLog = carryOver.hubLog;
+  Game.spiralCycle = carryOver.spiralCycle;
+
+  // Spells do NOT carry over — each run starts fresh with only your new school's spells
+  // Mastery auras are the reward, not free spell access
+
+  Game.deck = Game.wizard.learnedSpells.slice();
+
+  // Set default rules for new school
+  var s = school;
+  if (s === 'storm') Game.rules = [{conditionId:'pips_above_2',spellId:'crackling_crows'},{conditionId:'always',spellId:'volt_asp'}];
+  else if (s === 'fire') Game.rules = [{conditionId:'pips_above_2',spellId:'flame_sprite'},{conditionId:'always',spellId:'ember_fox'}];
+  else if (s === 'ice') Game.rules = [{conditionId:'pips_above_2',spellId:'sleet_viper'},{conditionId:'always',spellId:'frost_scarab_s'}];
+  else if (s === 'life') Game.rules = [{conditionId:'hp_below_50',spellId:'thorn_sprite_s'},{conditionId:'pips_above_2',spellId:'nymph'},{conditionId:'always',spellId:'thorn_sprite_s'}];
+  else if (s === 'death') Game.rules = [{conditionId:'pips_above_2',spellId:'revenant'},{conditionId:'always',spellId:'shadow_wisp_s'}];
+  else if (s === 'myth') Game.rules = [{conditionId:'pips_above_2',spellId:'boggart'},{conditionId:'always',spellId:'fang_bat'}];
+  else Game.rules = [{conditionId:'always',spellId:Game.deck[0]||''}];
+
+  // Enrollment quote
+  var quote = SILAS_ENROLLMENT[Game.enrollmentCount] || '"The Spiral remembers every thread you weave." — Silas Stillwater';
+  addLog('', 'info');
+  addLog('═══ THE GRAND ENROLLMENT ═══', 'system');
+  addLog('School: ' + school.charAt(0).toUpperCase() + school.slice(1) + ' | Enrollment #' + (Game.enrollmentCount + 1), 'system');
+  addLog('Auras active: ' + Game.graduatedSchools.map(function(s){return MASTERY_AURAS[s].name;}).join(', '), 'crit');
+  addLog(quote, 'info');
+  addHubLog('Enrolled in ' + school + ' (run #' + (Game.enrollmentCount+1) + ')', 'crit');
+
+  applySchoolTheme(school);
+
+  if (school === 'balance') {
+    // Balance handled by initGame's balance path — but we already set things up
+    Game.spiralCycle = Game.spiralCycle || 1;
+    document.body.classList.add('spiral-theme');
+    enterSpiral();
+  } else {
+    Game.state = 'fighting';
+    startEncounter();
+  }
+
+  if (!Game.tickInterval) Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+  saveGame();
+  updateUI();
+}
+
+function processMasteryAuras() {
+  if (!Game.masteryAuras) return;
+  var enemies = getAliveEnemies();
+
+  // Surge (Storm): crits deal +50% bonus — handled in damage calc
+  // Ember (Fire): all damage applies 15 DoT for 2 rounds — handled in castSpell
+  // Permafrost (Ice): 30% chance shield persists — handled in enemyTurn
+  // Regrowth (Life): +2% max HP per round
+  if (Game.masteryAuras.life && Game.wizard.hp < Game.wizard.maxHp) {
+    var regenAmt = Math.floor(Game.wizard.maxHp * 0.02);
+    Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + regenAmt);
+  }
+  // Dark Harvest (Death): passive drain — handled in castSpell
+  // Architect (Myth): passive minion damage
+  if (Game.masteryAuras.myth && enemies.length > 0) {
+    var archTarget = enemies[0];
+    archTarget.hp = Math.max(0, archTarget.hp - 20);
+    if (archTarget.hp <= 0) addLog('  Architect aura defeats ' + archTarget.name + '!', 'kill');
+  }
+}
+
+// ===== ACHIEVEMENTS =====
+const ACHIEVEMENTS = {
+  first_blood:{name:'First Blood',desc:'Defeat your first enemy',check:function(){return Game.stats.enemiesDefeated>=1;}},
+  fizzle_king:{name:'Fizzle King',desc:'Fizzle 10 times',check:function(){return Game.stats.fizzles>=10;}},
+  century:{name:'Century',desc:'Clear 100 encounters',check:function(){return Game.stats.encountersCleared>=100;}},
+  thousand:{name:'Thousand',desc:'Clear 1000 encounters',check:function(){return Game.stats.encountersCleared>=1000;}},
+  crit_master:{name:'Critical Master',desc:'Land 50 critical hits',check:function(){return Game.stats.crits>=50;}},
+  gold_hoarder:{name:'Gold Hoarder',desc:'Earn 10,000 gold total',check:function(){return Game.stats.goldEarned>=10000;}},
+  first_death:{name:'Defeat',desc:'Get defeated for the first time',check:function(){return Game.stats.deathCount>=1;}},
+  world_beater:{name:'World Beater',desc:'Complete Spindlewood',check:function(){return Game.furthestWorld>=1;}},
+  globe_trotter:{name:'Globe Trotter',desc:'Reach Pyralis (World 5)',check:function(){return Game.furthestWorld>=4;}},
+  graduate:{name:'Graduate',desc:'Complete your first Grand Enrollment',check:function(){return Game.enrollmentCount>=1;}},
+  master_weaver:{name:'Master Weaver',desc:'Graduate all 6 schools',check:function(){return Game.graduatedSchools&&Game.graduatedSchools.length>=6;}},
+  spiral_initiate:{name:'Spiral Initiate',desc:'Complete Spiral Cycle 1',check:function(){return (Game.spiralCycle||1)>1;}},
+  spiral_veteran:{name:'Spiral Veteran',desc:'Reach Spiral Cycle 10',check:function(){return (Game.spiralCycle||1)>10;}},
+  pet_parent:{name:'Pet Parent',desc:'Hatch your first pet',check:function(){return Game.petRoster&&Game.petRoster.length>=2;}},
+  green_thumb:{name:'Green Thumb',desc:'Harvest an Elder plant',check:function(){return Game.stats.elderHarvests>=1;}},
+  artisan:{name:'Artisan',desc:'Reach Master Crafter',check:function(){return Game.crafting&&Game.crafting.rank>=5;}},
+};
+
+function checkAchievements() {
+  var keys = Object.keys(ACHIEVEMENTS);
+  for (var i = 0; i < keys.length; i++) {
+    if (Game.achievements[keys[i]]) continue;
+    if (ACHIEVEMENTS[keys[i]].check()) {
+      Game.achievements[keys[i]] = Date.now();
+      addLog('', 'info');
+      addLog('★ ACHIEVEMENT: ' + ACHIEVEMENTS[keys[i]].name + ' — ' + ACHIEVEMENTS[keys[i]].desc, 'crit');
+      addHubLog('Achievement: ' + ACHIEVEMENTS[keys[i]].name, 'crit');
+    }
+  }
+}
+
 // ===== CONDITIONS =====
 const CONDITIONS = {
   always:{label:'Always',check:()=>true},
@@ -350,6 +881,8 @@ const CONDITIONS = {
   enemy_boss:{label:'Enemy is boss',check:()=>{const e=getAliveEnemies()[0];return e&&!!e.boss;}},
   enemy_has_dot:{label:'Enemy has DoT',check:()=>{const e=getAliveEnemies()[0];return e&&e.dots&&e.dots.length>0;}},
   enemy_no_dot:{label:'Enemy has no DoT',check:()=>{const e=getAliveEnemies()[0];return e&&(!e.dots||e.dots.length===0);}},
+  has_minion:{label:'Minion alive',check:()=>Game.wizard.minion&&Game.wizard.minion.hp>0},
+  no_minion:{label:'No minion',check:()=>!Game.wizard.minion||Game.wizard.minion.hp<=0},
   blade_and_trap:{label:'Blade AND trap on enemy',check:()=>!!Game.wizard.blade&&getAliveEnemies()[0]?.trap},
 };
 
@@ -829,35 +1362,64 @@ function eventTick() {
 }
 
 // ===== TRAINING POINTS =====
-const TP_SPELLS = {
-  mending_touch:{id:'mending_touch',name:'Mending Touch',school:'life',pips:2,type:'heal',accuracy:100,mana:2,effect:{healPercent:25},desc:'Heal 25% HP',tpCost:2,prereq:[]},
-  dewdrop:{id:'dewdrop',name:'Dewdrop',school:'life',pips:1,type:'heal',accuracy:100,mana:1,effect:{healPercent:12},desc:'Heal 12% HP',tpCost:1,prereq:[]},
-  rampart:{id:'rampart',name:'Rampart',school:'ice',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield',tpCost:3,prereq:[]},
-  curse:{id:'curse',name:'Curse',school:'death',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:30},desc:'+30% universal trap',tpCost:3,prereq:[]},
-  doom_snare:{id:'doom_snare',name:'Doom Snare',school:'death',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:70},desc:'+70% trap (Feint)',tpCost:5,prereq:['curse']},
-  frost_scarab:{id:'frost_scarab',name:'Frost Scarab',school:'ice',pips:1,type:'damage',accuracy:80,mana:1,effect:{damage:[80,110]},desc:'80-110 Ice damage',tpCost:1,prereq:[]},
-  thorn_sprite:{id:'thorn_sprite',name:'Thorn Sprite',school:'life',pips:1,type:'damage',accuracy:90,mana:1,effect:{damage:[65,95]},desc:'65-95 Life damage',tpCost:1,prereq:[]},
-  shadow_wisp:{id:'shadow_wisp',name:'Shadow Wisp',school:'death',pips:1,type:'damage',accuracy:85,mana:1,effect:{damage:[75,105],drain:true},desc:'75-105 Death drain (heals half)',tpCost:1,prereq:[]},
-};
+// TP costs per rank tier: Novice=1, Apprentice=1, Initiate=2, Journeyman=2, Adept=3, Master=3, Grandmaster=4, Archmage=5
+const TP_RANK_COSTS = [1, 1, 2, 2, 3, 3, 4, 5];
 
-function buyTPSpell(spellId) {
-  var tp = TP_SPELLS[spellId];
-  if (!tp) return;
-  if (!Game.wizard.trainingPoints || Game.wizard.trainingPoints < tp.tpCost) { addLog('Not enough Training Points.', 'info'); return; }
-  if (Game.wizard.learnedSpells.includes(spellId)) { addLog('Already learned.', 'info'); return; }
-  for (var i = 0; i < tp.prereq.length; i++) {
-    if (!Game.wizard.learnedSpells.includes(tp.prereq[i])) { addLog('Prerequisite: ' + TP_SPELLS[tp.prereq[i]].name, 'info'); return; }
+function getTPSpells() {
+  var tpList = {};
+  var schools = Object.keys(SCHOOL_SPELLS);
+  for (var si = 0; si < schools.length; si++) {
+    var school = schools[si];
+    if (school === 'balance') continue;
+    var rankSpells = SCHOOL_SPELLS[school];
+    var prevLastSpell = null;
+    for (var ri = 0; ri < rankSpells.length; ri++) {
+      for (var spi = 0; spi < rankSpells[ri].length; spi++) {
+        var spellId = rankSpells[ri][spi];
+        var spell = SPELLS[spellId];
+        if (!spell) continue;
+        var tpId = 'tp_' + spellId;
+        var prereqs = [];
+        if (spi === 0 && prevLastSpell) prereqs.push('tp_' + prevLastSpell);
+        tpList[tpId] = {
+          id: tpId, realSpellId: spellId,
+          name: spell.name, school: school,
+          pips: spell.pips, type: spell.type,
+          accuracy: spell.accuracy, mana: spell.mana,
+          effect: spell.effect, desc: spell.desc,
+          tpCost: TP_RANK_COSTS[ri] || 1,
+          prereq: prereqs,
+          rankTier: ri,
+        };
+      }
+      prevLastSpell = rankSpells[ri][rankSpells[ri].length - 1];
+    }
   }
-  Game.wizard.trainingPoints -= tp.tpCost;
-  Game.wizard.learnedSpells.push(spellId);
-  if (!Game.deck.includes(spellId)) Game.deck.push(spellId);
-  if (!SPELLS[spellId]) SPELLS[spellId] = tp;
-  addLog('★ Learned ' + tp.name + ' (' + tp.tpCost + ' TP)!', 'crit');
-  saveGame();
+  return tpList;
 }
 
-// Register TP spells into SPELLS so combat can use them
-for (var tpk in TP_SPELLS) { if (!SPELLS[tpk]) SPELLS[tpk] = TP_SPELLS[tpk]; }
+var TP_SPELLS = getTPSpells();
+
+function buyTPSpell(tpId) {
+  var tp = TP_SPELLS[tpId];
+  if (!tp) return;
+  var realId = tp.realSpellId || tpId;
+  if (!Game.wizard.trainingPoints || Game.wizard.trainingPoints < tp.tpCost) { addLog('Not enough Training Points.', 'info'); return; }
+  if (Game.wizard.learnedSpells.includes(realId)) { addLog('Already learned.', 'info'); return; }
+  for (var i = 0; i < tp.prereq.length; i++) {
+    var preReq = tp.prereq[i];
+    var preReal = TP_SPELLS[preReq] ? (TP_SPELLS[preReq].realSpellId || preReq) : preReq;
+    if (!Game.wizard.learnedSpells.includes(preReal) && !Game.wizard.learnedSpells.includes(preReq)) {
+      addLog('Prerequisite: ' + (TP_SPELLS[preReq]?TP_SPELLS[preReq].name:preReq), 'info'); return;
+    }
+  }
+  Game.wizard.trainingPoints -= tp.tpCost;
+  Game.wizard.learnedSpells.push(realId);
+  if (!Game.deck.includes(realId)) Game.deck.push(realId);
+  addLog('★ Learned ' + tp.name + ' (' + tp.tpCost + ' TP)!', 'crit');
+  addHubLog('Learned ' + tp.name + ' (' + tp.school + ', ' + tp.tpCost + ' TP)', 'crit');
+  saveGame();
+}
 
 // ===== DECK SAVING =====
 function saveDeckSlot(slotIndex, name) {
@@ -882,6 +1444,7 @@ function loadDeckSlot(slotIndex) {
 }
 
 function getMaxDecks() {
+  if (Game.wizard && Game.wizard.school === 'balance') return 10;
   if (Game.currentWorld <= 1) return 2;
   if (Game.currentWorld <= 3) return 3;
   if (Game.currentWorld <= 5) return 4;
@@ -1026,6 +1589,50 @@ const PET_SPECIES = {
   crackling_crab:{id:'crackling_crab',name:'Crackling Crab',school:'storm',rarity:'common'},
   levinmare:{id:'levinmare',name:'Levinmare',school:'storm',rarity:'rare'},
   gale_whelp:{id:'gale_whelp',name:'Gale Whelp',school:'storm',rarity:'rare'},
+  // Fire pets
+  cinder_toad:{id:'cinder_toad',name:'Cinder Toad',school:'fire',rarity:'common'},
+  ember_newt:{id:'ember_newt',name:'Ember Newt',school:'fire',rarity:'common'},
+  lava_grub:{id:'lava_grub',name:'Lava Grub',school:'fire',rarity:'common'},
+  smolder_lizard:{id:'smolder_lizard',name:'Smolder Lizard',school:'fire',rarity:'common'},
+  flame_wasp:{id:'flame_wasp',name:'Flame Wasp',school:'fire',rarity:'common'},
+  pyrebird:{id:'pyrebird',name:'Pyrebird',school:'fire',rarity:'rare'},
+  blaze_whelp:{id:'blaze_whelp',name:'Blaze Whelp',school:'fire',rarity:'rare'},
+  // Ice pets
+  crystal_cub:{id:'crystal_cub',name:'Crystal Cub',school:'ice',rarity:'common'},
+  snow_mink:{id:'snow_mink',name:'Snow Mink',school:'ice',rarity:'common'},
+  rime_owlet:{id:'rime_owlet',name:'Rime Owlet',school:'ice',rarity:'common'},
+  frost_snail:{id:'frost_snail',name:'Frost Snail',school:'ice',rarity:'common'},
+  tundra_penguin:{id:'tundra_penguin',name:'Tundra Penguin',school:'ice',rarity:'common'},
+  glacionyx:{id:'glacionyx',name:'Glacionyx',school:'ice',rarity:'rare'},
+  frost_whelp:{id:'frost_whelp',name:'Frost Whelp',school:'ice',rarity:'rare'},
+  // Life pets
+  petal_hare:{id:'petal_hare',name:'Petal Hare',school:'life',rarity:'common'},
+  honeybug:{id:'honeybug',name:'Honeybug',school:'life',rarity:'common'},
+  fernling:{id:'fernling',name:'Fernling',school:'life',rarity:'common'},
+  bloom_turtle:{id:'bloom_turtle',name:'Bloom Turtle',school:'life',rarity:'common'},
+  dewdrop_spider:{id:'dewdrop_spider',name:'Dewdrop Spider',school:'life',rarity:'common'},
+  solstag:{id:'solstag',name:'Solstag',school:'life',rarity:'rare'},
+  bloom_whelp:{id:'bloom_whelp',name:'Bloom Whelp',school:'life',rarity:'rare'},
+  // Death pets
+  bone_rat:{id:'bone_rat',name:'Bone Rat',school:'death',rarity:'common'},
+  dusk_crow:{id:'dusk_crow',name:'Dusk Crow',school:'death',rarity:'common'},
+  wilt_serpent:{id:'wilt_serpent',name:'Wilt Serpent',school:'death',rarity:'common'},
+  crypt_scarab:{id:'crypt_scarab',name:'Crypt Scarab',school:'death',rarity:'common'},
+  hollow_bat:{id:'hollow_bat',name:'Hollow Bat',school:'death',rarity:'common'},
+  phantomaw:{id:'phantomaw',name:'Phantomaw',school:'death',rarity:'rare'},
+  grave_whelp:{id:'grave_whelp',name:'Grave Whelp',school:'death',rarity:'rare'},
+  // Myth pets
+  stone_cat:{id:'stone_cat',name:'Stone Cat',school:'myth',rarity:'common'},
+  glyph_hound:{id:'glyph_hound',name:'Glyph Hound',school:'myth',rarity:'common'},
+  tome_imp:{id:'tome_imp',name:'Tome Imp',school:'myth',rarity:'common'},
+  rune_tortoise:{id:'rune_tortoise',name:'Rune Tortoise',school:'myth',rarity:'common'},
+  sigil_finch:{id:'sigil_finch',name:'Sigil Finch',school:'myth',rarity:'common'},
+  griffen_runt:{id:'griffen_runt',name:'Griffen Runt',school:'myth',rarity:'rare'},
+  fable_whelp:{id:'fable_whelp',name:'Fable Whelp',school:'myth',rarity:'rare'},
+  // Balance pets (neutral, rare finds)
+  sand_fox:{id:'sand_fox',name:'Sand Fox',school:'balance',rarity:'rare'},
+  dusk_moth:{id:'dusk_moth',name:'Dusk Moth',school:'balance',rarity:'rare'},
+  silt_chameleon:{id:'silt_chameleon',name:'Silt Chameleon',school:'balance',rarity:'rare'},
 };
 const PET_STAGES = ['Baby','Teen','Adult','Ancient','Epic','Mega','Ultra'];
 const PET_STAGE_XP = [0, 100, 300, 700, 1500, 3000, 6000];
@@ -1176,16 +1783,23 @@ function devSkipWorld() {
 function devUnlockAll() {
   Game.autoUnlocked=true;
   if (Game.garden) Game.garden.unlocked=true;
-  Game.gold+=2000; Game.snacks+=100; Game.reagents+=100;
-  var allSpells = Object.keys(SPELLS);
-  for (var i=0;i<allSpells.length;i++) {
-    if (Game.wizard.learnedSpells.indexOf(allSpells[i])===-1) Game.wizard.learnedSpells.push(allSpells[i]);
-    if (Game.deck.indexOf(allSpells[i])===-1) Game.deck.push(allSpells[i]);
+  Game.gold+=2000; Game.snacks+=100;
+  for (var ri=0;ri<REAGENT_IDS.length;ri++) Game.reagents[REAGENT_IDS[ri]]=(Game.reagents[REAGENT_IDS[ri]]||0)+50;
+  var schoolSpells = SCHOOL_SPELLS[Game.wizard.school] || SCHOOL_SPELLS.storm;
+  for (var r=0;r<schoolSpells.length;r++) {
+    for (var s=0;s<schoolSpells[r].length;s++) {
+      var sid=schoolSpells[r][s];
+      if (Game.wizard.learnedSpells.indexOf(sid)===-1) Game.wizard.learnedSpells.push(sid);
+      if (Game.deck.indexOf(sid)===-1) Game.deck.push(sid);
+    }
   }
   if (Game.petRoster.length===0) {
-    var pet = createPet('spark_otter');
+    var petMap = {storm:'spark_otter',fire:'cinder_toad',ice:'crystal_cub',life:'petal_hare',death:'bone_rat',myth:'stone_cat',balance:'sand_fox'};
+    var petId = petMap[Game.wizard.school] || 'spark_otter';
+    if (!PET_SPECIES[petId]) petId = 'spark_otter';
+    var pet = createPet(petId);
     Game.petRoster.push(pet); Game.pet = pet;
-    addLog('DEV: Received Spark Otter pet!','crit');
+    addLog('DEV: Received ' + pet.name + '!','crit');
   }
   expandGarden();
   recalcStats();
@@ -1218,6 +1832,13 @@ function expandGarden() {
 }
 
 // ===== WIZARD =====
+function applySchoolTheme(school) {
+  var classes = ['school-storm','school-fire','school-ice','school-life','school-death','school-myth','spiral-theme'];
+  for (var i = 0; i < classes.length; i++) document.body.classList.remove(classes[i]);
+  if (school === 'balance') document.body.classList.add('spiral-theme');
+  else document.body.classList.add('school-' + school);
+}
+
 function createWizard(school) {
   school = school || 'storm';
   const rank = RANKS[0];
@@ -1298,13 +1919,13 @@ function recalcStats() {
   w.maxHp = w.baseHp + bonusHp;
   w.maxMana = w.baseMana + bonusMana;
   var schoolAcc = (SCHOOL_STATS[w.school] || SCHOOL_STATS.storm).baseAccuracy;
-  w.damage = bonusDmg + (w._eventDmgBuff||0);
-  w.accuracy = schoolAcc + bonusAcc + (w._eventAccBuff||0);
-  w.resist = bonusRes;
-  w.crit = 5 + bonusCrit;
+  w.damage = bonusDmg + (w._eventDmgBuff||0) + (w._shardDmg||0);
+  w.accuracy = schoolAcc + bonusAcc + (w._eventAccBuff||0) + (w._shardAcc||0);
+  w.resist = bonusRes + (w._shardRes||0);
+  w.crit = 5 + bonusCrit + (w._shardCrit||0);
   w.pierce = bonusPierce;
   w.critBlock = bonusCritBlock;
-  w.powerPipChance = rank.powerPipBase + bonusPip;
+  w.powerPipChance = rank.powerPipBase + bonusPip + (w._shardPip||0);
   if (w.hp > w.maxHp) w.hp = w.maxHp;
   if (w.mana > w.maxMana) w.mana = w.maxMana;
 }
@@ -1329,6 +1950,18 @@ function buyGear(gearId) {
   Game.gold -= item.cost;
   Game.wizard.inventory.push(gearId);
   addLog('Bought ' + item.name + ' for ' + item.cost + ' gold', 'system'); addHubLog('Bought ' + item.name + ' (-' + item.cost + 'g)', 'system'); saveGame();
+}
+
+function sellGear(gearId) {
+  var idx = Game.wizard.inventory.indexOf(gearId);
+  if (idx === -1) return;
+  var item = GEAR[gearId];
+  var price = Math.max(5, Math.floor((item.cost||20) * 0.3));
+  Game.wizard.inventory.splice(idx, 1);
+  Game.gold += price;
+  addLog('Sold ' + item.name + ' for ' + price + ' gold', 'system');
+  addHubLog('Sold ' + item.name + ' (+' + price + 'g)', 'system');
+  saveGame();
 }
 
 // ===== PIPS =====
@@ -1396,9 +2029,10 @@ function castSpell(spell, targetIndex) {
   }
 
   // Fizzle check (utility spells never fizzle)
-  const noFizzle = ['blade','trap','shield','charm','prism','global'].includes(spell.type);
+  const noFizzle = ['blade','trap','shield','charm','prism','global','debuff','detonate','absorb','heal','summon'].includes(spell.type);
   if (!noFizzle && !rollAccuracy(spell.accuracy, Game.wizard.accuracyCharm)) {
     addLog('R' + Game.round + ': ' + spell.name + ' → FIZZLE ✗', 'fizzle');
+    if (!Game.stats) Game.stats = {}; Game.stats.fizzles = (Game.stats.fizzles||0) + 1;
     if (Game.wizard.accuracyCharm) Game.wizard.accuracyCharm = null;
     return true;
   }
@@ -1412,13 +2046,17 @@ function castSpell(spell, targetIndex) {
 
       // Base multiplier (includes enchantment damage bonus)
       var enchDmgBonus = getSpellEnchantBonus(spell.id, 'damage');
-      var mult = 1 + ((Game.wizard.damage + enchDmgBonus)/100);
+      var glacialBonus = (Game.wizard.school === 'ice' && Game.wizard._glacialMomentum) ? Game.wizard._glacialMomentum : 0;
+      var overhealBonus = Game.wizard._overhealBuff || 0;
+      var mult = 1 + ((Game.wizard.damage + enchDmgBonus + glacialBonus + overhealBonus)/100);
+      if (overhealBonus > 0) { Game.wizard._overhealBuff = 0; addLog('  💚 Overheal buff consumed: +' + overhealBonus + '%', 'crit'); }
       if (Game.combat.global && Game.combat.global.stormDmgBonus) mult += Game.combat.global.stormDmgBonus/100;
+      if (Game.combat.global && Game.combat.global.mythDmgBonus) mult += Game.combat.global.mythDmgBonus/100;
 
       // Blade applies to all targets (consumed once)
       if (Game.wizard.blade) {
         mult *= (1+Game.wizard.blade.percent/100);
-        Game.wizard.blade = null;
+        Game.wizard.blade = (Game.wizard.bladeStack && Game.wizard.bladeStack.length > 0) ? Game.wizard.bladeStack.shift() : null;
       }
 
       var totalDmgDealt = 0;
@@ -1443,6 +2081,9 @@ function castSpell(spell, targetIndex) {
         var condMet = false;
         if (spell.effect.conditional === 'trap_bonus_50' && tgt.trap) condMet = true;
         if (spell.effect.conditional === 'dot_bonus_100' && tgt.dots && tgt.dots.length > 0) condMet = true;
+        if (spell.effect.conditional === 'hp_bonus_90' && Game.wizard.hp >= Game.wizard.maxHp * 0.9) condMet = true;
+        if (spell.effect.conditional === 'low_hp_bonus' && Game.wizard.hp <= Game.wizard.maxHp * 0.25) condMet = true;
+        if (spell.effect.conditional === 'minion_bonus' && Game.wizard.minion && Game.wizard.minion.hp > 0) condMet = true;
         // Trap
         if (tgt.trap) {
           tMult *= (1+tgt.trap.percent/100);
@@ -1457,7 +2098,11 @@ function castSpell(spell, targetIndex) {
         dmg = Math.floor(dmg * tMult);
         var critChance = (Game.wizard.crit || 5) / 100;
         var isCrit = Math.random() < critChance;
-        if (isCrit) dmg = Math.floor(dmg*2);
+        if (isCrit) {
+          var critMult = Game.masteryAuras && Game.masteryAuras.storm ? 2.5 : 2;
+          dmg = Math.floor(dmg * critMult);
+          if (!Game.stats) Game.stats = {}; Game.stats.crits = (Game.stats.crits||0) + 1;
+        }
 
         // Enemy resist (reduced by pierce)
         if (tgt.resistSchool && tgt.resistSchool === dmgSchool) {
@@ -1471,6 +2116,24 @@ function castSpell(spell, targetIndex) {
 
         tgt.hp = Math.max(0, tgt.hp - dmg);
         totalDmgDealt += dmg;
+
+        // Multi-hit (Manticore, Chimera — extra hits that pierce shields)
+        if (spell.effect.multiHit && spell.effect.multiHit > 1 && tgt.hp > 0) {
+          for (var mh = 1; mh < spell.effect.multiHit; mh++) {
+            var mhDmg = rollDamage(spell.effect.damage);
+            mhDmg = Math.floor(mhDmg * tMult);
+            tgt.hp = Math.max(0, tgt.hp - mhDmg);
+            totalDmgDealt += mhDmg;
+            addLog('  Hit ' + (mh+1) + ': ' + mhDmg + ' [' + tgt.name + ']', 'cast');
+            if (tgt.hp <= 0) break;
+          }
+        }
+
+        // Strip all blades/shields (Upheaval, Keeper of Tales)
+        if (spell.effect.stripAll && tgt.hp > 0) {
+          tgt.trap = null; tgt.trapStack = []; tgt.prism = null;
+          addLog('  Stripped all effects from ' + tgt.name, 'cast');
+        }
 
         if (isAoe) {
           addLog('R' + Game.round + ': ' + spell.name + ' → ' + dmg + (isCrit?' (CRIT!)':'') + ' [' + tgt.name + ']', isCrit?'crit':'cast');
@@ -1502,6 +2165,8 @@ function castSpell(spell, targetIndex) {
 
         if (tgt.hp <= 0) {
           addLog('  ↳ ' + tgt.name + ' defeated!', 'kill');
+          if (!Game.stats) Game.stats = {};
+          Game.stats.enemiesDefeated = (Game.stats.enemiesDefeated||0) + 1;
           var worldMult = Game.currentWorld + 1;
           Game.gold += Math.floor(Math.random() * 8 * worldMult) + 5 * worldMult;
           Game.wizard.xp += (typeof spell.pips === 'number' ? spell.pips : xPipVal)*3+3;
@@ -1544,6 +2209,19 @@ function castSpell(spell, targetIndex) {
         Game.wizard.hots.push({heal:spell.effect.hot.heal, rounds:spell.effect.hot.rounds||3});
         addLog('  💚 HoT applied: +' + spell.effect.hot.heal + '/rd for ' + (spell.effect.hot.rounds||3) + ' rounds', 'heal');
       }
+      // Mastery Aura: Ember — auto DoT on all damage
+      if (Game.masteryAuras && Game.masteryAuras.fire && totalDmgDealt > 0) {
+        var emberTargets = getAliveEnemies();
+        for (var eti = 0; eti < emberTargets.length; eti++) {
+          if (!emberTargets[eti].dots) emberTargets[eti].dots = [];
+          emberTargets[eti].dots.push({dmg:15, rounds:2, school:'fire'});
+        }
+      }
+      // Mastery Aura: Dark Harvest — all damage heals 10%
+      if (Game.masteryAuras && Game.masteryAuras.death && totalDmgDealt > 0) {
+        var harvestHeal = Math.floor(totalDmgDealt * 0.1);
+        Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + harvestHeal);
+      }
       // Self-Ignite: damage yourself
       if (spell.effect.selfDamagePercent) {
         var selfDmg = Math.floor(Game.wizard.maxHp * spell.effect.selfDamagePercent / 100);
@@ -1563,10 +2241,21 @@ function castSpell(spell, targetIndex) {
       if (spell.pips === 'X') {
         var bladePct = (spell.effect.bladePerPip||15) * xPipVal;
         Game.wizard.blade = {percent:bladePct};
-        addLog('R' + Game.round + ': ' + spell.name + ' → +' + bladePct + '% blade (' + xPipVal + ' pips) ⚔', 'cast');
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + bladePct + '% blade (' + xPipVal + ' pips)', 'cast');
+      } else if (spell.effect.tripleStack) {
+        if (!Game.wizard.bladeStack) Game.wizard.bladeStack = [];
+        for (var bs = 0; bs < 3; bs++) Game.wizard.bladeStack.push({percent:spell.effect.bladePercent});
+        if (!Game.wizard.blade) Game.wizard.blade = Game.wizard.bladeStack.shift();
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.bladePercent + '% blade x3', 'cast');
       } else {
         Game.wizard.blade = {percent:spell.effect.bladePercent};
-        addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.bladePercent + '% blade ⚔', 'cast');
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.bladePercent + '% blade', 'cast');
+      }
+      // Dark Covenant self-damage
+      if (spell.effect.selfDamagePercent) {
+        var sdmg = Math.floor(Game.wizard.maxHp * spell.effect.selfDamagePercent / 100);
+        Game.wizard.hp = Math.max(1, Game.wizard.hp - sdmg);
+        addLog('  Dark Covenant: -' + sdmg + ' HP', 'fizzle');
       }
       break;
     case 'trap':
@@ -1582,8 +2271,36 @@ function castSpell(spell, targetIndex) {
           target.trap={percent:spell.effect.trapPercent};
           addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.trapPercent + '% trap [' + target.name + ']', 'cast');
         }
+        // Doom Snare self-trap (Feint)
+        if (spell.effect.selfTrap) {
+          Game.wizard._selfTrap = spell.effect.selfTrap;
+          addLog('  ⚠ Self-trap: you take +' + spell.effect.selfTrap + '% damage next hit', 'fizzle');
+        }
       }
       break;
+    case 'debuff': {
+      if (spell.effect.aoeWeakness) {
+        var debuffTargets = getAliveEnemies();
+        for (var wi = 0; wi < debuffTargets.length; wi++) {
+          debuffTargets[wi].weakness = (debuffTargets[wi].weakness||0) + spell.effect.weakness;
+        }
+        addLog('R' + Game.round + ': ' + spell.name + ' → -' + spell.effect.weakness + '% damage to all enemies', 'cast');
+      } else if (spell.effect.singleTarget && target) {
+        target.weakness = (target.weakness||0) + spell.effect.weakness;
+        addLog('R' + Game.round + ': ' + spell.name + ' → -' + spell.effect.weakness + '% damage [' + target.name + ']', 'cast');
+      }
+      if (spell.effect.shieldBreak && target) {
+        target.trap = null; target.trapStack = [];
+        addLog('R' + Game.round + ': ' + spell.name + ' → stripped shields from ' + target.name, 'cast');
+      }
+      break;
+    }
+    case 'summon': {
+      var m = spell.effect.minion;
+      Game.wizard.minion = {name:m.name, hp:m.hp, maxHp:m.hp, damage:m.damage, accuracy:m.accuracy};
+      addLog('R' + Game.round + ': ' + spell.name + ' → ' + m.name + ' summoned! (' + m.hp + ' HP)', 'crit');
+      break;
+    }
     case 'detonate':
       if (target && target.dots && target.dots.length > 0) {
         var detDmg = getTotalDoTDamage(target);
@@ -1601,16 +2318,47 @@ function castSpell(spell, targetIndex) {
       addLog('R' + Game.round + ': ' + spell.name + ' → -' + spell.effect.shieldPercent + '% ' + sl + ' shield 🛡', 'cast');
       break;
     case 'charm':
-      Game.wizard.accuracyCharm = {percent:spell.effect.accuracyBuff};
-      addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.accuracyBuff + '% accuracy 🎯', 'cast');
+      if (spell.effect.accuracyBuff) {
+        Game.wizard.accuracyCharm = {percent:spell.effect.accuracyBuff};
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.accuracyBuff + '% accuracy', 'cast');
+      }
+      if (spell.effect.healBoost) {
+        Game.wizard.healBoost = (Game.wizard.healBoost||0) + spell.effect.healBoost;
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.healBoost + '% next heal', 'cast');
+      }
       break;
     case 'prism':
       if (target) { target.prism={from:spell.school, to:spell.effect.convertTo}; addLog('R' + Game.round + ': ' + spell.name + ' → ' + spell.school + '→' + spell.effect.convertTo + ' prism [' + target.name + ']', 'cast'); }
       break;
     case 'heal': {
       var healAmt = Math.floor(Game.wizard.maxHp * (spell.effect.healPercent||20) / 100);
+      // Heal boost (Guiding Glow charm + Sanctuary global)
+      var healMult = 1;
+      if (Game.wizard.healBoost) { healMult += Game.wizard.healBoost/100; Game.wizard.healBoost = 0; }
+      if (Game.combat && Game.combat.global && Game.combat.global.healBoost) healMult += Game.combat.global.healBoost/100;
+      healAmt = Math.floor(healAmt * healMult);
+      var prevHp = Game.wizard.hp;
       Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + healAmt);
-      addLog('R' + Game.round + ': ' + spell.name + ' → +' + healAmt + ' HP', 'heal');
+      var actualHeal = Game.wizard.hp - prevHp;
+      var overheal = healAmt - actualHeal;
+      addLog('R' + Game.round + ': ' + spell.name + ' → +' + actualHeal + ' HP' + (healMult>1?' (boosted)':''), 'heal');
+      // Overheal → damage buff (Life solo mechanic)
+      if (overheal > 0 && Game.wizard.school === 'life') {
+        var ohBonus = Math.floor(overheal / Game.wizard.maxHp * 100);
+        Game.wizard._overhealBuff = (Game.wizard._overhealBuff||0) + ohBonus;
+        if (ohBonus > 0) addLog('  💚 Overheal: +' + ohBonus + '% damage stored (' + Game.wizard._overhealBuff + '% total)', 'crit');
+      }
+      // HoT from heal spells (Dewdrop, Sacred Grove)
+      if (spell.effect.hot) {
+        if (!Game.wizard.hots) Game.wizard.hots = [];
+        Game.wizard.hots.push({heal:spell.effect.hot.heal, rounds:spell.effect.hot.rounds||3});
+        addLog('  💚 HoT: +' + spell.effect.hot.heal + '/rd for ' + (spell.effect.hot.rounds||3) + ' rounds', 'heal');
+      }
+      // Genesis absorb
+      if (spell.effect.absorb) {
+        Game.wizard.absorb = (Game.wizard.absorb||0) + spell.effect.absorb;
+        addLog('  Absorb: +' + spell.effect.absorb, 'cast');
+      }
       break;
     }
     case 'global':
@@ -1619,6 +2367,17 @@ function castSpell(spell, targetIndex) {
       for (var gk in gb) { Game.combat.global[gk] = (Game.combat.global[gk]||0) + gb[gk]; }
       addLog('R' + Game.round + ': ' + spell.name + ' → Global buff active!', 'cast');
       break;
+    case 'absorb': {
+      var absAmt = (spell.effect.absorbPerPip || 80) * (spell.pips === 'X' ? xPipVal : spell.pips);
+      Game.wizard.absorb = (Game.wizard.absorb||0) + absAmt;
+      addLog('R' + Game.round + ': ' + spell.name + ' → Absorb shield: ' + absAmt + ' HP', 'cast');
+      break;
+    }
+  }
+  // Weaver self-shield
+  if (spell.effect.selfShield) {
+    Game.wizard.shield = {percent:spell.effect.selfShield.percent, schools:spell.effect.selfShield.schools||null};
+    addLog('  Shield applied: -' + spell.effect.selfShield.percent + '%', 'cast');
   }
   return true;
 }
@@ -1626,14 +2385,14 @@ function castSpell(spell, targetIndex) {
 // ===== BOSS DROPS =====
 function handleBossDrop(target) {
   var bossDrops = {
-    'Aldric Grimsworth': {unlock:'auto', item:'sw_boss_robe', chance:0.35},
-    'Khet-Amun the Sealed': {item:'sol_boss_hat', chance:0.30, pet:'spark_otter'},
-    'Magnus Prime': {item:'pen_boss_wand', chance:0.30},
-    'Kaelith the Unbroken': {item:'mis_boss_boots', chance:0.25},
-    'Pyrrhus the Architect': {item:'pyr_boss_ring', chance:0.25},
-    'The Tidebound Chorus': {item:'aby_boss_amulet', chance:0.25},
-    'Your Echo': {item:'pnb_boss_hat', chance:0.20},
-    'The Culmination': {item:'gp_boss_robe', chance:0.30},
+    'Aldric Grimsworth': {unlock:'auto', items:[{id:'sw_boss_robe',chance:0.35}]},
+    'Khet-Amun the Sealed': {items:[{id:'sol_boss_hat',chance:0.30},{id:'sol_wand',chance:0.15}], pet:'spark_otter'},
+    'Magnus Prime': {items:[{id:'pen_boss_wand',chance:0.30},{id:'pen_hat',chance:0.15}]},
+    'Kaelith the Unbroken': {items:[{id:'mis_boss_boots',chance:0.25},{id:'mis_robe',chance:0.15}]},
+    'Pyrrhus the Architect': {items:[{id:'pyr_boss_ring',chance:0.25},{id:'pyr_wand',chance:0.15},{id:'pyr_hat',chance:0.10}]},
+    'The Tidebound Chorus': {items:[{id:'aby_boss_amulet',chance:0.25},{id:'aby_robe',chance:0.15},{id:'aby_wand',chance:0.10}]},
+    'Your Echo': {items:[{id:'pnb_boss_hat',chance:0.20},{id:'pnb_robe',chance:0.15},{id:'pnb_wand',chance:0.10}]},
+    'The Culmination': {items:[{id:'gp_boss_robe',chance:0.30},{id:'pnb_boss_hat',chance:0.15}]},
   };
   var bd = bossDrops[target.name];
   if (!bd) return;
@@ -1644,11 +2403,16 @@ function handleBossDrop(target) {
     addLog('★ AUTO COMBAT UNLOCKED!', 'crit');
     addLog('Set priority rules in the Deck tab to automate fights.', 'system');
   }
-  if (bd.item && Math.random() < bd.chance) {
-    if (!Game.wizard.inventory.includes(bd.item) && Game.wizard.gear[GEAR[bd.item].slot] !== bd.item) {
-      Game.wizard.inventory.push(bd.item);
-      addLog('  ★ RARE DROP: ' + GEAR[bd.item].name + '!', 'crit');
-      addHubLog('Rare drop: ' + GEAR[bd.item].name, 'crit');
+  if (bd.items) {
+    for (var di = 0; di < bd.items.length; di++) {
+      var drop = bd.items[di];
+      if (Math.random() < drop.chance && GEAR[drop.id]) {
+        if (!Game.wizard.inventory.includes(drop.id) && Game.wizard.gear[GEAR[drop.id].slot] !== drop.id) {
+          Game.wizard.inventory.push(drop.id);
+          addLog('  ★ RARE DROP: ' + GEAR[drop.id].name + '!', 'crit');
+          addHubLog('Rare drop: ' + GEAR[drop.id].name, 'crit');
+        }
+      }
     }
   }
   if (bd.pet && Game.petRoster.length === 0) {
@@ -1832,11 +2596,32 @@ function enemyTurn() {
     if (!rollAccuracy(enemy.accuracy, null)) { addLog('  ' + enemy.name + ' → fizzle', 'info'); continue; }
     let dmg = rollDamage(enemy.damage);
     if (enemy.weakness) { dmg = Math.floor(dmg * (1 - enemy.weakness/100)); enemy.weakness = 0; }
+    // Minion intercept (30% chance minion takes the hit)
+    if (Game.wizard.minion && Game.wizard.minion.hp > 0 && Math.random() < 0.3) {
+      Game.wizard.minion.hp -= dmg;
+      addLog('  ' + Game.wizard.minion.name + ' intercepts! (-' + dmg + ' to minion)', 'info');
+      if (Game.wizard.minion.hp <= 0) { addLog('  ' + Game.wizard.minion.name + ' destroyed!', 'death'); Game.wizard.minion = null; }
+      continue;
+    }
+    // Absorb shield takes damage first
+    if (Game.wizard.absorb && Game.wizard.absorb > 0) {
+      var absorbed = Math.min(dmg, Game.wizard.absorb);
+      Game.wizard.absorb -= absorbed;
+      dmg -= absorbed;
+      if (dmg <= 0) { addLog('  ' + enemy.name + ' → absorbed (' + absorbed + ')', 'info'); continue; }
+      addLog('  Absorb: -' + absorbed + ' (' + Game.wizard.absorb + ' left)', 'info');
+    }
     if (Game.wizard.shield) {
       const shieldBlocks = !Game.wizard.shield.schools || Game.wizard.shield.schools.includes(enemy.school);
       if (shieldBlocks) {
         const blocked = Math.floor(dmg*Game.wizard.shield.percent/100);
-        dmg -= blocked; Game.wizard.shield = null;
+        dmg -= blocked;
+        // Permafrost aura: 30% chance shield persists
+        if (Game.masteryAuras && Game.masteryAuras.ice && Math.random() < 0.3) {
+          addLog('  ❄ Permafrost: shield persists!', 'cast');
+        } else {
+          Game.wizard.shield = null;
+        }
         addLog('  ' + enemy.name + ' → ' + dmg + ' dmg (shield: -' + blocked + ')', 'fizzle');
       } else {
         if (Game.wizard.resist>0) dmg = Math.floor(dmg*(1-Game.wizard.resist/100));
@@ -1845,6 +2630,11 @@ function enemyTurn() {
     } else {
       if (Game.wizard.resist>0) dmg = Math.floor(dmg*(1-Game.wizard.resist/100));
       addLog('  ' + enemy.name + ' → ' + dmg + ' dmg', 'fizzle');
+    }
+    // Self-trap (Doom Snare/Feint)
+    if (Game.wizard._selfTrap) {
+      dmg = Math.floor(dmg * (1 + Game.wizard._selfTrap/100));
+      Game.wizard._selfTrap = 0;
     }
     Game.wizard.hp = Math.max(0, Game.wizard.hp-dmg);
     if (Game.wizard.hp <= 0) addLog('  ↳ You were defeated!', 'death');
@@ -1875,7 +2665,7 @@ function evaluateRules() {
 }
 
 // ===== ZONE/WORLD =====
-function getCurrentWorld() { return WORLDS[Game.currentWorld]; }
+function getCurrentWorld() { return Game._spiralWorld || WORLDS[Game.currentWorld]; }
 function getCurrentZone() { const w=getCurrentWorld(); return w ? w.zones[Game.currentZone] : null; }
 
 function travelToWorld(worldIndex, zoneIndex) {
@@ -1936,10 +2726,23 @@ function startEncounter() {
   const encounterDef = zone.encounters[Game.currentEncounter];
   if (!encounterDef) return;
   const enemyIds = Array.isArray(encounterDef[0]) ? encounterDef[0] : encounterDef;
+  const schoolPool = ['storm','fire','ice','life','death','myth'];
+  const runScale = 1 + (Game.enrollmentCount || 0) * 0.15;
   const enemies = enemyIds.map(id => {
     const t = ENEMIES[id];
-    if (!t) return {name:'Unknown',school:'balance',hp:100,maxHp:100,damage:[10,20],accuracy:70,trap:null,prism:null,stunRounds:0};
-    return {...t, hp:t.hp, maxHp:t.hp, trap:null, trapStack:[], prism:null, stunRounds:0, dots:[], weakness:0};
+    if (!t) return {name:'Unknown',school:'balance',hp:100,maxHp:100,damage:[10,20],accuracy:70,trap:null,prism:null,stunRounds:0,dots:[],weakness:0};
+    // School rotation: shift schools based on enrollment count
+    var eSchool = t.school;
+    if (!t.boss && Game.enrollmentCount > 0) {
+      var schoolIdx = schoolPool.indexOf(t.school);
+      if (schoolIdx !== -1) {
+        eSchool = schoolPool[(schoolIdx + Game.enrollmentCount) % schoolPool.length];
+      }
+    }
+    // Difficulty scaling: +15% per enrollment
+    var scaledHp = Math.floor(t.hp * runScale);
+    var scaledDmg = [Math.floor(t.damage[0] * runScale), Math.floor(t.damage[1] * runScale)];
+    return {...t, school:eSchool, hp:scaledHp, maxHp:scaledHp, damage:scaledDmg, trap:null, trapStack:[], prism:null, stunRounds:0, dots:[], weakness:0};
   });
 
   const hasBoss = enemies.some(e => e.boss);
@@ -1983,7 +2786,31 @@ function combatTick() {
       generatePip();
       processDoTs();
       processHoTs();
+      // Minion attacks (Myth)
+      if (Game.wizard.minion && Game.wizard.minion.hp > 0) {
+        var minionTargets = getAliveEnemies();
+        if (minionTargets.length > 0) {
+          var mt = minionTargets[0];
+          if (Math.random()*100 < Game.wizard.minion.accuracy) {
+            var mDmg = rollDamage(Game.wizard.minion.damage);
+            mt.hp = Math.max(0, mt.hp - mDmg);
+            addLog('  ' + Game.wizard.minion.name + ' → ' + mDmg + ' dmg [' + mt.name + ']', 'cast');
+            if (mt.hp <= 0) addLog('  ↳ ' + mt.name + ' defeated by minion!', 'kill');
+          }
+        }
+      }
+      // Glacial Momentum (Ice solo mechanic)
+      if (Game.wizard.school === 'ice') {
+        if (Game.wizard.shield || (Game.wizard.absorb && Game.wizard.absorb > 0)) {
+          Game.wizard._glacialMomentum = (Game.wizard._glacialMomentum||0) + 3;
+          if (Game.round % 5 === 0) addLog('  ❄ Glacial Momentum: +' + Game.wizard._glacialMomentum + '% damage', 'cast');
+        } else {
+          if (Game.wizard._glacialMomentum > 0) addLog('  ❄ Glacial Momentum reset (no shield)', 'info');
+          Game.wizard._glacialMomentum = 0;
+        }
+      }
       processBossCheats();
+      processMasteryAuras();
       if (Game.wizard.hp <= 0) { handleDeath(); return; }
       Game.phase = Game.mode==='auto' ? 'player_turn' : 'waiting_input';
       break;
@@ -2028,6 +2855,8 @@ function manualPass() {
 
 function advanceEncounter() {
   var encInfo = Game.round + ' rounds | HP: ' + Game.wizard.hp + '/' + Game.wizard.maxHp + ' | Mana: ' + Game.wizard.mana + '/' + Game.wizard.maxMana;
+  if (!Game.stats) Game.stats = {};
+  Game.stats.encountersCleared = (Game.stats.encountersCleared||0) + 1;
   addLog('✓ Encounter cleared! (' + encInfo + ')', 'kill');
   Game.currentEncounter++;
   const zone = getCurrentZone();
@@ -2036,6 +2865,13 @@ function advanceEncounter() {
   if (!zone || Game.currentEncounter >= getCurrentWorld().zones[Game.currentZone].encounters.length) {
     const zoneName = world.zones[Game.currentZone].name;
     addLog('═══ ' + zoneName + ' COMPLETE ═══', 'system');
+
+    // TP from zone completion
+    if (!Game.farming) {
+      if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
+      Game.wizard.trainingPoints += 1;
+      addLog('  +1 Training Point (zone)', 'info');
+    }
 
     // Farming mode: loop back to start of current zone
     if (Game.farming) {
@@ -2056,14 +2892,26 @@ function advanceEncounter() {
     }
 
     if (Game.currentZone >= world.zones.length) {
+      // Spiral cycle completion
+      if (Game._spiralWorld) {
+        addLog('', 'info');
+        addLog('★ CYCLE ' + Game.spiralCycle + ' COMPLETE ★', 'crit');
+        addHubLog('Spiral Cycle ' + Game.spiralCycle + ' complete!', 'crit');
+        if (Game.spiralCycle % 10 === 0) awardSpiralShard();
+        Game.spiralCycle++;
+        Game._spiralWorld = null;
+        enterSpiral();
+        return;
+      }
+
       addLog('', 'info');
       addLog('★ ' + world.name.toUpperCase() + ' COMPLETE ★', 'system');
 
       // Training points on world completion
       if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
-      Game.wizard.trainingPoints += 2;
-      addLog('  +2 Training Points! (Total: ' + Game.wizard.trainingPoints + ')', 'crit');
-      addHubLog(world.name + ' complete! +2 TP', 'crit');
+      Game.wizard.trainingPoints += 4;
+      addLog('  +4 Training Points! (Total: ' + Game.wizard.trainingPoints + ')', 'crit');
+      addHubLog(world.name + ' complete! +4 TP', 'crit');
 
       Game.currentWorld++; Game.currentZone = 0; Game.currentEncounter = 0;
       if (Game.currentWorld > Game.furthestWorld) { Game.furthestWorld = Game.currentWorld; Game.furthestZone = 0; }
@@ -2100,6 +2948,8 @@ function advanceEncounter() {
         startEncounter();
         return;
       } else {
+        // Campaign complete — graduate and show enrollment
+        graduate();
         addLog('"I\'ve waited a very long time for you. Longer than you know." — Silas Stillwater', 'system');
         Game.state = 'complete'; Game.phase = 'none';
         return;
@@ -2112,6 +2962,7 @@ function advanceEncounter() {
 }
 
 function handleDeath() {
+  if (!Game.stats) Game.stats = {}; Game.stats.deathCount = (Game.stats.deathCount||0) + 1;
   const zone = getCurrentWorld().zones[Game.currentZone];
   addLog('Sent back to start of ' + zone.name + '.', 'death');
   Game.currentEncounter = 0;
@@ -2141,6 +2992,7 @@ function gameTick() {
   if (Game.tick%2===0) gardenTick();
   craftingTick();
   eventTick();
+  if (Game.tick%30===0) checkAchievements();
   updateUI();
 }
 
@@ -2156,6 +3008,9 @@ function saveGame() {
     furthestWorld:Game.furthestWorld, furthestZone:Game.furthestZone,
     crafting:Game.crafting, events:Game.events, savedDecks:Game.savedDecks,
     hubLog:Game.hubLog, logMode:Game.logMode,
+    spiralCycle:Game.spiralCycle,
+    graduatedSchools:Game.graduatedSchools, masteryAuras:Game.masteryAuras, enrollmentCount:Game.enrollmentCount,
+    achievements:Game.achievements, stats:Game.stats,
     lastSaveTime:Date.now(),
   }));
 }
@@ -2211,6 +3066,14 @@ function loadGame() {
     Game.savedDecks = d.savedDecks||[];
     Game.hubLog = d.hubLog||[];
     Game.logMode = d.logMode||'verbose';
+    Game.spiralCycle = d.spiralCycle||1;
+    if (Game.wizard.school === 'balance') document.body.classList.add('spiral-theme');
+    applySchoolTheme(Game.wizard.school);
+    Game.graduatedSchools = d.graduatedSchools||[];
+    Game.masteryAuras = d.masteryAuras||{};
+    Game.enrollmentCount = d.enrollmentCount||0;
+    Game.achievements = d.achievements||{};
+    Game.stats = d.stats||{encountersCleared:0,enemiesDefeated:0,spellsCast:0,fizzles:0,crits:0,goldEarned:0,deathCount:0};
     if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
     if (!Game.wizard.enchantments) Game.wizard.enchantments = {};
     if (!Game.wizard.hots) Game.wizard.hots = [];
@@ -2223,7 +3086,8 @@ function loadGame() {
 function resetGame() {
   localStorage.removeItem('spiralbound_save');
   if (Game.tickInterval) { clearInterval(Game.tickInterval); Game.tickInterval = null; }
-  Game.state = 'idle'; Game.combat = null;
+  Game.state = 'idle'; Game.combat = null; Game._spiralWorld = null;
+  applySchoolTheme('');
 }
 
 function processOfflineProgress() {
@@ -2238,90 +3102,52 @@ function processOfflineProgress() {
     // Offline runs at 50% efficiency (simulate fewer ticks than actually passed)
     elapsedTicks = Math.floor(elapsedTicks * 0.5);
 
-    var summary = {gold:0, encounters:0, motes:0, snacks:0, gardenHarvests:0, craftsCompleted:0};
+    var summary = {gold:0, xp:0, motes:0, snacks:0, gardenHarvests:0, craftsCompleted:0, petXp:0};
 
-    // Simulate combat encounters (simplified — no spell-by-spell, just outcome per encounter)
+    // Offline rewards — grant gold, XP, reagents, and pet XP based on time away
+    // Does NOT advance encounters/zones/worlds — progression stays where you left off
     if (Game.state === 'fighting' || Game.state === 'resting') {
-      var ticksUsed = 0;
-      while (ticksUsed < elapsedTicks) {
-        if (Game.state === 'resting') {
-          Game.wizard.hp = Game.wizard.maxHp;
-          Game.wizard.mana = Game.wizard.maxMana;
-          Game.state = 'fighting';
-          ticksUsed += 30; // ~rest cycle
-          continue;
-        }
-        // Simulate one encounter
-        var zone = getCurrentZone();
-        var world = getCurrentWorld();
-        if (!zone || !world) break;
-        var encDef = zone.encounters[Game.currentEncounter];
-        if (!encDef) break;
+      var zone = getCurrentZone();
+      var world = getCurrentWorld();
+      if (zone && world) {
+        var encDef = zone.encounters[Game.currentEncounter] || zone.encounters[0];
         var enemyIds = Array.isArray(encDef[0]) ? encDef[0] : encDef;
         var totalEnemyHp = 0;
+        var avgEnemyDmg = 0;
         for (var ei = 0; ei < enemyIds.length; ei++) {
           var et = ENEMIES[enemyIds[ei]];
-          if (et) totalEnemyHp += et.hp;
+          if (et) { totalEnemyHp += et.hp; avgEnemyDmg += (et.damage[0]+et.damage[1])/2; }
         }
-        // Estimate rounds to kill based on average spell damage + damage%
-        var avgDmg = 135 * (1 + Game.wizard.damage/100); // rough avg for storm
+        var avgDmg = 135 * (1 + Game.wizard.damage/100);
         var roundsToKill = Math.max(1, Math.ceil(totalEnemyHp / avgDmg));
-        var manaUsed = Math.min(roundsToKill * 2, Game.wizard.mana);
-        Game.wizard.mana -= manaUsed;
-        // Take some damage
-        var avgEnemyDmg = 0;
-        for (var di = 0; di < enemyIds.length; di++) { var dt = ENEMIES[enemyIds[di]]; if (dt) avgEnemyDmg += (dt.damage[0]+dt.damage[1])/2; }
-        var dmgTaken = Math.floor(avgEnemyDmg * roundsToKill * 0.6 * (1 - Game.wizard.resist/100));
-        Game.wizard.hp -= dmgTaken;
-        // Gold + reagent drops
+        var ticksPerEncounter = roundsToKill * 6 + 3;
+        var encountersSim = Math.floor(elapsedTicks / ticksPerEncounter);
         var worldMult = Game.currentWorld + 1;
-        var goldEarned = Math.floor((Math.random()*8*worldMult + 5*worldMult) * enemyIds.length);
-        Game.gold += goldEarned;
-        summary.gold += goldEarned;
-        summary.encounters++;
-        // Reagent drops
-        for (var ri = 0; ri < enemyIds.length; ri++) {
-          if (Math.random() < 0.12) {
-            var worldReagents = getReagentDropsForWorld(Game.currentWorld);
-            var rDrop = worldReagents[Math.floor(Math.random() * worldReagents.length)];
-            Game.reagents[rDrop] = (Game.reagents[rDrop]||0) + 1;
-            summary.motes++;
-          }
-        }
-        ticksUsed += roundsToKill * 6 + 3;
-        // Check death
-        if (Game.wizard.hp <= 0) {
-          Game.wizard.hp = Math.floor(Game.wizard.maxHp * 0.5);
-          Game.wizard.mana = Math.floor(Game.wizard.maxMana * 0.5);
-          Game.currentEncounter = 0;
-          Game.state = 'resting';
-          continue;
-        }
-        // Check mana
-        if (Game.wizard.mana <= 0) {
-          Game.state = 'resting';
-          // Advance encounter first
-        }
-        // Advance encounter
-        Game.currentEncounter++;
-        if (Game.currentEncounter >= zone.encounters.length) {
-          if (Game.farming) {
-            Game.currentEncounter = 0;
-          } else {
-            Game.currentZone++;
-            Game.currentEncounter = 0;
-            if (!Game.farming && Game.currentWorld === Game.furthestWorld && Game.currentZone > Game.furthestZone) {
-              Game.furthestZone = Game.currentZone;
-            }
-            if (Game.currentZone >= world.zones.length) {
-              // Don't auto-complete worlds offline — stop here
-              Game.currentZone = world.zones.length - 1;
-              Game.currentEncounter = zone.encounters.length - 1;
-              break;
+        for (var enc = 0; enc < encountersSim; enc++) {
+          var goldEarned = Math.floor((Math.random()*8*worldMult + 5*worldMult) * enemyIds.length);
+          Game.gold += goldEarned;
+          summary.gold += goldEarned;
+          var xpEarned = Math.floor(worldMult * enemyIds.length * 8);
+          Game.wizard.xp += xpEarned;
+          summary.xp += xpEarned;
+          for (var ri = 0; ri < enemyIds.length; ri++) {
+            if (Math.random() < 0.12) {
+              var worldReagents = getReagentDropsForWorld(Game.currentWorld);
+              var rDrop = worldReagents[Math.floor(Math.random() * worldReagents.length)];
+              Game.reagents[rDrop] = (Game.reagents[rDrop]||0) + 1;
+              summary.motes++;
             }
           }
+          if (Game.pet) {
+            var petXp = Math.floor(worldMult * 2);
+            Game.pet.xp += petXp;
+            summary.petXp += petXp;
+          }
         }
-        if (Game.wizard.mana <= 0) Game.state = 'resting';
+        // Restore to full so the player comes back ready to fight
+        Game.wizard.hp = Game.wizard.maxHp;
+        Game.wizard.mana = Game.wizard.maxMana;
+        Game.state = 'fighting';
       }
     }
 
@@ -2368,9 +3194,10 @@ function processOfflineProgress() {
     var timeStr = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
     var msg = 'Welcome back! (' + timeStr + ' away)';
     var details = [];
-    if (summary.encounters > 0) details.push(summary.encounters + ' encounters cleared');
     if (summary.gold > 0) details.push('+' + summary.gold + ' gold');
+    if (summary.xp > 0) details.push('+' + summary.xp + ' XP');
     if (summary.motes > 0) details.push('+' + summary.motes + ' reagents');
+    if (summary.petXp > 0) details.push('+' + summary.petXp + ' pet XP');
     if (summary.gardenHarvests > 0) details.push('Garden advanced');
     if (summary.craftsCompleted > 0) details.push('Craft completed');
     if (details.length > 0) msg += ' — ' + details.join(', ');
@@ -2399,25 +3226,92 @@ function initGame(school) {
   Game.events = {active:[],lastEventTick:0};
   Game.savedDecks = [];
   Game.hubLog = [];
+  Game.spiralCycle = 1;
+  Game._spiralWorld = null;
+  Game.graduatedSchools = Game.graduatedSchools || [];
+  Game.masteryAuras = Game.masteryAuras || {};
+  Game.enrollmentCount = Game.enrollmentCount || 0;
   Game.deck = Game.wizard.learnedSpells.slice();
   var s = Game.wizard.school;
   if (s === 'storm') {
     Game.rules = [{conditionId:'pips_above_2',spellId:'crackling_crows'},{conditionId:'always',spellId:'volt_asp'}];
   } else if (s === 'fire') {
     Game.rules = [{conditionId:'pips_above_2',spellId:'flame_sprite'},{conditionId:'always',spellId:'ember_fox'}];
+  } else if (s === 'ice') {
+    Game.rules = [{conditionId:'pips_above_2',spellId:'sleet_viper'},{conditionId:'always',spellId:'frost_scarab_s'}];
+  } else if (s === 'life') {
+    Game.rules = [{conditionId:'hp_below_50',spellId:'thorn_sprite_s'},{conditionId:'pips_above_2',spellId:'nymph'},{conditionId:'always',spellId:'thorn_sprite_s'}];
+  } else if (s === 'death') {
+    Game.rules = [{conditionId:'pips_above_2',spellId:'revenant'},{conditionId:'always',spellId:'shadow_wisp_s'}];
+  } else if (s === 'myth') {
+    Game.rules = [{conditionId:'pips_above_2',spellId:'boggart'},{conditionId:'always',spellId:'fang_bat'}];
+  } else if (s === 'balance') {
+    // Balance starts fully powered — reward for 6 graduations
+    Game.wizard.rankIndex = RANKS.length - 1;
+    Game.wizard.rank = RANKS[RANKS.length-1].name;
+    var maxRank = RANKS[RANKS.length-1];
+    Game.wizard.baseHp = Math.floor(maxRank.baseHp * SCHOOL_STATS.balance.hpScale);
+    Game.wizard.baseMana = maxRank.baseMana;
+    // Learn ALL spells from ALL schools
+    var allSchools = Object.keys(SCHOOL_SPELLS);
+    for (var si = 0; si < allSchools.length; si++) {
+      var schoolSpellList = SCHOOL_SPELLS[allSchools[si]];
+      for (var br = 0; br < schoolSpellList.length; br++) {
+        for (var bs = 0; bs < schoolSpellList[br].length; bs++) {
+          if (Game.wizard.learnedSpells.indexOf(schoolSpellList[br][bs]) === -1) Game.wizard.learnedSpells.push(schoolSpellList[br][bs]);
+        }
+      }
+    }
+    // Also add all TP spells for free
+    var tpKeys = Object.keys(TP_SPELLS);
+    for (var ti = 0; ti < tpKeys.length; ti++) {
+      if (Game.wizard.learnedSpells.indexOf(tpKeys[ti]) === -1) Game.wizard.learnedSpells.push(tpKeys[ti]);
+    }
+    Game.deck = Game.wizard.learnedSpells.slice();
+    Game.autoUnlocked = true;
+    if (Game.garden) Game.garden.unlocked = true;
+    Game.wizard.trainingPoints = 20;
+    Game.gold = 5000;
+    Game.snacks = 100;
+    for (var rr = 0; rr < REAGENT_IDS.length; rr++) Game.reagents[REAGENT_IDS[rr]] = 50;
+    recalcStats();
+    Game.wizard.hp = Game.wizard.maxHp;
+    Game.wizard.mana = Game.wizard.maxMana;
+    Game.rules = [
+      {conditionId:'no_blade',spellId:'arcblade'},
+      {conditionId:'no_trap',spellId:'hex'},
+      {conditionId:'blade_and_trap',spellId:'adjudication'},
+      {conditionId:'pips_above_3',spellId:'chimeric_bolt'},
+      {conditionId:'always',spellId:'sand_scarab'},
+    ];
   } else {
     Game.rules = [{conditionId:'always',spellId:Game.deck[0]||''}];
   }
   var ss = SCHOOL_STATS[s] || SCHOOL_STATS.storm;
-  addLog('Welcome to Spiralbound.','system');
-  addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design."','system');
-  addLog('  — Headmaster Silas Stillwater','info');
-  addLog('School: ' + s.charAt(0).toUpperCase()+s.slice(1) + ' | Rank: Novice | Accuracy: ' + ss.baseAccuracy + '%','info');
-  addLog('','info');
-  Game.state='fighting';
-  startEncounter();
-  if (Game.tickInterval) clearInterval(Game.tickInterval);
-  Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+  applySchoolTheme(s);
+  if (s !== 'balance') {
+    addLog('Welcome to Spiralbound.','system');
+    addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design."','system');
+    addLog('  — Headmaster Silas Stillwater','info');
+    addLog('School: ' + s.charAt(0).toUpperCase()+s.slice(1) + ' | Rank: Novice | Accuracy: ' + ss.baseAccuracy + '%','info');
+  }
+  if (s === 'balance') {
+    addLog('You enter The Spiral.', 'system');
+    addLog('"I can\'t follow you past this point. No one can teach you what comes next."', 'system');
+    addLog('"...I\'m proud of you. Don\'t tell Thornscribe I said that."', 'system');
+    addLog('  — Headmaster Silas Stillwater', 'info');
+    addLog('', 'info');
+    Game.spiralCycle = Game.spiralCycle || 1;
+    if (Game.tickInterval) clearInterval(Game.tickInterval);
+    Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+    enterSpiral();
+  } else {
+    addLog('','info');
+    Game.state='fighting';
+    startEncounter();
+    if (Game.tickInterval) clearInterval(Game.tickInterval);
+    Game.tickInterval = setInterval(gameTick, Game.TICK_MS);
+  }
   updateUI();
 }
 
@@ -2432,7 +3326,7 @@ window.getPipValue=getPipValue; window.canAffordSpell=canAffordSpell;
 window.getAliveEnemies=getAliveEnemies; window.addLog=addLog; window.addHubLog=addHubLog;
 window.startEncounter=startEncounter; window.getCurrentWorld=getCurrentWorld; window.getCurrentZone=getCurrentZone;
 window.travelToWorld=travelToWorld; window.returnToProgress=returnToProgress;
-window.equipGear=equipGear; window.unequipGear=unequipGear; window.buyGear=buyGear; window.recalcStats=recalcStats;
+window.equipGear=equipGear; window.unequipGear=unequipGear; window.buyGear=buyGear; window.sellGear=sellGear; window.recalcStats=recalcStats;
 window.SEEDS=SEEDS; window.SEED_SHOP=SEED_SHOP; window.SEED_DROPS=SEED_DROPS; window.createGarden=createGarden;
 window.plantSeed=plantSeed; window.tendPlot=tendPlot; window.tendAll=tendAll;
 window.harvestPlot=harvestPlot; window.plowPlot=plowPlot; window.buySeed=buySeed;
@@ -2454,3 +3348,7 @@ window.EVENT_TYPES=EVENT_TYPES; window.respondToEvent=respondToEvent; window.gen
 window.TP_SPELLS=TP_SPELLS; window.buyTPSpell=buyTPSpell;
 window.saveDeckSlot=saveDeckSlot; window.loadDeckSlot=loadDeckSlot; window.getMaxDecks=getMaxDecks;
 window.processOfflineProgress=processOfflineProgress;
+window.enterSpiral=enterSpiral; window.SPIRAL_VOICE=SPIRAL_VOICE; window.SPIRAL_SHARDS=SPIRAL_SHARDS;
+window.MASTERY_AURAS=MASTERY_AURAS; window.graduate=graduate; window.enrollNewSchool=enrollNewSchool;
+window.ACHIEVEMENTS=ACHIEVEMENTS; window.checkAchievements=checkAchievements; window.sellGear=sellGear;
+window.applySchoolTheme=applySchoolTheme;

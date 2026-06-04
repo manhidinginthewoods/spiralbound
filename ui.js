@@ -1,6 +1,28 @@
-/* SPIRALBOUND UI v1.0 — Matches game.js v1.0: Full Storm, 8 worlds, hatchery, AoE */
+/* SPIRALBOUND UI v1.1 */
 
 let selectedTargetIndex = 0;
+
+function gearCompareTooltip(item) {
+  if (!item || !Game.wizard) return item ? item.desc : '';
+  var equipped = Game.wizard.gear[item.slot] ? GEAR[Game.wizard.gear[item.slot]] : null;
+  var tip = item.name + ' (' + item.slot + '): ' + item.desc;
+  if (equipped) {
+    tip += ' | vs ' + equipped.name + ': ';
+    var statKeys = ['hp','mana','damage','accuracy','resist','powerPip','crit','pierce','critBlock'];
+    var diffs = [];
+    for (var si = 0; si < statKeys.length; si++) {
+      var k = statKeys[si];
+      var newVal = (item.stats[k]||0);
+      var oldVal = (equipped.stats[k]||0);
+      var diff = newVal - oldVal;
+      if (diff !== 0) diffs.push(k + ' ' + (diff>0?'+':'') + diff);
+    }
+    tip += diffs.length > 0 ? diffs.join(', ') : 'same stats';
+  } else {
+    tip += ' | (empty slot)';
+  }
+  return tip;
+}
 let _lastLogLen = 0;
 let _lastPhase = '';
 let _lastMode = '';
@@ -276,25 +298,39 @@ function renderDeck() {
   }
 
   // ---- TRAINING POINTS ----
+  var mySchool = w.school || 'storm';
+  if (mySchool !== 'balance') {
   h += '<div class="section-head" style="margin-top:20px">Training Points: ' + (w.trainingPoints||0) + '</div>';
-  h += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Learn spells from other schools. 2 TP earned per world completed.</p>';
+  h += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Learn spells from other schools. TP earned from zones (+1) and worlds (+4). Your own school\'s spells are free.</p>';
   var tpKeys = Object.keys(TP_SPELLS);
+  var lastTpSchool = '';
   for (var ti = 0; ti < tpKeys.length; ti++) {
     var tp = TP_SPELLS[tpKeys[ti]];
-    var learned = w.learnedSpells.includes(tpKeys[ti]);
+    if (tp.school === mySchool) continue;
+    if (tp.school !== lastTpSchool) {
+      lastTpSchool = tp.school;
+      h += '<div style="font-size:11px;color:var(--' + tp.school + ', var(--text-dim));margin-top:8px;margin-bottom:4px;text-transform:capitalize">' + tp.school + ' — ' + RANKS[tp.rankTier].name + '+</div>';
+    }
+    var realId = tp.realSpellId || tpKeys[ti];
+    var learned = w.learnedSpells.includes(realId);
     var canBuy = !learned && (w.trainingPoints||0) >= tp.tpCost;
     var hasPrereq = true;
-    for (var p = 0; p < tp.prereq.length; p++) { if (!w.learnedSpells.includes(tp.prereq[p])) hasPrereq = false; }
+    for (var p = 0; p < tp.prereq.length; p++) {
+      var preReal = TP_SPELLS[tp.prereq[p]] ? (TP_SPELLS[tp.prereq[p]].realSpellId || tp.prereq[p]) : tp.prereq[p];
+      if (!w.learnedSpells.includes(preReal)) hasPrereq = false;
+    }
     var tpColor = 'var(--' + tp.school + ', var(--text-dim))';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:3px;background:var(--bg);border:1px solid '+(learned?'var(--storm)':'var(--border)')+';border-radius:3px;font-size:11px;'+(learned||hasPrereq?'':'opacity:0.5')+'"><span>';
     h += '<span style="color:'+tpColor+'">' + tp.name + '</span>';
-    h += ' <span style="color:var(--text-dim)">(' + tp.school + ' ' + tp.pips + 'p ' + tp.type + ') — ' + tp.desc + '</span>';
+    h += ' <span style="color:var(--text-dim)">' + tp.pips + 'p ' + tp.type + ' — ' + tp.desc + '</span>';
     if (tp.prereq.length > 0 && !hasPrereq) h += ' <span style="color:var(--fizzle)">[Req: ' + tp.prereq.map(function(pid){return TP_SPELLS[pid]?TP_SPELLS[pid].name:pid;}).join(', ') + ']</span>';
     h += '</span>';
     if (learned) h += '<span style="color:var(--storm);font-size:10px">Learned</span>';
     else h += '<button class="btn" onclick="buyTPSpell(\''+tpKeys[ti]+'\');_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(canBuy&&hasPrereq?'':'disabled')+'>' + tp.tpCost + ' TP</button>';
     h += '</div>';
   }
+
+  } // end balance TP skip
 
   // ---- ENCHANTMENTS ----
   h += '<div class="section-head" style="margin-top:20px">Enchantments</div>';
@@ -404,7 +440,29 @@ function renderGear() {
     } else if (Game.state === 'waiting_boss') {
       statusText = 'Boss ahead! Check Combat tab.';
     } else if (Game.state === 'complete') {
-      statusText = 'Campaign Complete';
+      statusText = 'Campaign Complete — Graduated ' + (Game.wizard.school||'storm').toUpperCase() + '!';
+      // Enrollment UI
+      sh += '<div style="background:var(--bg-card);border:2px solid var(--gold);border-radius:6px;padding:16px;margin-top:8px;margin-bottom:8px;text-align:center">';
+      sh += '<div style="font-size:14px;color:var(--gold);margin-bottom:8px">★ THE GRAND ENROLLMENT ★</div>';
+      sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Choose your next school. Mastery auras, pets, and crafting rank carry over. Gear, spells, reagents, and gold reset.</div>';
+      if (Game.graduatedSchools && Game.graduatedSchools.length > 0) {
+        sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Auras: ' + Game.graduatedSchools.map(function(s){return '<span style="color:var(--'+s+')">' + MASTERY_AURAS[s].name + '</span>';}).join(', ') + '</div>';
+      }
+      sh += '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">';
+      var enrollSchools = ['storm','fire','ice','life','death','myth'];
+      for (var esi = 0; esi < enrollSchools.length; esi++) {
+        var es = enrollSchools[esi];
+        var graduated = Game.graduatedSchools && Game.graduatedSchools.indexOf(es) !== -1;
+        if (graduated) {
+          sh += '<button class="btn" disabled style="opacity:0.4;font-size:11px;padding:4px 12px;color:var(--'+es+')">'+es.charAt(0).toUpperCase()+es.slice(1)+' ✓</button>';
+        } else {
+          sh += '<button class="btn" onclick="enrollNewSchool(\''+es+'\')" style="font-size:11px;padding:4px 12px;border-color:var(--'+es+');color:var(--'+es+')">'+es.charAt(0).toUpperCase()+es.slice(1)+'</button>';
+        }
+      }
+      if (Game.graduatedSchools && Game.graduatedSchools.length >= 6) {
+        sh += '<button class="btn primary" onclick="enrollNewSchool(\'balance\')" style="font-size:11px;padding:4px 14px;border-color:var(--balance);color:var(--balance)">★ Balance — Enter The Spiral</button>';
+      }
+      sh += '</div></div>';
     }
     if (statusText) {
       sh += '<div style="font-size:12px;color:var(--storm);margin-bottom:2px">' + statusText + '</div>';
@@ -421,7 +479,9 @@ function renderGear() {
     ph += '<div><div style="font-size:16px;color:var(--text-bright)">' + w.rank + ' Wizard</div>';
     var schoolColor = 'var(--' + w.school + ', var(--storm))';
     ph += '<div style="font-size:11px;color:var(--text-dim)">School: <span style="color:'+schoolColor+'">' + w.school.charAt(0).toUpperCase()+w.school.slice(1) + '</span> | ' + (world?world.name:'') + '</div></div>';
-    ph += '<div style="text-align:right;font-size:12px;color:var(--gold)">Gold: ' + Game.gold + '</div>';
+    ph += '<div style="text-align:right;font-size:12px"><span style="color:var(--gold)">Gold: ' + Game.gold + '</span>';
+    if (Game.enrollmentCount > 0) ph += '<br><span style="color:var(--text-dim);font-size:10px">Run ' + (Game.enrollmentCount+1) + '</span>';
+    ph += '</div>';
     ph += '</div>';
     // Stats grid
     ph += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px">';
@@ -443,9 +503,38 @@ function renderGear() {
     if (Game.combat && Game.combat.global && Game.combat.global.stormDmgBonus) b.push('⚡ Global +' + Game.combat.global.stormDmgBonus + '%');
     if (w._eventDmgBuff) b.push('✨ +' + w._eventDmgBuff + '% Dmg');
     if (w._eventAccBuff) b.push('✨ ' + (w._eventAccBuff>0?'+':'') + w._eventAccBuff + '% Acc');
+    if (w.absorb) b.push('🧊 Absorb ' + w.absorb);
+    if (w._glacialMomentum) b.push('❄ Glacial +' + w._glacialMomentum + '%');
+    if (w._overhealBuff) b.push('💚 Overheal +' + w._overhealBuff + '%');
+    if (w.healBoost) b.push('✨ Heal +' + w.healBoost + '%');
+    if (w._selfTrap) b.push('⚠ Self-trap +' + w._selfTrap + '%');
+    if (w.minion && w.minion.hp > 0) b.push('🗿 ' + w.minion.name + ' ' + w.minion.hp + '/' + w.minion.maxHp);
+    // Mastery auras
+    if (Game.graduatedSchools && Game.graduatedSchools.length > 0) {
+      for (var ai = 0; ai < Game.graduatedSchools.length; ai++) {
+        var aura = MASTERY_AURAS[Game.graduatedSchools[ai]];
+        if (aura) b.push('◆ ' + aura.name);
+      }
+    }
     if (b.length > 0) {
       ph += '<div style="margin-top:8px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + b.join('  |  ') + '</div>';
     }
+    // Enrollment info
+    if (Game.enrollmentCount > 0) {
+      ph += '<div style="margin-top:4px;font-size:10px;color:var(--text-dim)">Enrollment #' + (Game.enrollmentCount+1) + ' | Graduated: ' + Game.graduatedSchools.map(function(s){return s.charAt(0).toUpperCase()+s.slice(1);}).join(', ') + '</div>';
+    }
+    // Mote the fox
+    var moteLines = [
+      'Mote sleeps in Silas\'s coat pocket. Doesn\'t look at you.',
+      'Mote\'s ear twitches when you enter the room.',
+      'Mote watches you from Silas\'s shoulder.',
+      'Mote sits between you and Silas during lessons.',
+      'Mote follows you to the world gate, then turns back.',
+      'Mote waits at The Spiral\'s entrance before you arrive.',
+      'Mote follows you into The Spiral. Silas watches you both go.',
+    ];
+    var moteIdx = Math.min(Game.enrollmentCount||0, moteLines.length-1);
+    ph += '<div style="margin-top:4px;font-size:10px;color:var(--gold);font-style:italic">🦊 ' + moteLines[moteIdx] + '</div>';
     ph += '</div>';
     prof.innerHTML = ph;
   }
@@ -485,7 +574,8 @@ function renderGear() {
         var cur = w.gear[item2.slot] ? GEAR[w.gear[item2.slot]] : null;
         ih += '<div title="'+item2.desc+(cur?' | Replaces: '+cur.name:'')+'" style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:help"><span><span style="color:var(--text-bright)">'+item2.name+'</span> <span style="color:var(--text-dim)">('+item2.slot+') — '+item2.desc+'</span>';
         if (cur) ih += ' <span style="color:var(--text-dim);font-size:10px">[replaces: '+cur.name+']</span>';
-        ih += '</span><button class="btn primary" onclick="equipGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px">Equip</button></div>';
+        var sellPrice = Math.max(5, Math.floor((item2.cost||20) * 0.3));
+        ih += '</span><span><button class="btn primary" onclick="equipGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px">Equip</button> <button class="btn" onclick="sellGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)">Sell ('+sellPrice+'g)</button></span></div>';
       }
     }
 
@@ -542,6 +632,15 @@ function renderGear() {
     // Training Points
     ih += '<div style="font-size:12px;color:var(--text-bright);margin-top:12px;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid var(--border)">Training Points</div>';
     ih += '<div style="font-size:11px;color:var(--text-dim)">' + (w.trainingPoints||0) + ' TP available — spend in the Spellbook tab</div>';
+
+    // Achievements
+    ih += '<div style="font-size:12px;color:var(--text-bright);margin-top:12px;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid var(--border)">Achievements (' + Object.keys(Game.achievements||{}).length + '/' + Object.keys(ACHIEVEMENTS).length + ')</div>';
+    var achKeys = Object.keys(ACHIEVEMENTS);
+    for (var achi = 0; achi < achKeys.length; achi++) {
+      var ach = ACHIEVEMENTS[achKeys[achi]];
+      var earned = Game.achievements && Game.achievements[achKeys[achi]];
+      ih += '<div style="font-size:11px;padding:2px 0;color:'+(earned?'var(--gold)':'var(--text-dim)')+';opacity:'+(earned?'1':'0.5')+'" title="'+ ach.desc +'">'+(earned?'★':'○')+' ' + ach.name + (earned?' — '+ach.desc:'') + '</div>';
+    }
 
     inv.innerHTML = ih;
   }
@@ -691,7 +790,7 @@ function renderShop() {
       if (!item) continue;
       var owned = w.inventory.indexOf(item.id) !== -1 || w.gear[item.slot] === item.id;
       var canBuy = Game.gold >= item.cost && !owned;
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:12px;'+(owned?'opacity:0.5':'')+'"><span><span style="color:var(--text-bright)">'+item.name+'</span> <span style="color:var(--text-dim)">('+item.slot+') — '+item.desc+'</span></span>';
+      h += '<div title="'+gearCompareTooltip(item)+'" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:12px;cursor:help;'+(owned?'opacity:0.5':'')+'"><span><span style="color:var(--text-bright)">'+item.name+'</span> <span style="color:var(--text-dim)">('+item.slot+') — '+item.desc+'</span></span>';
       if (owned) h += '<span style="color:var(--text-dim);font-size:10px">Owned</span>';
       else h += '<button class="btn" onclick="buyGear(\''+item.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+item.cost+' gold</button>';
       h += '</div>';
@@ -715,7 +814,7 @@ function renderShop() {
         if (shop && shop.items.indexOf(it.id) !== -1) continue;
         var ow = w.inventory.indexOf(it.id) !== -1 || w.gear[it.slot] === it.id;
         var cb = Game.gold >= it.cost && !ow;
-        h2 += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:12px;'+(ow?'opacity:0.5':'')+'"><span><span style="color:var(--text-bright)">'+it.name+'</span> <span style="color:var(--text-dim)">('+it.slot+') — '+it.desc+'</span></span>';
+        h2 += '<div title="'+gearCompareTooltip(it)+'" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:12px;cursor:help;'+(ow?'opacity:0.5':'')+'"><span><span style="color:var(--text-bright)">'+it.name+'</span> <span style="color:var(--text-dim)">('+it.slot+') — '+it.desc+'</span></span>';
         if (ow) h2 += '<span style="color:var(--text-dim);font-size:10px">Owned</span>';
         else h2 += '<button class="btn" onclick="buyGear(\''+it.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(cb?'':'disabled')+'>'+it.cost+' gold</button>';
         h2 += '</div>';
@@ -943,6 +1042,26 @@ function renderPet() {
 function renderMap() {
   var mapEl = document.getElementById('world-map');
   var h = '';
+
+  // Spiral mode (Balance endgame)
+  if (Game._spiralWorld) {
+    var sw = Game._spiralWorld;
+    h += '<div class="section-head" style="color:var(--balance)">The Spiral — Cycle ' + (Game.spiralCycle||1) + '</div>';
+    // Shard count
+    var shardTotal = 0;
+    if (Game.wizard.spiralShards) { for (var sk in Game.wizard.spiralShards) shardTotal += Game.wizard.spiralShards[sk]; }
+    h += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Spiral Shards: ' + shardTotal + ' | Next shard at Cycle ' + (Math.ceil((Game.spiralCycle||1)/10)*10) + '</div>';
+    for (var sz = 0; sz < sw.zones.length; sz++) {
+      var szone = sw.zones[sz];
+      var sstatus = sz < Game.currentZone ? 'completed' : sz === Game.currentZone ? 'current' : 'locked';
+      var sicon = sz < Game.currentZone ? '●' : sz === Game.currentZone ? '◉' : '○';
+      var sprogress = sz < Game.currentZone ? szone.encounters.length + '/' + szone.encounters.length : sz === Game.currentZone ? Game.currentEncounter + '/' + szone.encounters.length : '0/' + szone.encounters.length;
+      h += '<div class="zone-row '+sstatus+'"><span class="zone-icon">'+sicon+'</span><span class="zone-name">'+szone.name+'</span><span class="zone-progress">'+sprogress+'</span></div>';
+    }
+    mapEl.innerHTML = h;
+    return;
+  }
+
   var fw = Game.furthestWorld || 0;
   var fz = Game.furthestZone || 0;
   // If not farming, sync furthest with current
@@ -1006,7 +1125,7 @@ function addToDeck(id) { if (Game.deck.indexOf(id)===-1) { Game.deck.push(id); _
 function removeFromDeck(id) { Game.deck=Game.deck.filter(function(x){return x!==id;}); for(var i=0;i<Game.rules.length;i++){if(Game.rules[i].spellId===id)Game.rules[i].spellId='';} _deckDirty=true; updateUI(); saveGame(); }
 function updateRule(i,f,v) { if(f==='condition')Game.rules[i].conditionId=v; if(f==='spell')Game.rules[i].spellId=v; saveGame(); }
 function addRule() {
-  var maxRules = Game.currentWorld <= 1 ? 6 : Game.currentWorld <= 3 ? 8 : Game.currentWorld <= 5 ? 10 : 12;
+  var maxRules = Game.wizard.school === 'balance' ? 99 : Game.currentWorld <= 1 ? 6 : Game.currentWorld <= 3 ? 8 : Game.currentWorld <= 5 ? 10 : 12;
   if(Game.rules.length>=maxRules){alert('Max '+maxRules+' rules at this world.');return;}
   Game.rules.push({conditionId:'',spellId:''}); _deckDirty=true; updateUI();
 }

@@ -479,6 +479,70 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 
+/* ---- SPIRAL THEME (Balance endgame) ---- */
+body.spiral-theme {
+  --bg: #1a1510; --bg-surface: #2a1f15; --bg-card: #3a2a1a;
+  --bg-input: #2a1f15; --border: #4a3a2a; --border-light: #5a4a3a;
+  --text: #e0d0c0; --text-dim: #a08060; --text-bright: #ffe8d0;
+  --cast: var(--balance);
+}
+body.spiral-theme .game-title span { color: var(--balance); }
+body.spiral-theme .tab-btn.active { color: var(--balance); border-bottom-color: var(--balance); }
+
+/* ---- SCHOOL THEMES ---- */
+body.school-storm {
+  --bg: #171728; --bg-surface: #1a1e38; --bg-card: #1e2550;
+  --bg-input: #1a1e3a; --border: #2a2e55; --border-light: #3a3e65;
+  --cast: var(--storm);
+}
+body.school-storm .game-title span { color: var(--storm); }
+body.school-storm .tab-btn.active { color: var(--storm); border-bottom-color: var(--storm); }
+
+body.school-fire {
+  --bg: #1f1410; --bg-surface: #2a1a14; --bg-card: #3a2218;
+  --bg-input: #2a1a14; --border: #4a3020; --border-light: #5a4030;
+  --text: #f0ddd0; --text-dim: #a07860; --text-bright: #fff0e0;
+  --cast: var(--fire);
+}
+body.school-fire .game-title span { color: var(--fire); }
+body.school-fire .tab-btn.active { color: var(--fire); border-bottom-color: var(--fire); }
+
+body.school-ice {
+  --bg: #101820; --bg-surface: #142230; --bg-card: #1a2e42;
+  --bg-input: #142235; --border: #253a50; --border-light: #354a60;
+  --text: #d0e4f0; --text-dim: #6090b0; --text-bright: #e8f4ff;
+  --cast: var(--ice);
+}
+body.school-ice .game-title span { color: var(--ice); }
+body.school-ice .tab-btn.active { color: var(--ice); border-bottom-color: var(--ice); }
+
+body.school-life {
+  --bg: #121a14; --bg-surface: #182418; --bg-card: #1e3020;
+  --bg-input: #182418; --border: #2a4028; --border-light: #3a5038;
+  --text: #d4e8d0; --text-dim: #608858; --text-bright: #e8ffe4;
+  --cast: var(--life);
+}
+body.school-life .game-title span { color: var(--life); }
+body.school-life .tab-btn.active { color: var(--life); border-bottom-color: var(--life); }
+
+body.school-death {
+  --bg: #141416; --bg-surface: #1a1a1e; --bg-card: #222228;
+  --bg-input: #1a1a20; --border: #303038; --border-light: #404048;
+  --text: #c8c8d0; --text-dim: #707080; --text-bright: #e0e0f0;
+  --cast: var(--death);
+}
+body.school-death .game-title span { color: var(--death); }
+body.school-death .tab-btn.active { color: var(--death); border-bottom-color: var(--death); }
+
+body.school-myth {
+  --bg: #1a1810; --bg-surface: #242018; --bg-card: #302a1a;
+  --bg-input: #242018; --border: #403820; --border-light: #504830;
+  --text: #e8e0c8; --text-dim: #a09060; --text-bright: #fff8e0;
+  --cast: var(--myth);
+}
+body.school-myth .game-title span { color: var(--myth); }
+body.school-myth .tab-btn.active { color: var(--myth); border-bottom-color: var(--myth); }
+
 /* ---- RESPONSIVE ---- */
 @media (max-width: 600px) {
   .resource-panel { gap: 6px; }
