@@ -12,9 +12,6 @@
   <div class="game-header">
     <div class="game-title">SPIRAL<span>BOUND</span></div>
     <div class="header-stats">
-      <span>Gold: <span class="stat-val" id="gold-display">0</span></span>
-      <span>Snacks: <span class="stat-val" id="snacks-display">0</span></span>
-      <span>Rank: <span class="stat-val" id="rank-display">Novice</span></span>
     </div>
   </div>
 
@@ -36,11 +33,13 @@
   <!-- TAB BAR -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="hub" onclick="switchTab('hub')">Hub</button>
+    <button class="tab-btn" data-tab="gear" onclick="switchTab('gear')">Wizard</button>
     <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')">Combat</button>
-    <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Deck</button>
-    <button class="tab-btn" data-tab="gear" onclick="switchTab('gear')">Gear</button>
+    <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Spellbook</button>
     <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">Shop</button>
+    <button class="tab-btn" data-tab="craft" onclick="switchTab('craft')">Craft</button>
     <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')">Garden</button>
+    <button class="tab-btn" data-tab="pet" onclick="switchTab('pet')">Pet</button>
     <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Map</button>
   </div>
 
@@ -58,16 +57,50 @@
     </div>
 
     <div class="status-box">
+      <h3>Activity Log</h3>
+      <div class="combat-log" id="hub-log" style="height:180px"></div>
+    </div>
+
+    <div class="status-box">
       <h3>Quick Actions</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="saveGame(); addLog('Game saved.', 'system'); updateUI();">Save</button>
         <button class="btn" onclick="if(confirm('Reset all progress?')) resetGame();">Reset</button>
+        <button class="btn" onclick="document.getElementById('dev-menu').style.display=document.getElementById('dev-menu').style.display==='none'?'block':'none'">Dev Menu</button>
+      </div>
+    </div>
+
+    <div class="status-box" id="dev-menu" style="display:none">
+      <h3>Dev / Testing</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" onclick="Game.gold+=500;updateUI();">+500 Gold</button>
+        <button class="btn" onclick="Game.gold+=5000;updateUI();">+5000 Gold</button>
+        <button class="btn" onclick="Game.snacks+=50;updateUI();">+50 Snacks</button>
+        <button class="btn" onclick="for(var t of REAGENT_IDS)Game.reagents[t]=(Game.reagents[t]||0)+20;updateUI();">+20 Each Reagent</button>
+        <button class="btn" onclick="Game.wizard.trainingPoints=(Game.wizard.trainingPoints||0)+5;updateUI();">+5 TP</button>
+        <button class="btn" onclick="Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;updateUI();">Full Heal</button>
+        <button class="btn" onclick="devSkipZone()">Skip Zone</button>
+        <button class="btn" onclick="devSkipWorld()">Skip World</button>
+        <button class="btn" onclick="devUnlockAll()">Unlock All</button>
+        <button class="btn" onclick="devAddSeeds()">+5 Each Seed</button>
+        <button class="btn" onclick="devKillEnemies()">Kill Enemies</button>
+        <button class="btn" onclick="Game.crafting.rank=Math.min(Game.crafting.rank+1,CRAFTING_RANKS.length-1);addLog('DEV: Crafting rank → '+CRAFTING_RANKS[Game.crafting.rank],'system');updateUI();">Crafting Rank Up</button>
+        <button class="btn" onclick="Game.crafting.inventory.enchantments.push('keen_edge','sharp_edge','brilliant_edge','precision','greater_precision','efficiency');addLog('DEV: +1 of each enchantment','system');updateUI();">+All Enchantments</button>
+        <button class="btn" onclick="Game.crafting.inventory.jewels.push('ruby','sapphire','emerald','citrine','opal');addLog('DEV: +1 of each jewel','system');updateUI();">+All Jewels</button>
+        <button class="btn" onclick="if(Game.pet){Game.pet.stageIndex=6;Game.pet.xp=6000;for(var mi=0;mi<Game.pet.talentPool.length&&Game.pet.manifested.length<5;mi++){if(Game.pet.manifested.indexOf(Game.pet.talentPool[mi])===-1)Game.pet.manifested.push(Game.pet.talentPool[mi]);}addLog('DEV: '+Game.pet.name+' → Ultra (all talents)','system');recalcStats();updateUI();}else if(Game.petRoster.length>0){var p=Game.petRoster[0];p.stageIndex=6;p.xp=6000;Game.pet=p;recalcStats();updateUI();}">Max Pet Stage</button>
+        <button class="btn" onclick="generateEvent();updateUI();">Force Event</button>
+        <button class="btn" onclick="Game.wizard.rankIndex=RANKS.length-2;rankUp();Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;updateUI();">Max Rank</button>
       </div>
     </div>
   </div>
 
   <!-- ===== COMBAT TAB ===== -->
   <div class="tab-content" id="tab-combat">
+    <div id="boss-alert" style="display:none;background:var(--bg-card);border:2px solid var(--gold);border-radius:4px;padding:16px;margin-bottom:12px;text-align:center">
+      <div style="font-size:14px;color:var(--gold);margin-bottom:8px" id="boss-alert-text">Boss ahead!</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px" id="boss-alert-detail"></div>
+      <button class="btn primary" onclick="startBossFight()" style="font-size:13px;padding:6px 20px">Begin Fight</button>
+    </div>
     <div class="section-head">Enemies</div>
     <div class="enemy-panel" id="enemy-panel"></div>
 
@@ -82,36 +115,18 @@
     <div class="spell-hand" id="spell-hand" style="display:none"></div>
   </div>
 
-  <!-- ===== DECK TAB ===== -->
+  <!-- ===== SPELLBOOK TAB ===== -->
   <div class="tab-content" id="tab-deck">
-    <div class="section-head">Priority Rules</div>
-    <p style="font-size:11px;color:var(--text-dim);margin-bottom:10px">
-      Rules evaluate top-to-bottom each round. First matching rule fires. Last rule should always be "Always → cheap spell".
-    </p>
-    <div class="rule-list" id="rule-list"></div>
-    <button class="btn" style="margin-top:10px" onclick="addRule()">+ Add Rule</button>
-
-    <div class="section-head" style="margin-top:20px">Deck Configuration</div>
-    <p style="font-size:11px;color:var(--text-dim);margin-bottom:10px">
-      Add or remove spells from your deck. Only equipped spells can be used in combat and assigned to priority rules.
-    </p>
-    <div id="deck-config"></div>
-
-    <div class="section-head" style="margin-top:20px">Spell Reference</div>
-    <div id="deck-spells" style="font-size:12px;color:var(--text-dim)">
-    </div>
+    <div id="spellbook-content"></div>
   </div>
 
-  <!-- ===== GEAR TAB ===== -->
+  <!-- ===== WIZARD TAB ===== -->
   <div class="tab-content" id="tab-gear">
-    <div class="section-head">Equipped Gear</div>
+    <div id="wizard-profile"></div>
+    <div class="section-head" style="margin-top:16px">Equipped Gear</div>
     <div id="gear-equipped"></div>
-
     <div class="section-head" style="margin-top:16px">Inventory</div>
     <div id="gear-inventory"></div>
-
-    <div class="section-head" style="margin-top:16px">Stat Summary</div>
-    <div id="gear-stats"></div>
   </div>
 
   <!-- ===== SHOP TAB ===== -->
@@ -124,9 +139,19 @@
     <div id="shop-bazaar"></div>
   </div>
 
+  <!-- ===== CRAFT TAB ===== -->
+  <div class="tab-content" id="tab-craft">
+    <div id="craft-content"></div>
+  </div>
+
   <!-- ===== GARDEN TAB ===== -->
   <div class="tab-content" id="tab-garden">
     <div id="garden-content"></div>
+  </div>
+
+  <!-- ===== PET TAB ===== -->
+  <div class="tab-content" id="tab-pet">
+    <div id="pet-content"></div>
   </div>
 
   <!-- ===== MAP TAB ===== -->
@@ -153,19 +178,6 @@
         }
         updateUI();
       }
-
-      // Render deck spells list
-      const deckSpellsEl = document.getElementById('deck-spells');
-      let spellHtml = '';
-      for (const id of Game.deck) {
-        const s = SPELLS[id];
-        if (!s) continue;
-        spellHtml += `<div style="padding:3px 0;border-bottom:1px solid var(--border)">
-          <span style="color:var(--storm)">${s.name}</span>
-          <span style="color:var(--text-dim)"> — ${s.pips}p ${s.type} — ${s.desc}</span>
-        </div>`;
-      }
-      deckSpellsEl.innerHTML = spellHtml;
     });
   </script>
 
