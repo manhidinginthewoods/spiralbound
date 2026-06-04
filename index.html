@@ -30,6 +30,45 @@
     </div>
   </div>
 
+  <!-- SCHOOL SELECTION OVERLAY -->
+  <div id="school-select" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100;overflow-y:auto;padding:20px">
+    <div style="max-width:500px;margin:0 auto;text-align:center">
+      <div style="font-size:24px;color:var(--text-bright);letter-spacing:3px;margin-bottom:4px">SPIRAL<span style="color:var(--storm)">BOUND</span></div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:24px;font-style:italic">"Welcome to Spindlewood. You'll find it confusing at first. That's by design."<br>— Headmaster Silas Stillwater</div>
+
+      <div style="font-size:14px;color:var(--text-bright);margin-bottom:16px">Choose Your School</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div onclick="selectSchool('storm')" style="background:var(--bg-card);border:2px solid var(--storm);border-radius:6px;padding:16px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='var(--bg-surface)'" onmouseout="this.style.background='var(--bg-card)'">
+          <div style="font-size:16px;color:var(--storm);margin-bottom:4px">Storm</div>
+          <div style="font-size:11px;color:var(--text-dim)">AoE damage king. 70% accuracy. Lowest HP. Kills fast or dies trying.</div>
+        </div>
+        <div onclick="selectSchool('fire')" style="background:var(--bg-card);border:2px solid var(--fire);border-radius:6px;padding:16px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='var(--bg-surface)'" onmouseout="this.style.background='var(--bg-card)'">
+          <div style="font-size:16px;color:var(--fire);margin-bottom:4px">Fire</div>
+          <div style="font-size:11px;color:var(--text-dim)">Damage over time. 75% accuracy. Self-sustains via Singe.</div>
+        </div>
+        <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:6px;padding:16px;opacity:0.35;cursor:not-allowed">
+          <div style="font-size:16px;color:var(--ice);margin-bottom:4px">Ice</div>
+          <div style="font-size:11px;color:var(--text-dim)">Tank. 80% accuracy. Highest HP/resist. Glacial Momentum. Coming soon.</div>
+        </div>
+        <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:6px;padding:16px;opacity:0.35;cursor:not-allowed">
+          <div style="font-size:16px;color:var(--life);margin-bottom:4px">Life</div>
+          <div style="font-size:11px;color:var(--text-dim)">Healer. 90% accuracy. Overheal converts to damage. Coming soon.</div>
+        </div>
+        <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:6px;padding:16px;opacity:0.35;cursor:not-allowed">
+          <div style="font-size:16px;color:var(--death);margin-bottom:4px">Death</div>
+          <div style="font-size:11px;color:var(--text-dim)">Drain. 85% accuracy. Damage heals self. Coming soon.</div>
+        </div>
+        <div style="background:var(--bg-card);border:2px solid var(--border);border-radius:6px;padding:16px;opacity:0.35;cursor:not-allowed">
+          <div style="font-size:16px;color:var(--myth);margin-bottom:4px">Myth</div>
+          <div style="font-size:11px;color:var(--text-dim)">Summoner. 80% accuracy. Minions and multi-hit spells. Coming soon.</div>
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--text-dim);margin-top:12px">Balance unlocks after graduating all six schools.</div>
+    </div>
+  </div>
+
   <!-- TAB BAR -->
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="gear" onclick="switchTab('gear')">Wizard</button>
@@ -40,6 +79,7 @@
     <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')">Garden</button>
     <button class="tab-btn" data-tab="pet" onclick="switchTab('pet')">Pet</button>
     <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Map</button>
+    <button class="tab-btn" data-tab="options" onclick="switchTab('options')">Options</button>
   </div>
 
   <!-- ===== WIZARD TAB (was Hub + Gear) ===== -->
@@ -58,7 +98,7 @@
       <h3>Quick Actions</h3>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="saveGame(); addHubLog('Game saved.', 'system'); updateUI();">Save</button>
-        <button class="btn" onclick="if(confirm('Reset all progress?')) resetGame();">Reset</button>
+        <button class="btn" onclick="switchTab('options')">Options</button>
         <button class="btn" onclick="document.getElementById('dev-menu').style.display=document.getElementById('dev-menu').style.display==='none'?'block':'none'">Dev Menu</button>
       </div>
     </div>
@@ -101,6 +141,7 @@
 
     <div class="combat-controls">
       <button class="btn" id="mode-btn" onclick="toggleMode()">⚙ AUTO</button>
+      <button class="btn" id="log-mode-btn" onclick="Game.logMode=Game.logMode==='verbose'?'summary':'verbose';this.textContent=Game.logMode==='verbose'?'📜 Verbose':'📋 Summary'">📜 Verbose</button>
       <span id="phase-display" style="font-size:12px;padding:6px;color:var(--text-dim)"></span>
     </div>
 
@@ -142,16 +183,78 @@
     <div class="world-map" id="world-map"></div>
   </div>
 
+  <!-- ===== OPTIONS TAB ===== -->
+  <div class="tab-content" id="tab-options">
+    <div class="section-head">Options</div>
+
+    <div class="status-box">
+      <h3>Combat</h3>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
+          <span>Combat Log Mode</span>
+          <select onchange="Game.logMode=this.value;saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="verbose" selected>Verbose (all details)</option>
+            <option value="summary">Summary (results only)</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
+          <span title="Game speed. Normal = 1.2s per tick.">Tick Speed</span>
+          <select onchange="Game.TICK_MS=parseInt(this.value);if(Game.tickInterval){clearInterval(Game.tickInterval);Game.tickInterval=setInterval(gameTick,Game.TICK_MS);}saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="1600">Slow (1.6s)</option>
+            <option value="1200" selected>Normal (1.2s)</option>
+            <option value="800">Fast (0.8s)</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h3>Save Data</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn" onclick="saveGame();addHubLog('Game saved.','system');updateUI();alert('Game saved!');">Save Now</button>
+        <button class="btn" onclick="if(confirm('Reset ALL progress? This cannot be undone.')) { resetGame(); document.getElementById('school-select').style.display='block'; }" style="color:var(--fizzle)">Reset Game</button>
+      </div>
+      <div style="margin-top:8px">
+        <button class="btn" onclick="var s=localStorage.getItem('spiralbound_save');if(s){navigator.clipboard.writeText(s).then(function(){alert('Save copied to clipboard!');});}">Export Save</button>
+        <button class="btn" onclick="var s=prompt('Paste save string:');if(s){try{JSON.parse(s);localStorage.setItem('spiralbound_save',s);location.reload();}catch(e){alert('Invalid save data.');}}" style="margin-left:4px">Import Save</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:6px">Export your save to back it up or transfer between devices.</div>
+    </div>
+
+    <div class="status-box">
+      <h3>Dev Menu</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="document.getElementById('dev-menu').style.display=document.getElementById('dev-menu').style.display==='none'?'block':'none'">Toggle Dev Menu (Wizard tab)</button>
+      </div>
+    </div>
+
+    <div class="status-box">
+      <h3>About</h3>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
+        <strong style="color:var(--text-bright)">Spiralbound</strong> — A W101-inspired incremental game<br>
+        School: Storm | Version: 1.1<br>
+        Built with vanilla HTML/CSS/JS. No frameworks.<br>
+        Save data stored in localStorage.
+      </div>
+    </div>
+  </div>
+
   <script src="game.js"></script>
   <script src="ui.js"></script>
   <script>
+    function selectSchool(school) {
+      document.getElementById('school-select').style.display = 'none';
+      initGame(school);
+    }
+
     // Boot
     window.addEventListener('load', () => {
       try {
         if (!loadGame()) {
-          initGame();
+          // New game — show school selection
+          document.getElementById('school-select').style.display = 'block';
         } else {
-          // Resume
+          processOfflineProgress();
           addLog('Save loaded. Resuming...', 'system');
           if (Game.state === 'fighting' || Game.state === 'resting') {
             if (Game.tickInterval) clearInterval(Game.tickInterval);

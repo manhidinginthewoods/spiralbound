@@ -9,7 +9,7 @@ const Game = {
   currentWorld: 0, currentZone: 0, currentEncounter: 0,
   deck: [], rules: [], log: [], gold: 0, tick: 0,
   mode: 'manual', state: 'idle', phase: 'none', round: 0,
-  tickInterval: null, TICK_MS: 800, MAX_LOG: 200,
+  tickInterval: null, TICK_MS: 1200, MAX_LOG: 200,
   garden: null, snacks: 0,
   reagents: {},
   autoUnlocked: false, pet: null, petRoster: [],
@@ -19,19 +19,49 @@ const Game = {
   events: {active:[], lastEventTick:0},
   savedDecks: [],
   hubLog: [],
+  logMode: 'verbose', // 'verbose' or 'summary'
+};
+
+// ===== SCHOOL STATS =====
+const SCHOOL_STATS = {
+  storm: {baseAccuracy:70, hpScale:1.0, desc:'AoE damage king. 70% accuracy.'},
+  fire:  {baseAccuracy:75, hpScale:1.0375, desc:'DoT specialist. 75% accuracy.'},
 };
 
 // ===== RANKS =====
 const RANKS = [
-  { name:'Novice', baseHp:400, baseMana:15, powerPipBase:0, spells:['volt_asp','crackling_crows','thermal_ward'] },
-  { name:'Apprentice', baseHp:550, baseMana:25, powerPipBase:10, spells:['galefin','galeblade','gale_snare','spark_strike','gale_prism'] },
-  { name:'Initiate', baseHp:750, baseMana:40, powerPipBase:20, spells:['charybdis','galecrest','overcharge'] },
-  { name:'Journeyman', baseHp:1000, baseMana:60, powerPipBase:35, spells:['thundermaw','maelstrom','reckless_bolt'] },
-  { name:'Adept', baseHp:1300, baseMana:85, powerPipBase:50, spells:['nereid','tempest_king'] },
-  { name:'Master', baseHp:1650, baseMana:115, powerPipBase:65, spells:['scylla','harpies'] },
-  { name:'Grandmaster', baseHp:2050, baseMana:150, powerPipBase:80, spells:['thunderwing'] },
-  { name:'Archmage', baseHp:2500, baseMana:200, powerPipBase:95, spells:['glintswarm','zenith_of_gales'] },
+  { name:'Novice', baseHp:400, baseMana:15, powerPipBase:0 },
+  { name:'Apprentice', baseHp:550, baseMana:25, powerPipBase:10 },
+  { name:'Initiate', baseHp:750, baseMana:40, powerPipBase:20 },
+  { name:'Journeyman', baseHp:1000, baseMana:60, powerPipBase:35 },
+  { name:'Adept', baseHp:1300, baseMana:85, powerPipBase:50 },
+  { name:'Master', baseHp:1650, baseMana:115, powerPipBase:65 },
+  { name:'Grandmaster', baseHp:2050, baseMana:150, powerPipBase:80 },
+  { name:'Archmage', baseHp:2500, baseMana:200, powerPipBase:95 },
 ];
+
+const SCHOOL_SPELLS = {
+  storm: [
+    ['volt_asp','crackling_crows','thermal_ward'],
+    ['galefin','galeblade','gale_snare','spark_strike','gale_prism'],
+    ['charybdis','galecrest','overcharge'],
+    ['thundermaw','maelstrom','reckless_bolt'],
+    ['nereid','tempest_king'],
+    ['scylla','harpies'],
+    ['thunderwing'],
+    ['glintswarm','zenith_of_gales'],
+  ],
+  fire: [
+    ['ember_fox','flame_sprite','fire_ward'],
+    ['scorchbeak','singe','blazeblade','blaze_snare','blaze_prism'],
+    ['meteor_shower','self_ignite','hellhound'],
+    ['salamander','kindling'],
+    ['moloch','wyrm_pyre'],
+    ['ifrit','ember_rain','detonate'],
+    ['sun_viper'],
+    ['zenith_of_flame'],
+  ],
+};
 
 // ===== SPELLS =====
 const SPELLS = {
@@ -64,131 +94,160 @@ const SPELLS = {
   // Archmage
   glintswarm:{id:'glintswarm',name:'Glintswarm',school:'storm',pips:5,type:'damage',accuracy:70,mana:5,effect:{damage:[430,490],aoe:true},desc:'430-490 AoE Storm damage'},
   zenith_of_gales:{id:'zenith_of_gales',name:'Zenith of Gales',school:'storm',pips:11,type:'damage',accuracy:70,mana:11,effect:{damage:[1600,1800],conditional:'trap_bonus_50'},desc:'1600-1800 dmg (+50% if target has trap)'},
+  // ===== FIRE SPELLS =====
+  // Novice
+  ember_fox:{id:'ember_fox',name:'Ember Fox',school:'fire',pips:1,type:'damage',accuracy:75,mana:1,effect:{damage:[100,140]},desc:'100-140 Fire damage'},
+  flame_sprite:{id:'flame_sprite',name:'Flame Sprite',school:'fire',pips:2,type:'damage',accuracy:75,mana:2,effect:{damage:[55,75],dot:{dmg:40,rounds:3}},desc:'55-75 + 40/round for 3 rounds'},
+  fire_ward:{id:'fire_ward',name:'Fire Ward',school:'fire',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['ice','storm']},desc:'-70% Ice/Storm shield'},
+  // Apprentice
+  scorchbeak:{id:'scorchbeak',name:'Scorchbeak',school:'fire',pips:3,type:'damage',accuracy:75,mana:3,effect:{damage:[310,370]},desc:'310-370 Fire damage'},
+  singe:{id:'singe',name:'Singe',school:'fire',pips:2,type:'damage',accuracy:75,mana:2,effect:{damage:[30,50],dot:{dmg:35,rounds:3},hot:{heal:30,rounds:3}},desc:'30-50 dmg + 35 DoT/rd + heal 30/rd for 3 rounds'},
+  blazeblade:{id:'blazeblade',name:'Blazeblade',school:'fire',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Fire blade'},
+  blaze_snare:{id:'blaze_snare',name:'Blaze Snare',school:'fire',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Fire trap'},
+  blaze_prism:{id:'blaze_prism',name:'Blaze Prism',school:'fire',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'ice'},desc:'Converts Fire → Ice damage'},
+  // Initiate
+  meteor_shower:{id:'meteor_shower',name:'Meteor Shower',school:'fire',pips:4,type:'damage',accuracy:75,mana:4,effect:{damage:[305,365],aoe:true},desc:'305-365 AoE Fire damage'},
+  self_ignite:{id:'self_ignite',name:'Self-Ignite',school:'fire',pips:4,type:'damage',accuracy:100,mana:4,effect:{damage:[650,750],selfDamagePercent:20},desc:'650-750 dmg, costs 20% of your HP'},
+  hellhound:{id:'hellhound',name:'Hellhound',school:'fire',pips:'X',type:'damage',accuracy:75,mana:0,effect:{dot:{dmgPerPip:55,rounds:3},dynamicMana:true},desc:'55 DoT/pip/round for 3 rounds'},
+  // Journeyman
+  salamander:{id:'salamander',name:'Salamander',school:'fire',pips:5,type:'damage',accuracy:75,mana:5,effect:{damage:[550,620]},desc:'550-620 Fire damage'},
+  kindling:{id:'kindling',name:'Kindling',school:'fire',pips:2,type:'trap',accuracy:100,mana:2,effect:{trapPercent:25,tripleStack:true},desc:'+25% trap ×3 (stacks 3 traps)'},
+  // Adept
+  moloch:{id:'moloch',name:'Moloch',school:'fire',pips:6,type:'damage',accuracy:75,mana:6,effect:{damage:[680,760]},desc:'680-760 Fire damage'},
+  wyrm_pyre:{id:'wyrm_pyre',name:'Wyrm Pyre',school:'fire',pips:7,type:'damage',accuracy:75,mana:7,effect:{damage:[380,450],aoe:true,dot:{dmg:120,rounds:3}},desc:'380-450 AoE + 120 DoT/rd for 3 rounds'},
+  // Master
+  ifrit:{id:'ifrit',name:'Ifrit',school:'fire',pips:8,type:'damage',accuracy:75,mana:8,effect:{damage:[820,900],weakness:25},desc:'820-900 dmg + applies -25% weakness'},
+  ember_rain:{id:'ember_rain',name:'Ember Rain',school:'fire',pips:9,type:'damage',accuracy:75,mana:9,effect:{damage:[200,280],aoe:true,dot:{dmg:160,rounds:3}},desc:'200-280 AoE + 160 DoT/rd for 3 rounds'},
+  detonate:{id:'detonate',name:'Detonate',school:'fire',pips:0,type:'detonate',accuracy:100,mana:0,effect:{},desc:'Converts all DoT on target to instant damage'},
+  // Grandmaster
+  sun_viper:{id:'sun_viper',name:'Sun Viper',school:'fire',pips:10,type:'damage',accuracy:75,mana:10,effect:{damage:[700,800],aoe:true,aoeSplitSingle:[400,500]},desc:'700-800 AoE + 400-500 extra to target'},
+  // Archmage
+  zenith_of_flame:{id:'zenith_of_flame',name:'Zenith of Flame',school:'fire',pips:11,type:'damage',accuracy:75,mana:11,effect:{damage:[1400,1600],conditional:'dot_bonus_100'},desc:'1400-1600 dmg (x2 if target has DoT)'},
 };
 
 // ===== ENEMIES =====
 const ENEMIES = {
   // W1 Spindlewood
-  inkling_smear:{name:'Inkling Smear',school:'storm',hp:85,damage:[15,25],accuracy:75},
-  inkling_blot:{name:'Inkling Blot',school:'fire',hp:95,damage:[18,28],accuracy:75},
-  bindling_page:{name:'Loose Page',school:'myth',hp:110,damage:[20,30],accuracy:78},
-  bindling_tome:{name:'Rogue Tome',school:'ice',hp:140,damage:[22,35],accuracy:78},
-  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:130,damage:[18,30],accuracy:80},
-  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:160,damage:[25,38],accuracy:80},
-  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:120,damage:[15,25],accuracy:85},
-  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:170,damage:[28,42],accuracy:82},
-  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:200,damage:[30,50],accuracy:80},
-  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:70,damage:[20,35],accuracy:70},
-  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:100,damage:[25,40],accuracy:72},
-  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:650,damage:[35,55],accuracy:85,boss:true},
+  inkling_smear:{name:'Inkling Smear',school:'storm',hp:280,damage:[15,25],accuracy:75},
+  inkling_blot:{name:'Inkling Blot',school:'fire',hp:310,damage:[18,28],accuracy:75},
+  bindling_page:{name:'Loose Page',school:'myth',hp:360,damage:[20,30],accuracy:78},
+  bindling_tome:{name:'Rogue Tome',school:'ice',hp:460,damage:[22,35],accuracy:78},
+  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:420,damage:[18,30],accuracy:80},
+  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:520,damage:[25,38],accuracy:80},
+  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:380,damage:[15,25],accuracy:85},
+  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:550,damage:[28,42],accuracy:82},
+  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:650,damage:[30,50],accuracy:80},
+  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:240,damage:[20,35],accuracy:70},
+  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:330,damage:[25,40],accuracy:72},
+  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:2200,damage:[35,55],accuracy:85,boss:true},
   // W2 Solara
-  mander_digger:{name:'Mander Digger',school:'fire',hp:180,damage:[28,42],accuracy:78},
-  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:220,damage:[25,38],accuracy:80},
-  mander_keeper:{name:'Mander Keeper',school:'life',hp:200,damage:[22,35],accuracy:82},
-  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:190,damage:[30,45],accuracy:76},
-  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:250,damage:[32,50],accuracy:78},
-  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:160,damage:[35,48],accuracy:75},
-  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:210,damage:[30,45],accuracy:80},
-  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:170,damage:[38,55],accuracy:72},
-  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:230,damage:[35,52],accuracy:78},
-  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:150,damage:[40,58],accuracy:74},
-  jackal_raider:{name:'Jackal Raider',school:'fire',hp:200,damage:[38,55],accuracy:76},
-  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:1200,damage:[40,60],accuracy:85,boss:true,cheats:['self_heal_3']},
+  mander_digger:{name:'Mander Digger',school:'fire',hp:580,damage:[28,42],accuracy:78},
+  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:720,damage:[25,38],accuracy:80},
+  mander_keeper:{name:'Mander Keeper',school:'life',hp:650,damage:[22,35],accuracy:82},
+  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:620,damage:[30,45],accuracy:76},
+  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:820,damage:[32,50],accuracy:78},
+  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:520,damage:[35,48],accuracy:75},
+  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:680,damage:[30,45],accuracy:80},
+  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:560,damage:[38,55],accuracy:72},
+  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:750,damage:[35,52],accuracy:78},
+  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:490,damage:[40,58],accuracy:74},
+  jackal_raider:{name:'Jackal Raider',school:'fire',hp:650,damage:[38,55],accuracy:76},
+  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:4000,damage:[40,60],accuracy:85,boss:true,cheats:['self_heal_3']},
   // W3 Pendleton
-  cogs_worker:{name:'Cogsworth Worker',school:'myth',hp:280,damage:[32,48],accuracy:78},
-  cogs_foreman:{name:'Cogsworth Foreman',school:'ice',hp:350,damage:[38,55],accuracy:80},
-  brass_patrol:{name:'Brasshound Patrol',school:'fire',hp:300,damage:[35,52],accuracy:79},
-  brass_alpha:{name:'Brasshound Alpha',school:'storm',hp:380,damage:[42,62],accuracy:77},
-  piston_guard:{name:'Pistonier Guard',school:'ice',hp:400,damage:[36,54],accuracy:82},
-  piston_captain:{name:'Pistonier Captain',school:'myth',hp:450,damage:[44,65],accuracy:80},
-  steam_spinner:{name:'Steamweaver Spinner',school:'fire',hp:320,damage:[40,58],accuracy:78},
-  steam_queen:{name:'Steamweaver Queen',school:'death',hp:420,damage:[46,68],accuracy:80},
-  chimney_wisp:{name:'Chimney Wisp',school:'storm',hp:260,damage:[38,56],accuracy:75},
-  chimney_blaze:{name:'Chimney Blaze',school:'fire',hp:340,damage:[44,64],accuracy:76},
-  magnus_prime:{name:'Magnus Prime',school:'myth',hp:2200,damage:[50,75],accuracy:85,boss:true,cheats:['spawn_minion','shield_at_3']},
+  cogs_worker:{name:'Cogsworth Worker',school:'myth',hp:920,damage:[32,48],accuracy:78},
+  cogs_foreman:{name:'Cogsworth Foreman',school:'ice',hp:1150,damage:[38,55],accuracy:80},
+  brass_patrol:{name:'Brasshound Patrol',school:'fire',hp:980,damage:[35,52],accuracy:79},
+  brass_alpha:{name:'Brasshound Alpha',school:'storm',hp:1250,damage:[42,62],accuracy:77},
+  piston_guard:{name:'Pistonier Guard',school:'ice',hp:1300,damage:[36,54],accuracy:82},
+  piston_captain:{name:'Pistonier Captain',school:'myth',hp:1480,damage:[44,65],accuracy:80},
+  steam_spinner:{name:'Steamweaver Spinner',school:'fire',hp:1050,damage:[40,58],accuracy:78},
+  steam_queen:{name:'Steamweaver Queen',school:'death',hp:1380,damage:[46,68],accuracy:80},
+  chimney_wisp:{name:'Chimney Wisp',school:'storm',hp:850,damage:[38,56],accuracy:75},
+  chimney_blaze:{name:'Chimney Blaze',school:'fire',hp:1120,damage:[44,64],accuracy:76},
+  magnus_prime:{name:'Magnus Prime',school:'myth',hp:7200,damage:[50,75],accuracy:85,boss:true,cheats:['spawn_minion','shield_at_3']},
   // W4 Mistral
-  jade_monk:{name:'Jade Monk',school:'life',hp:450,damage:[48,70],accuracy:82},
-  jade_elder:{name:'Jade Elder',school:'myth',hp:550,damage:[55,80],accuracy:84},
-  paper_sentinel:{name:'Paper Sentinel',school:'storm',hp:420,damage:[52,75],accuracy:78},
-  paper_master:{name:'Paper Master',school:'ice',hp:520,damage:[50,72],accuracy:82},
-  cloud_serpent:{name:'Cloud Serpent',school:'storm',hp:500,damage:[58,85],accuracy:76},
-  cloud_wyrm:{name:'Cloud Wyrm',school:'ice',hp:620,damage:[55,82],accuracy:80},
-  stonewarden:{name:'Stonewarden',school:'life',hp:600,damage:[45,68],accuracy:85},
-  stonewarden_elder:{name:'Stonewarden Elder',school:'death',hp:700,damage:[58,85],accuracy:82},
-  bamboo_stalker:{name:'Bamboo Stalker',school:'myth',hp:480,damage:[55,80],accuracy:80},
-  bamboo_ronin:{name:'Bamboo Ronin',school:'fire',hp:580,damage:[60,88],accuracy:78},
-  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:3800,damage:[65,95],accuracy:88,boss:true,cheats:['stacking_dot']},
+  jade_monk:{name:'Jade Monk',school:'life',hp:1480,damage:[48,70],accuracy:82},
+  jade_elder:{name:'Jade Elder',school:'myth',hp:1800,damage:[55,80],accuracy:84},
+  paper_sentinel:{name:'Paper Sentinel',school:'storm',hp:1380,damage:[52,75],accuracy:78},
+  paper_master:{name:'Paper Master',school:'ice',hp:1700,damage:[50,72],accuracy:82},
+  cloud_serpent:{name:'Cloud Serpent',school:'storm',hp:1650,damage:[58,85],accuracy:76},
+  cloud_wyrm:{name:'Cloud Wyrm',school:'ice',hp:2040,damage:[55,82],accuracy:80},
+  stonewarden:{name:'Stonewarden',school:'life',hp:1950,damage:[45,68],accuracy:85},
+  stonewarden_elder:{name:'Stonewarden Elder',school:'death',hp:2300,damage:[58,85],accuracy:82},
+  bamboo_stalker:{name:'Bamboo Stalker',school:'myth',hp:1580,damage:[55,80],accuracy:80},
+  bamboo_ronin:{name:'Bamboo Ronin',school:'fire',hp:1900,damage:[60,88],accuracy:78},
+  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:12500,damage:[65,95],accuracy:88,boss:true,cheats:['stacking_dot']},
   // W5 Pyralis
-  ash_knight:{name:'Ash Knight',school:'fire',hp:650,damage:[65,92],accuracy:80},
-  ash_champion:{name:'Ash Champion',school:'death',hp:800,damage:[72,105],accuracy:82},
-  glassborn:{name:'Glassborn',school:'fire',hp:700,damage:[68,98],accuracy:78},
-  glassborn_shaper:{name:'Glassborn Shaper',school:'storm',hp:750,damage:[75,108],accuracy:76},
-  cinder_wolf:{name:'Cinder Wolf',school:'fire',hp:620,damage:[70,100],accuracy:79},
-  cinder_alpha:{name:'Cinder Alpha',school:'death',hp:850,damage:[78,112],accuracy:80},
-  forge_wraith:{name:'Forge Wraith',school:'death',hp:780,damage:[72,105],accuracy:82},
-  forge_specter:{name:'Forge Specter',school:'ice',hp:900,damage:[65,95],accuracy:84},
-  obsidian_golem:{name:'Obsidian Golem',school:'ice',hp:1000,damage:[60,90],accuracy:85},
-  obsidian_titan:{name:'Obsidian Titan',school:'myth',hp:1150,damage:[80,115],accuracy:82},
-  slag_crawler:{name:'Slag Crawler',school:'fire',hp:680,damage:[75,108],accuracy:75},
-  slag_horror:{name:'Slag Horror',school:'storm',hp:850,damage:[82,118],accuracy:74},
-  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:6000,damage:[85,120],accuracy:88,boss:true,cheats:['blade_shatter']},
+  ash_knight:{name:'Ash Knight',school:'fire',hp:2100,damage:[65,92],accuracy:80},
+  ash_champion:{name:'Ash Champion',school:'death',hp:2600,damage:[72,105],accuracy:82},
+  glassborn:{name:'Glassborn',school:'fire',hp:2300,damage:[68,98],accuracy:78},
+  glassborn_shaper:{name:'Glassborn Shaper',school:'storm',hp:2450,damage:[75,108],accuracy:76},
+  cinder_wolf:{name:'Cinder Wolf',school:'fire',hp:2050,damage:[70,100],accuracy:79},
+  cinder_alpha:{name:'Cinder Alpha',school:'death',hp:2800,damage:[78,112],accuracy:80},
+  forge_wraith:{name:'Forge Wraith',school:'death',hp:2550,damage:[72,105],accuracy:82},
+  forge_specter:{name:'Forge Specter',school:'ice',hp:2950,damage:[65,95],accuracy:84},
+  obsidian_golem:{name:'Obsidian Golem',school:'ice',hp:3300,damage:[60,90],accuracy:85},
+  obsidian_titan:{name:'Obsidian Titan',school:'myth',hp:3800,damage:[80,115],accuracy:82},
+  slag_crawler:{name:'Slag Crawler',school:'fire',hp:2250,damage:[75,108],accuracy:75},
+  slag_horror:{name:'Slag Horror',school:'storm',hp:2800,damage:[82,118],accuracy:74},
+  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:20000,damage:[85,120],accuracy:88,boss:true,cheats:['blade_shatter']},
   // W6 Abyssia
-  coral_warden:{name:'Coral Warden',school:'ice',hp:900,damage:[82,118],accuracy:82},
-  coral_sentinel:{name:'Coral Sentinel',school:'life',hp:1050,damage:[78,112],accuracy:84},
-  tide_crawler:{name:'Tide Crawler',school:'storm',hp:880,damage:[88,125],accuracy:78},
-  tide_ravager:{name:'Tide Ravager',school:'fire',hp:1100,damage:[92,132],accuracy:80},
-  kelp_horror:{name:'Kelp Horror',school:'death',hp:1000,damage:[85,122],accuracy:80},
-  kelp_leviathan:{name:'Kelp Leviathan',school:'myth',hp:1250,damage:[90,130],accuracy:82},
-  pressure_drone:{name:'Pressure Drone',school:'storm',hp:950,damage:[90,128],accuracy:76},
-  pressure_engine:{name:'Pressure Engine',school:'ice',hp:1200,damage:[82,118],accuracy:84},
-  pearl_shaper:{name:'Pearl Shaper',school:'life',hp:1050,damage:[80,115],accuracy:85},
-  pearl_oracle:{name:'Pearl Oracle',school:'myth',hp:1150,damage:[88,126],accuracy:83},
-  lantern_angler:{name:'Lantern Angler',school:'death',hp:980,damage:[92,132],accuracy:79},
-  lantern_abyssal:{name:'Lantern Abyssal',school:'storm',hp:1100,damage:[95,138],accuracy:77},
-  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:9000,damage:[110,150],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
+  coral_warden:{name:'Coral Warden',school:'ice',hp:2950,damage:[82,118],accuracy:82},
+  coral_sentinel:{name:'Coral Sentinel',school:'life',hp:3450,damage:[78,112],accuracy:84},
+  tide_crawler:{name:'Tide Crawler',school:'storm',hp:2900,damage:[88,125],accuracy:78},
+  tide_ravager:{name:'Tide Ravager',school:'fire',hp:3600,damage:[92,132],accuracy:80},
+  kelp_horror:{name:'Kelp Horror',school:'death',hp:3300,damage:[85,122],accuracy:80},
+  kelp_leviathan:{name:'Kelp Leviathan',school:'myth',hp:4100,damage:[90,130],accuracy:82},
+  pressure_drone:{name:'Pressure Drone',school:'storm',hp:3100,damage:[90,128],accuracy:76},
+  pressure_engine:{name:'Pressure Engine',school:'ice',hp:3950,damage:[82,118],accuracy:84},
+  pearl_shaper:{name:'Pearl Shaper',school:'life',hp:3450,damage:[80,115],accuracy:85},
+  pearl_oracle:{name:'Pearl Oracle',school:'myth',hp:3800,damage:[88,126],accuracy:83},
+  lantern_angler:{name:'Lantern Angler',school:'death',hp:3200,damage:[92,132],accuracy:79},
+  lantern_abyssal:{name:'Lantern Abyssal',school:'storm',hp:3600,damage:[95,138],accuracy:77},
+  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:30000,damage:[110,150],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
   // W7 Penumbra
-  echo_shade:{name:'Echo Shade',school:'death',hp:1200,damage:[105,148],accuracy:82},
-  echo_wraith:{name:'Echo Wraith',school:'storm',hp:1350,damage:[112,158],accuracy:80},
-  rift_stalker:{name:'Rift Stalker',school:'fire',hp:1300,damage:[108,155],accuracy:81},
-  rift_predator:{name:'Rift Predator',school:'myth',hp:1500,damage:[115,165],accuracy:83},
-  void_mote:{name:'Void Mote',school:'death',hp:1150,damage:[100,145],accuracy:84},
-  void_devourer:{name:'Void Devourer',school:'ice',hp:1450,damage:[110,158],accuracy:82},
-  fractured_golem:{name:'Fractured Golem',school:'myth',hp:1600,damage:[118,168],accuracy:80},
-  fractured_titan:{name:'Fractured Titan',school:'fire',hp:1800,damage:[125,178],accuracy:81},
-  memory_wisp:{name:'Memory Wisp',school:'life',hp:1250,damage:[102,148],accuracy:85},
-  memory_torment:{name:'Memory Torment',school:'death',hp:1500,damage:[120,170],accuracy:83},
-  unraveler:{name:'Unraveler',school:'storm',hp:1400,damage:[115,165],accuracy:78},
-  unraveler_prime:{name:'Unraveler Prime',school:'ice',hp:1700,damage:[128,182],accuracy:82},
-  your_echo:{name:'Your Echo',school:'storm',hp:13000,damage:[140,190],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
+  echo_shade:{name:'Echo Shade',school:'death',hp:3950,damage:[105,148],accuracy:82},
+  echo_wraith:{name:'Echo Wraith',school:'storm',hp:4450,damage:[112,158],accuracy:80},
+  rift_stalker:{name:'Rift Stalker',school:'fire',hp:4300,damage:[108,155],accuracy:81},
+  rift_predator:{name:'Rift Predator',school:'myth',hp:4950,damage:[115,165],accuracy:83},
+  void_mote:{name:'Void Mote',school:'death',hp:3800,damage:[100,145],accuracy:84},
+  void_devourer:{name:'Void Devourer',school:'ice',hp:4780,damage:[110,158],accuracy:82},
+  fractured_golem:{name:'Fractured Golem',school:'myth',hp:5280,damage:[118,168],accuracy:80},
+  fractured_titan:{name:'Fractured Titan',school:'fire',hp:5950,damage:[125,178],accuracy:81},
+  memory_wisp:{name:'Memory Wisp',school:'life',hp:4100,damage:[102,148],accuracy:85},
+  memory_torment:{name:'Memory Torment',school:'death',hp:4950,damage:[120,170],accuracy:83},
+  unraveler:{name:'Unraveler',school:'storm',hp:4620,damage:[115,165],accuracy:78},
+  unraveler_prime:{name:'Unraveler Prime',school:'ice',hp:5600,damage:[128,182],accuracy:82},
+  your_echo:{name:'Your Echo',school:'storm',hp:42000,damage:[140,190],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
   // W8 Grand Practicum
-  prac_inkling:{name:'Practicum Inkling',school:'storm',hp:1800,damage:[130,185],accuracy:82},
-  prac_mander:{name:'Practicum Mander',school:'fire',hp:1900,damage:[135,192],accuracy:82},
-  prac_cogsworth:{name:'Practicum Cogsworth',school:'myth',hp:2000,damage:[140,198],accuracy:82},
-  prac_monk:{name:'Practicum Monk',school:'life',hp:2100,damage:[132,188],accuracy:84},
-  prac_knight:{name:'Practicum Knight',school:'death',hp:2200,damage:[145,205],accuracy:82},
-  prac_warden:{name:'Practicum Warden',school:'ice',hp:2400,damage:[138,195],accuracy:84},
-  prac_shade:{name:'Practicum Shade',school:'death',hp:2300,damage:[148,210],accuracy:83},
-  prac_elite:{name:'Practicum Elite',school:'balance',hp:2600,damage:[150,215],accuracy:85},
-  the_culmination:{name:'The Culmination',school:'balance',hp:20000,damage:[170,220],accuracy:90,boss:true,cheats:['phase_boss']},
+  prac_inkling:{name:'Practicum Inkling',school:'storm',hp:5950,damage:[130,185],accuracy:82},
+  prac_mander:{name:'Practicum Mander',school:'fire',hp:6250,damage:[135,192],accuracy:82},
+  prac_cogsworth:{name:'Practicum Cogsworth',school:'myth',hp:6600,damage:[140,198],accuracy:82},
+  prac_monk:{name:'Practicum Monk',school:'life',hp:6950,damage:[132,188],accuracy:84},
+  prac_knight:{name:'Practicum Knight',school:'death',hp:7250,damage:[145,205],accuracy:82},
+  prac_warden:{name:'Practicum Warden',school:'ice',hp:7900,damage:[138,195],accuracy:84},
+  prac_shade:{name:'Practicum Shade',school:'death',hp:7600,damage:[148,210],accuracy:83},
+  prac_elite:{name:'Practicum Elite',school:'balance',hp:8600,damage:[150,215],accuracy:85},
+  the_culmination:{name:'The Culmination',school:'balance',hp:65000,damage:[170,220],accuracy:90,boss:true,cheats:['phase_boss']},
 };
 
 // ===== WORLDS & ZONES =====
 const WORLDS = [
   // W1 Spindlewood
   { name:'Spindlewood', rank:'Novice', zones:[
-    {name:'The Enrollment Hall',encounters:[['inkling_smear'],['inkling_blot']]},
-    {name:'The Training Grounds',encounters:[['dummy_sparring'],['inkling_smear','inkling_blot'],['dummy_sparring','glow_sprite'],['dummy_dueling']]},
-    {name:'The Old Library',encounters:[['bindling_page','bindling_page'],['bindling_tome'],['bindling_page','inkling_blot'],['bindling_tome','glow_sprite'],['bindling_tome','bindling_page']]},
-    {name:'The Bell Tower',encounters:[['thornwick_shoot','glow_sprite'],['thornwick_creep'],['dummy_rogue','inkling_blot'],['thornwick_creep','thornwick_shoot'],['glow_sprite_wild','glow_sprite_wild'],['dummy_rogue','thornwick_shoot']]},
+    {name:'The Enrollment Hall',encounters:[['inkling_smear'],['inkling_smear'],['inkling_blot'],['inkling_smear','inkling_smear'],['inkling_blot'],['glow_sprite','glow_sprite']]},
+    {name:'The Training Grounds',encounters:[['dummy_sparring'],['inkling_smear','inkling_blot'],['dummy_sparring','glow_sprite'],['inkling_blot','inkling_blot'],['dummy_sparring','inkling_smear'],['glow_sprite','inkling_blot'],['dummy_dueling'],['dummy_sparring','dummy_sparring']]},
+    {name:'The Old Library',encounters:[['bindling_page'],['bindling_page','bindling_page'],['bindling_tome'],['bindling_page','inkling_blot'],['bindling_tome','glow_sprite'],['bindling_page','bindling_page','glow_sprite'],['bindling_tome','bindling_page'],['bindling_tome','inkling_blot'],['bindling_tome','bindling_tome']]},
+    {name:'The Bell Tower',encounters:[['thornwick_shoot'],['thornwick_shoot','glow_sprite'],['thornwick_creep'],['dummy_rogue','inkling_blot'],['thornwick_creep','thornwick_shoot'],['glow_sprite_wild','glow_sprite_wild'],['thornwick_creep','glow_sprite'],['dummy_rogue','thornwick_shoot'],['thornwick_creep','thornwick_creep'],['dummy_rogue','dummy_dueling']]},
     {name:"The Headmaster's Study",encounters:[['grimsworth']]},
   ]},
   // W2 Solara
   { name:'Solara', rank:'Apprentice', zones:[
-    {name:'The Sand Gate',encounters:[['mander_digger'],['scarab_tomb','scarab_tomb'],['mander_sentinel']]},
-    {name:'The Outer Tombs',encounters:[['dustwrap_shuffler','mander_digger'],['mander_keeper'],['scarab_tomb','mander_sentinel'],['dustwrap_guardian'],['jackal_prowler','jackal_prowler']]},
-    {name:'The Scarab Tunnels',encounters:[['scarab_gilded','scarab_tomb'],['sandcaster_acolyte'],['jackal_raider','scarab_tomb'],['dustwrap_shuffler','dustwrap_shuffler'],['sandcaster_shaper','mander_digger']]},
-    {name:'The Inner Sanctum',encounters:[['sandcaster_shaper','mander_keeper'],['dustwrap_guardian','scarab_gilded'],['jackal_raider','jackal_prowler'],['mander_sentinel','mander_sentinel'],['sandcaster_shaper','dustwrap_guardian'],['scarab_gilded','sandcaster_acolyte']]},
-    {name:'The Hall of Records',encounters:[['dustwrap_guardian','mander_keeper'],['jackal_raider','sandcaster_shaper'],['scarab_gilded','scarab_gilded'],['sandcaster_shaper','sandcaster_acolyte'],['dustwrap_guardian','dustwrap_guardian']]},
+    {name:'The Sand Gate',encounters:[['mander_digger'],['mander_digger','mander_digger'],['scarab_tomb','scarab_tomb'],['mander_sentinel'],['mander_digger','scarab_tomb'],['scarab_tomb','mander_sentinel']]},
+    {name:'The Outer Tombs',encounters:[['dustwrap_shuffler','mander_digger'],['mander_keeper'],['scarab_tomb','mander_sentinel'],['dustwrap_shuffler','scarab_tomb'],['dustwrap_guardian'],['jackal_prowler','jackal_prowler'],['mander_keeper','scarab_tomb'],['dustwrap_shuffler','dustwrap_shuffler']]},
+    {name:'The Scarab Tunnels',encounters:[['scarab_gilded','scarab_tomb'],['sandcaster_acolyte'],['jackal_raider','scarab_tomb'],['dustwrap_shuffler','dustwrap_shuffler'],['scarab_gilded','mander_digger'],['sandcaster_shaper','mander_digger'],['jackal_prowler','dustwrap_shuffler'],['sandcaster_acolyte','scarab_tomb']]},
+    {name:'The Inner Sanctum',encounters:[['sandcaster_shaper','mander_keeper'],['dustwrap_guardian','scarab_gilded'],['jackal_raider','jackal_prowler'],['mander_sentinel','mander_sentinel'],['sandcaster_shaper','dustwrap_guardian'],['scarab_gilded','sandcaster_acolyte'],['jackal_raider','dustwrap_guardian'],['sandcaster_shaper','mander_sentinel']]},
+    {name:'The Hall of Records',encounters:[['dustwrap_guardian','mander_keeper'],['jackal_raider','sandcaster_shaper'],['scarab_gilded','scarab_gilded'],['sandcaster_shaper','sandcaster_acolyte'],['dustwrap_guardian','dustwrap_guardian'],['jackal_raider','jackal_raider'],['sandcaster_shaper','dustwrap_guardian','scarab_tomb']]},
     {name:'The Sealed Chamber',encounters:[['khet_amun']]},
   ]},
   // W3 Pendleton
@@ -289,6 +348,8 @@ const CONDITIONS = {
   enemy_count_above_1:{label:'Enemies > 1',check:()=>getAliveEnemies().length>1},
   enemy_count_above_2:{label:'Enemies > 2',check:()=>getAliveEnemies().length>2},
   enemy_boss:{label:'Enemy is boss',check:()=>{const e=getAliveEnemies()[0];return e&&!!e.boss;}},
+  enemy_has_dot:{label:'Enemy has DoT',check:()=>{const e=getAliveEnemies()[0];return e&&e.dots&&e.dots.length>0;}},
+  enemy_no_dot:{label:'Enemy has no DoT',check:()=>{const e=getAliveEnemies()[0];return e&&(!e.dots||e.dots.length===0);}},
   blade_and_trap:{label:'Blade AND trap on enemy',check:()=>!!Game.wizard.blade&&getAliveEnemies()[0]?.trap},
 };
 
@@ -1157,18 +1218,23 @@ function expandGarden() {
 }
 
 // ===== WIZARD =====
-function createWizard() {
+function createWizard(school) {
+  school = school || 'storm';
   const rank = RANKS[0];
+  const ss = SCHOOL_STATS[school] || SCHOOL_STATS.storm;
+  const baseHp = Math.floor(rank.baseHp * ss.hpScale);
+  const startSpells = SCHOOL_SPELLS[school] ? SCHOOL_SPELLS[school][0] : SCHOOL_SPELLS.storm[0];
   return {
-    name:'Novice Wizard', school:'storm', rank:rank.name, rankIndex:0,
-    baseHp:rank.baseHp, baseMana:rank.baseMana,
-    hp:rank.baseHp, maxHp:rank.baseHp, mana:rank.baseMana, maxMana:rank.baseMana,
+    name:'Novice Wizard', school:school, rank:rank.name, rankIndex:0,
+    baseHp:baseHp, baseMana:rank.baseMana,
+    hp:baseHp, maxHp:baseHp, mana:rank.baseMana, maxMana:rank.baseMana,
     pips:[], maxPips:7, powerPipChance:rank.powerPipBase,
-    accuracy:70, damage:0, resist:0, crit:5, pierce:0, critBlock:0,
+    accuracy:ss.baseAccuracy, damage:0, resist:0, crit:5, pierce:0, critBlock:0,
     blade:null, shield:null, accuracyCharm:null, prism:null,
+    dots:[], hots:[],
     xp:0, level:1,
     gear:{hat:null,robe:null,boots:null,wand:null,amulet:null,ring:null},
-    inventory:[], learnedSpells:[...rank.spells],
+    inventory:[], learnedSpells:[...startSpells],
     trainingPoints:0, enchantments:{},
   };
 }
@@ -1178,9 +1244,13 @@ function rankUp() {
   const nextIdx = w.rankIndex + 1;
   if (nextIdx >= RANKS.length) return;
   const rank = RANKS[nextIdx];
+  const ss = SCHOOL_STATS[w.school] || SCHOOL_STATS.storm;
   w.rankIndex = nextIdx; w.rank = rank.name;
-  w.baseHp = rank.baseHp; w.baseMana = rank.baseMana;
-  for (const spellId of rank.spells) {
+  w.baseHp = Math.floor(rank.baseHp * ss.hpScale); w.baseMana = rank.baseMana;
+  var schoolSpells = SCHOOL_SPELLS[w.school] || SCHOOL_SPELLS.storm;
+  var spellsForRank = schoolSpells[nextIdx] || [];
+  for (var si = 0; si < spellsForRank.length; si++) {
+    var spellId = spellsForRank[si];
     if (!w.learnedSpells.includes(spellId)) {
       w.learnedSpells.push(spellId);
       if (!Game.deck.includes(spellId)) Game.deck.push(spellId);
@@ -1227,8 +1297,9 @@ function recalcStats() {
   const rank = RANKS[w.rankIndex] || RANKS[0];
   w.maxHp = w.baseHp + bonusHp;
   w.maxMana = w.baseMana + bonusMana;
+  var schoolAcc = (SCHOOL_STATS[w.school] || SCHOOL_STATS.storm).baseAccuracy;
   w.damage = bonusDmg + (w._eventDmgBuff||0);
-  w.accuracy = 70 + bonusAcc + (w._eventAccBuff||0);
+  w.accuracy = schoolAcc + bonusAcc + (w._eventAccBuff||0);
   w.resist = bonusRes;
   w.crit = 5 + bonusCrit;
   w.pierce = bonusPierce;
@@ -1294,7 +1365,13 @@ function getAliveEnemies() {
 }
 function rollDamage(range) { return Math.floor(Math.random()*(range[1]-range[0]+1))+range[0]; }
 function rollAccuracy(base, charm) { let acc=base; if(charm) acc+=charm.percent; return Math.random()*100 < Math.min(acc,100); }
-function addLog(text, type='info') { Game.log.push({text,type,round:Game.round,ts:Date.now()}); if(Game.log.length>Game.MAX_LOG) Game.log.shift(); }
+function addLog(text, type='info') {
+  if (Game.logMode === 'summary' && Game.mode === 'auto' && Game.state === 'fighting') {
+    if (type === 'info' || type === 'cast' || type === 'fizzle') return;
+  }
+  Game.log.push({text,type,round:Game.round,ts:Date.now()});
+  if(Game.log.length>Game.MAX_LOG) Game.log.shift();
+}
 function addHubLog(text, type='info') { Game.hubLog.push({text,type,ts:Date.now()}); if(Game.hubLog.length>100) Game.hubLog.shift(); }
 
 // ===== CAST SPELL =====
@@ -1365,9 +1442,17 @@ function castSpell(spell, targetIndex) {
         // Conditional (check BEFORE trap consumption)
         var condMet = false;
         if (spell.effect.conditional === 'trap_bonus_50' && tgt.trap) condMet = true;
+        if (spell.effect.conditional === 'dot_bonus_100' && tgt.dots && tgt.dots.length > 0) condMet = true;
         // Trap
-        if (tgt.trap) { tMult *= (1+tgt.trap.percent/100); tgt.trap=null; }
-        if (condMet) { tMult *= 1.5; addLog('  Zenith: conditional bonus!', 'crit'); }
+        if (tgt.trap) {
+          tMult *= (1+tgt.trap.percent/100);
+          tgt.trap = (tgt.trapStack && tgt.trapStack.length > 0) ? tgt.trapStack.shift() : null;
+        }
+        if (condMet) {
+          var condMult = spell.effect.conditional === 'dot_bonus_100' ? 2.0 : 1.5;
+          tMult *= condMult;
+          addLog('  Zenith: conditional bonus!', 'crit');
+        }
 
         dmg = Math.floor(dmg * tMult);
         var critChance = (Game.wizard.crit || 5) / 100;
@@ -1397,6 +1482,22 @@ function castSpell(spell, targetIndex) {
         if (spell.effect.stun && tgt.hp > 0) {
           tgt.stunRounds = (tgt.stunRounds||0) + spell.effect.stun;
           addLog('  ' + tgt.name + ' is stunned for ' + spell.effect.stun + ' round(s)!', 'cast');
+        }
+
+        // DoT application
+        if (spell.effect.dot && tgt.hp > 0) {
+          if (!tgt.dots) tgt.dots = [];
+          var dotDmg = spell.effect.dot.dmg || 0;
+          if (spell.effect.dot.dmgPerPip) dotDmg = spell.effect.dot.dmgPerPip * xPipVal;
+          dotDmg = Math.floor(dotDmg * (1 + Game.wizard.damage/100));
+          tgt.dots.push({dmg:dotDmg, rounds:spell.effect.dot.rounds||3, school:spell.school});
+          addLog('  🔥 DoT applied: ' + dotDmg + '/rd for ' + (spell.effect.dot.rounds||3) + ' rounds [' + tgt.name + ']', 'cast');
+        }
+
+        // Weakness application
+        if (spell.effect.weakness && tgt.hp > 0) {
+          tgt.weakness = (tgt.weakness||0) + spell.effect.weakness;
+          addLog('  ' + tgt.name + ' weakened: -' + spell.effect.weakness + '% damage', 'cast');
         }
 
         if (tgt.hp <= 0) {
@@ -1437,6 +1538,18 @@ function castSpell(spell, targetIndex) {
         Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + drainHeal);
         addLog('  Drain: +' + drainHeal + ' HP', 'heal');
       }
+      // HoT application (from Singe etc.)
+      if (spell.effect.hot) {
+        if (!Game.wizard.hots) Game.wizard.hots = [];
+        Game.wizard.hots.push({heal:spell.effect.hot.heal, rounds:spell.effect.hot.rounds||3});
+        addLog('  💚 HoT applied: +' + spell.effect.hot.heal + '/rd for ' + (spell.effect.hot.rounds||3) + ' rounds', 'heal');
+      }
+      // Self-Ignite: damage yourself
+      if (spell.effect.selfDamagePercent) {
+        var selfDmg = Math.floor(Game.wizard.maxHp * spell.effect.selfDamagePercent / 100);
+        Game.wizard.hp = Math.max(1, Game.wizard.hp - selfDmg);
+        addLog('  Self-Ignite: -' + selfDmg + ' HP', 'fizzle');
+      }
       // Track last damage for mirror cheat
       if (Game.combat) Game.combat.lastPlayerDamage = totalDmgDealt;
       // Tidebound single-target shield response
@@ -1457,7 +1570,30 @@ function castSpell(spell, targetIndex) {
       }
       break;
     case 'trap':
-      if (target) { target.trap={percent:spell.effect.trapPercent}; addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.trapPercent + '% trap [' + target.name + ']', 'cast'); }
+      if (target) {
+        if (spell.effect.tripleStack) {
+          for (var ts = 0; ts < 3; ts++) {
+            if (!target.trapStack) target.trapStack = [];
+            target.trapStack.push({percent:spell.effect.trapPercent});
+          }
+          if (!target.trap) target.trap = target.trapStack.shift();
+          addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.trapPercent + '% trap \xd73 [' + target.name + ']', 'cast');
+        } else {
+          target.trap={percent:spell.effect.trapPercent};
+          addLog('R' + Game.round + ': ' + spell.name + ' → +' + spell.effect.trapPercent + '% trap [' + target.name + ']', 'cast');
+        }
+      }
+      break;
+    case 'detonate':
+      if (target && target.dots && target.dots.length > 0) {
+        var detDmg = getTotalDoTDamage(target);
+        target.dots = [];
+        target.hp = Math.max(0, target.hp - detDmg);
+        addLog('R' + Game.round + ': Detonate! ' + detDmg + ' instant damage [' + target.name + ']', 'crit');
+        if (target.hp <= 0) { addLog('  ↳ ' + target.name + ' defeated!', 'kill'); var wm=Game.currentWorld+1; Game.gold+=Math.floor(Math.random()*8*wm)+5*wm; if(target.boss) handleBossDrop(target); }
+      } else {
+        addLog('R' + Game.round + ': Detonate — no DoT to detonate', 'info');
+      }
       break;
     case 'shield':
       Game.wizard.shield = {percent:spell.effect.shieldPercent, schools:spell.effect.blocksSchools||null};
@@ -1640,6 +1776,46 @@ function processBossCheats() {
   }
 }
 
+// ===== DoT / HoT PROCESSING =====
+function processDoTs() {
+  var enemies = getAliveEnemies();
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (!e.dots || e.dots.length === 0) continue;
+    for (var d = e.dots.length - 1; d >= 0; d--) {
+      var dot = e.dots[d];
+      e.hp = Math.max(0, e.hp - dot.dmg);
+      addLog('  🔥 DoT: ' + dot.dmg + ' to ' + e.name + ' (' + dot.rounds + ' left)', 'cast');
+      dot.rounds--;
+      if (dot.rounds <= 0) e.dots.splice(d, 1);
+      if (e.hp <= 0) {
+        addLog('  ↳ ' + e.name + ' defeated by DoT!', 'kill');
+        var worldMult = Game.currentWorld + 1;
+        Game.gold += Math.floor(Math.random() * 8 * worldMult) + 5 * worldMult;
+      }
+    }
+  }
+}
+
+function processHoTs() {
+  if (!Game.wizard.hots || Game.wizard.hots.length === 0) return;
+  for (var h = Game.wizard.hots.length - 1; h >= 0; h--) {
+    var hot = Game.wizard.hots[h];
+    var healed = Math.min(hot.heal, Game.wizard.maxHp - Game.wizard.hp);
+    Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + hot.heal);
+    if (healed > 0) addLog('  💚 HoT: +' + healed + ' HP (' + hot.rounds + ' left)', 'heal');
+    hot.rounds--;
+    if (hot.rounds <= 0) Game.wizard.hots.splice(h, 1);
+  }
+}
+
+function getTotalDoTDamage(enemy) {
+  if (!enemy.dots) return 0;
+  var total = 0;
+  for (var i = 0; i < enemy.dots.length; i++) total += enemy.dots[i].dmg * enemy.dots[i].rounds;
+  return total;
+}
+
 function passTurn() { addLog('R' + Game.round + ': Pass (saving pips)', 'info'); }
 
 // ===== ENEMY TURN =====
@@ -1655,6 +1831,7 @@ function enemyTurn() {
     }
     if (!rollAccuracy(enemy.accuracy, null)) { addLog('  ' + enemy.name + ' → fizzle', 'info'); continue; }
     let dmg = rollDamage(enemy.damage);
+    if (enemy.weakness) { dmg = Math.floor(dmg * (1 - enemy.weakness/100)); enemy.weakness = 0; }
     if (Game.wizard.shield) {
       const shieldBlocks = !Game.wizard.shield.schools || Game.wizard.shield.schools.includes(enemy.school);
       if (shieldBlocks) {
@@ -1762,7 +1939,7 @@ function startEncounter() {
   const enemies = enemyIds.map(id => {
     const t = ENEMIES[id];
     if (!t) return {name:'Unknown',school:'balance',hp:100,maxHp:100,damage:[10,20],accuracy:70,trap:null,prism:null,stunRounds:0};
-    return {...t, hp:t.hp, maxHp:t.hp, trap:null, prism:null, stunRounds:0};
+    return {...t, hp:t.hp, maxHp:t.hp, trap:null, trapStack:[], prism:null, stunRounds:0, dots:[], weakness:0};
   });
 
   const hasBoss = enemies.some(e => e.boss);
@@ -1804,6 +1981,8 @@ function combatTick() {
       Game.round++;
       addLog('── Round ' + Game.round + ' ──', 'system');
       generatePip();
+      processDoTs();
+      processHoTs();
       processBossCheats();
       if (Game.wizard.hp <= 0) { handleDeath(); return; }
       Game.phase = Game.mode==='auto' ? 'player_turn' : 'waiting_input';
@@ -1848,7 +2027,8 @@ function manualPass() {
 }
 
 function advanceEncounter() {
-  addLog('✓ Encounter cleared!', 'kill');
+  var encInfo = Game.round + ' rounds | HP: ' + Game.wizard.hp + '/' + Game.wizard.maxHp + ' | Mana: ' + Game.wizard.mana + '/' + Game.wizard.maxMana;
+  addLog('✓ Encounter cleared! (' + encInfo + ')', 'kill');
   Game.currentEncounter++;
   const zone = getCurrentZone();
   const world = getCurrentWorld();
@@ -1947,8 +2127,8 @@ function gameTick() {
   Game.tick++;
   if (Game.state==='fighting') combatTick();
   if (Game.state==='resting') {
-    var manaRegen = Math.max(1, Math.floor(Game.wizard.maxMana * 0.05));
-    var hpRegen = Math.max(8, Math.floor(Game.wizard.maxHp * 0.04));
+    var manaRegen = Math.max(1, Math.floor(Game.wizard.maxMana * 0.03));
+    var hpRegen = Math.max(5, Math.floor(Game.wizard.maxHp * 0.02));
     if (Game.tick%3===0 && Game.wizard.mana<Game.wizard.maxMana) Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana+manaRegen);
     if (Game.tick%2===0 && Game.wizard.hp<Game.wizard.maxHp) Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp+hpRegen);
     if (Game.wizard.mana>=Game.wizard.maxMana && Game.wizard.hp>=Game.wizard.maxHp) {
@@ -1975,7 +2155,8 @@ function saveGame() {
     farming:Game.farming, homeWorld:Game.homeWorld, homeZone:Game.homeZone, homeEncounter:Game.homeEncounter,
     furthestWorld:Game.furthestWorld, furthestZone:Game.furthestZone,
     crafting:Game.crafting, events:Game.events, savedDecks:Game.savedDecks,
-    hubLog:Game.hubLog,
+    hubLog:Game.hubLog, logMode:Game.logMode,
+    lastSaveTime:Date.now(),
   }));
 }
 function loadGame() {
@@ -2029,20 +2210,182 @@ function loadGame() {
     Game.events = d.events||{active:[],lastEventTick:0};
     Game.savedDecks = d.savedDecks||[];
     Game.hubLog = d.hubLog||[];
+    Game.logMode = d.logMode||'verbose';
     if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
     if (!Game.wizard.enchantments) Game.wizard.enchantments = {};
+    if (!Game.wizard.hots) Game.wizard.hots = [];
+    if (!Game.wizard.dots) Game.wizard.dots = [];
+    if (!Game.wizard.school) Game.wizard.school = 'storm';
     recalcStats();
     return true;
   } catch(e) { console.error('Load error:', e); return false; }
 }
 function resetGame() {
   localStorage.removeItem('spiralbound_save');
-  if (Game.tickInterval) clearInterval(Game.tickInterval);
-  initGame();
+  if (Game.tickInterval) { clearInterval(Game.tickInterval); Game.tickInterval = null; }
+  Game.state = 'idle'; Game.combat = null;
 }
 
-function initGame() {
-  Game.wizard = createWizard();
+function processOfflineProgress() {
+  var raw = localStorage.getItem('spiralbound_save');
+  if (!raw) return;
+  try {
+    var d = JSON.parse(raw);
+    if (!d.lastSaveTime) return;
+    var elapsed = Date.now() - d.lastSaveTime;
+    var elapsedTicks = Math.floor(elapsed / Game.TICK_MS);
+    if (elapsedTicks < 10) return;
+    // Offline runs at 50% efficiency (simulate fewer ticks than actually passed)
+    elapsedTicks = Math.floor(elapsedTicks * 0.5);
+
+    var summary = {gold:0, encounters:0, motes:0, snacks:0, gardenHarvests:0, craftsCompleted:0};
+
+    // Simulate combat encounters (simplified — no spell-by-spell, just outcome per encounter)
+    if (Game.state === 'fighting' || Game.state === 'resting') {
+      var ticksUsed = 0;
+      while (ticksUsed < elapsedTicks) {
+        if (Game.state === 'resting') {
+          Game.wizard.hp = Game.wizard.maxHp;
+          Game.wizard.mana = Game.wizard.maxMana;
+          Game.state = 'fighting';
+          ticksUsed += 30; // ~rest cycle
+          continue;
+        }
+        // Simulate one encounter
+        var zone = getCurrentZone();
+        var world = getCurrentWorld();
+        if (!zone || !world) break;
+        var encDef = zone.encounters[Game.currentEncounter];
+        if (!encDef) break;
+        var enemyIds = Array.isArray(encDef[0]) ? encDef[0] : encDef;
+        var totalEnemyHp = 0;
+        for (var ei = 0; ei < enemyIds.length; ei++) {
+          var et = ENEMIES[enemyIds[ei]];
+          if (et) totalEnemyHp += et.hp;
+        }
+        // Estimate rounds to kill based on average spell damage + damage%
+        var avgDmg = 135 * (1 + Game.wizard.damage/100); // rough avg for storm
+        var roundsToKill = Math.max(1, Math.ceil(totalEnemyHp / avgDmg));
+        var manaUsed = Math.min(roundsToKill * 2, Game.wizard.mana);
+        Game.wizard.mana -= manaUsed;
+        // Take some damage
+        var avgEnemyDmg = 0;
+        for (var di = 0; di < enemyIds.length; di++) { var dt = ENEMIES[enemyIds[di]]; if (dt) avgEnemyDmg += (dt.damage[0]+dt.damage[1])/2; }
+        var dmgTaken = Math.floor(avgEnemyDmg * roundsToKill * 0.6 * (1 - Game.wizard.resist/100));
+        Game.wizard.hp -= dmgTaken;
+        // Gold + reagent drops
+        var worldMult = Game.currentWorld + 1;
+        var goldEarned = Math.floor((Math.random()*8*worldMult + 5*worldMult) * enemyIds.length);
+        Game.gold += goldEarned;
+        summary.gold += goldEarned;
+        summary.encounters++;
+        // Reagent drops
+        for (var ri = 0; ri < enemyIds.length; ri++) {
+          if (Math.random() < 0.12) {
+            var worldReagents = getReagentDropsForWorld(Game.currentWorld);
+            var rDrop = worldReagents[Math.floor(Math.random() * worldReagents.length)];
+            Game.reagents[rDrop] = (Game.reagents[rDrop]||0) + 1;
+            summary.motes++;
+          }
+        }
+        ticksUsed += roundsToKill * 6 + 3;
+        // Check death
+        if (Game.wizard.hp <= 0) {
+          Game.wizard.hp = Math.floor(Game.wizard.maxHp * 0.5);
+          Game.wizard.mana = Math.floor(Game.wizard.maxMana * 0.5);
+          Game.currentEncounter = 0;
+          Game.state = 'resting';
+          continue;
+        }
+        // Check mana
+        if (Game.wizard.mana <= 0) {
+          Game.state = 'resting';
+          // Advance encounter first
+        }
+        // Advance encounter
+        Game.currentEncounter++;
+        if (Game.currentEncounter >= zone.encounters.length) {
+          if (Game.farming) {
+            Game.currentEncounter = 0;
+          } else {
+            Game.currentZone++;
+            Game.currentEncounter = 0;
+            if (!Game.farming && Game.currentWorld === Game.furthestWorld && Game.currentZone > Game.furthestZone) {
+              Game.furthestZone = Game.currentZone;
+            }
+            if (Game.currentZone >= world.zones.length) {
+              // Don't auto-complete worlds offline — stop here
+              Game.currentZone = world.zones.length - 1;
+              Game.currentEncounter = zone.encounters.length - 1;
+              break;
+            }
+          }
+        }
+        if (Game.wizard.mana <= 0) Game.state = 'resting';
+      }
+    }
+
+    // Simulate garden growth
+    if (Game.garden && Game.garden.unlocked) {
+      var gardenTicks = Math.floor(elapsedTicks / 2);
+      for (var gi = 0; gi < Game.garden.plots.length; gi++) {
+        var plot = Game.garden.plots[gi];
+        if (!plot.seedId || !plot.stage || plot.wilting) continue;
+        var seed = SEEDS[plot.seedId];
+        if (!seed) continue;
+        plot.ticks += gardenTicks;
+        var g = seed.growth;
+        if (plot.stage === 'seedling' && plot.ticks >= g.seedling) { plot.stage = 'young'; plot.ticks -= g.seedling; }
+        if (plot.stage === 'young' && plot.ticks >= g.young) { plot.stage = 'mature'; plot.ticks -= g.young; }
+        if (plot.stage === 'mature' && plot.ticks >= g.mature) { plot.stage = 'elder'; plot.ticks = 0; }
+        summary.gardenHarvests++;
+      }
+    }
+
+    // Complete crafting
+    if (Game.crafting.queue) {
+      Game.crafting.queue.ticksLeft -= elapsedTicks;
+      if (Game.crafting.queue.ticksLeft <= 0) {
+        var r = RECIPES[Game.crafting.queue.recipeId];
+        if (r) {
+          if (r.result.snacks) { Game.snacks += r.result.snacks; summary.snacks += r.result.snacks; }
+          if (r.result.enchantment) Game.crafting.inventory.enchantments.push(r.result.enchantment);
+          if (r.result.jewel) Game.crafting.inventory.jewels.push(r.result.jewel);
+          if (r.result.gear) {
+            var gid = r.result.gear;
+            if (!Game.wizard.inventory.includes(gid) && Game.wizard.gear[GEAR[gid].slot] !== gid) Game.wizard.inventory.push(gid);
+          }
+          Game.crafting.xp += r.xp;
+          while (Game.crafting.rank < CRAFTING_RANKS.length-1 && Game.crafting.xp >= CRAFT_RANK_XP[Game.crafting.rank+1]) Game.crafting.rank++;
+          summary.craftsCompleted++;
+        }
+        Game.crafting.queue = null;
+      }
+    }
+
+    // Build summary message
+    var mins = Math.floor(elapsed / 60000);
+    var timeStr = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
+    var msg = 'Welcome back! (' + timeStr + ' away)';
+    var details = [];
+    if (summary.encounters > 0) details.push(summary.encounters + ' encounters cleared');
+    if (summary.gold > 0) details.push('+' + summary.gold + ' gold');
+    if (summary.motes > 0) details.push('+' + summary.motes + ' reagents');
+    if (summary.gardenHarvests > 0) details.push('Garden advanced');
+    if (summary.craftsCompleted > 0) details.push('Craft completed');
+    if (details.length > 0) msg += ' — ' + details.join(', ');
+
+    addLog('', 'info');
+    addLog(msg, 'system');
+    addHubLog(msg, 'crit');
+
+    Game.wizard.hp = Math.max(1, Game.wizard.hp);
+    saveGame();
+  } catch(e) { console.error('Offline progress error:', e); }
+}
+
+function initGame(school) {
+  Game.wizard = createWizard(school || 'storm');
   Game.currentWorld=0; Game.currentZone=0; Game.currentEncounter=0;
   Game.gold=0; Game.log=[]; Game.tick=0; Game.round=0;
   Game.mode='manual'; Game.combat=null; Game.phase='none';
@@ -2057,14 +2400,19 @@ function initGame() {
   Game.savedDecks = [];
   Game.hubLog = [];
   Game.deck = Game.wizard.learnedSpells.slice();
-  Game.rules = [
-    {conditionId:'pips_above_2',spellId:'crackling_crows'},
-    {conditionId:'always',spellId:'volt_asp'},
-  ];
+  var s = Game.wizard.school;
+  if (s === 'storm') {
+    Game.rules = [{conditionId:'pips_above_2',spellId:'crackling_crows'},{conditionId:'always',spellId:'volt_asp'}];
+  } else if (s === 'fire') {
+    Game.rules = [{conditionId:'pips_above_2',spellId:'flame_sprite'},{conditionId:'always',spellId:'ember_fox'}];
+  } else {
+    Game.rules = [{conditionId:'always',spellId:Game.deck[0]||''}];
+  }
+  var ss = SCHOOL_STATS[s] || SCHOOL_STATS.storm;
   addLog('Welcome to Spiralbound.','system');
   addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design."','system');
   addLog('  — Headmaster Silas Stillwater','info');
-  addLog('School: Storm | Rank: Novice | Accuracy: 70%','info');
+  addLog('School: ' + s.charAt(0).toUpperCase()+s.slice(1) + ' | Rank: Novice | Accuracy: ' + ss.baseAccuracy + '%','info');
   addLog('','info');
   Game.state='fighting';
   startEncounter();
@@ -2076,6 +2424,7 @@ function initGame() {
 // ===== EXPORTS =====
 window.Game=Game; window.SPELLS=SPELLS; window.WORLDS=WORLDS; window.CONDITIONS=CONDITIONS;
 window.GEAR=GEAR; window.GEAR_SLOTS=GEAR_SLOTS; window.SHOPS=SHOPS; window.RANKS=RANKS;
+window.SCHOOL_STATS=SCHOOL_STATS; window.SCHOOL_SPELLS=SCHOOL_SPELLS;
 window.ENEMIES=ENEMIES; window.getBazaarItems=getBazaarItems;
 window.initGame=initGame; window.loadGame=loadGame; window.saveGame=saveGame; window.resetGame=resetGame;
 window.manualCast=manualCast; window.manualPass=manualPass;
@@ -2104,3 +2453,4 @@ window.removeEnchant=removeEnchant; window.socketJewel=socketJewel; window.getSp
 window.EVENT_TYPES=EVENT_TYPES; window.respondToEvent=respondToEvent; window.generateEvent=generateEvent;
 window.TP_SPELLS=TP_SPELLS; window.buyTPSpell=buyTPSpell;
 window.saveDeckSlot=saveDeckSlot; window.loadDeckSlot=loadDeckSlot; window.getMaxDecks=getMaxDecks;
+window.processOfflineProgress=processOfflineProgress;

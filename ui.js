@@ -131,6 +131,8 @@ function renderCombat() {
         if (enemy.prism) ext += ' | Prism';
         if (enemy.stunRounds) ext += ' | STUNNED (' + enemy.stunRounds + ')';
         if (enemy.bossShield) ext += ' | SHIELDED';
+        if (enemy.dots && enemy.dots.length > 0) ext += ' | DoT ×' + enemy.dots.length;
+        if (enemy.weakness) ext += ' | Weak -' + enemy.weakness + '%';
         h += '<div class="enemy-card ' + (sel?'targeted':'') + '"' + (man?' onclick="selectTarget('+ai+')" style="cursor:pointer"':'') + '>';
         h += '<div class="enemy-name">' + (sel&&man?'▸ ':'') + enemy.name + (enemy.boss?' ★':'') + '</div>';
         h += '<div class="enemy-school">' + enemy.school + ext + '</div>';
@@ -417,7 +419,8 @@ function renderGear() {
     var ph = '<div style="background:var(--bg-card);border:1px solid var(--storm);border-radius:4px;padding:14px;margin-bottom:4px">';
     ph += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
     ph += '<div><div style="font-size:16px;color:var(--text-bright)">' + w.rank + ' Wizard</div>';
-    ph += '<div style="font-size:11px;color:var(--text-dim)">School: <span style="color:var(--storm)">Storm</span> | ' + (world?world.name:'') + '</div></div>';
+    var schoolColor = 'var(--' + w.school + ', var(--storm))';
+    ph += '<div style="font-size:11px;color:var(--text-dim)">School: <span style="color:'+schoolColor+'">' + w.school.charAt(0).toUpperCase()+w.school.slice(1) + '</span> | ' + (world?world.name:'') + '</div></div>';
     ph += '<div style="text-align:right;font-size:12px;color:var(--gold)">Gold: ' + Game.gold + '</div>';
     ph += '</div>';
     // Stats grid
