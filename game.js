@@ -1,15 +1,13 @@
-/* SPIRALBOUND — Game Engine v1.1
-   + Crafting (tiered reagents, recipes, enchantments, pet jewels)
-   + Events (random encounters, surges, merchants)
-   + Training Points (cross-school spells)
-   + Deck Saving (multiple loadouts) */
+/* SPIRALBOUND — Game Engine v2.0
+   7 schools, 8 worlds, deck building, Bazaar, crafting,
+   potions, pets, garden, Grand Enrollment, The Spiral */
 
 const Game = {
   wizard: null, combat: null,
   currentWorld: 0, currentZone: 0, currentEncounter: 0,
   deck: [], rules: [], log: [], gold: 0, tick: 0,
   mode: 'manual', state: 'idle', phase: 'none', round: 0,
-  tickInterval: null, TICK_MS: 1200, MAX_LOG: 200,
+  tickInterval: null, TICK_MS: 800, MAX_LOG: 200,
   garden: null, snacks: 0,
   reagents: {},
   autoUnlocked: false, pet: null, petRoster: [],
@@ -29,26 +27,140 @@ const Game = {
 
 // ===== SCHOOL STATS =====
 const SCHOOL_STATS = {
-  storm: {baseAccuracy:70, hpScale:1.0, desc:'AoE damage king. 70% accuracy.'},
-  fire:  {baseAccuracy:75, hpScale:1.0375, desc:'DoT specialist. 75% accuracy.'},
-  ice:   {baseAccuracy:80, hpScale:1.25, desc:'Tank. 80% accuracy. Highest HP/resist.'},
-  life:  {baseAccuracy:90, hpScale:1.15, desc:'Healer. 90% accuracy. Overheal → damage.'},
-  death: {baseAccuracy:85, hpScale:1.125, desc:'Drain. 85% accuracy. Damage heals self.'},
-  myth:  {baseAccuracy:80, hpScale:1.0625, desc:'Summoner. 80% accuracy. Minions + multi-hit.'},
-  balance:{baseAccuracy:85, hpScale:1.1, desc:'The Spiral. All mastery auras. Universal toolkit.'},
+  storm: {baseAccuracy:70, hpScale:1.0, title:'Stormcaller', professor:'Professor Galesworth', desc:'AoE damage king. 70% accuracy.'},
+  fire:  {baseAccuracy:75, hpScale:1.0375, title:'Pyromancer', professor:'Professor Ashveil', desc:'DoT specialist. 75% accuracy.'},
+  ice:   {baseAccuracy:80, hpScale:1.25, title:'Frostbinder', professor:'Professor Rimward', desc:'Tank. 80% accuracy. Highest HP/resist.'},
+  life:  {baseAccuracy:90, hpScale:1.15, title:'Verdancer', professor:'Professor Fernsby', desc:'Healer. 90% accuracy. Overheal → damage.'},
+  death: {baseAccuracy:85, hpScale:1.125, title:'Wraith', professor:'Professor Marrowick', desc:'Drain. 85% accuracy. Damage heals self.'},
+  myth:  {baseAccuracy:80, hpScale:1.0625, title:'Fabulist', professor:'Professor Thornscribe', desc:'Summoner. 80% accuracy. Minions + multi-hit.'},
+  balance:{baseAccuracy:85, hpScale:1.1, title:'Threadweaver', professor:'Headmaster Duskhollow', desc:'The Spiral. All mastery auras. Universal toolkit.'},
 };
+
+function getWizardTitle() {
+  if (!Game.wizard) return '';
+  var ss = SCHOOL_STATS[Game.wizard.school];
+  var schoolTitle = ss ? ss.title : 'Wizard';
+  return Game.wizard.rank + ' ' + schoolTitle;
+}
+
+function getProfessorName() {
+  if (!Game.wizard) return 'Professor Galesworth';
+  var ss = SCHOOL_STATS[Game.wizard.school];
+  return ss ? ss.professor : 'Professor Galesworth';
+}
 
 // ===== RANKS =====
 const RANKS = [
-  { name:'Novice', baseHp:400, baseMana:15, powerPipBase:0 },
-  { name:'Apprentice', baseHp:550, baseMana:25, powerPipBase:10 },
-  { name:'Initiate', baseHp:750, baseMana:40, powerPipBase:20 },
-  { name:'Journeyman', baseHp:1000, baseMana:60, powerPipBase:35 },
-  { name:'Adept', baseHp:1300, baseMana:85, powerPipBase:50 },
-  { name:'Master', baseHp:1650, baseMana:115, powerPipBase:65 },
-  { name:'Grandmaster', baseHp:2050, baseMana:150, powerPipBase:80 },
-  { name:'Archmage', baseHp:2500, baseMana:200, powerPipBase:95 },
+  { name:'Novice', baseHp:400, baseMana:30, powerPipBase:0 },
+  { name:'Apprentice', baseHp:550, baseMana:50, powerPipBase:10 },
+  { name:'Initiate', baseHp:750, baseMana:75, powerPipBase:20 },
+  { name:'Journeyman', baseHp:1000, baseMana:105, powerPipBase:35 },
+  { name:'Adept', baseHp:1300, baseMana:140, powerPipBase:50 },
+  { name:'Master', baseHp:1650, baseMana:180, powerPipBase:65 },
+  { name:'Grandmaster', baseHp:2050, baseMana:225, powerPipBase:80 },
+  { name:'Archmage', baseHp:2500, baseMana:280, powerPipBase:95 },
 ];
+
+// Deck sizes and hand sizes per rank index
+const DECK_SIZES = [20, 25, 30, 35, 40, 45, 50, 60];
+const HAND_SIZES = [5, 5, 6, 6, 7, 7, 7, 8];
+
+function getDeckSize() {
+  var base = DECK_SIZES[Game.wizard ? Game.wizard.rankIndex : 0] || 20;
+  return base;
+}
+
+function getHandSize() {
+  return HAND_SIZES[Game.wizard ? Game.wizard.rankIndex : 0] || 5;
+}
+
+function getDeckCardCount() {
+  var total = 0;
+  var db = Game.deckBuild || {};
+  for (var id in db) total += db[id];
+  return total;
+}
+
+function shuffleArray(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+  return arr;
+}
+
+function buildDrawPile() {
+  var pile = [];
+  var db = Game.deckBuild || {};
+  for (var id in db) {
+    for (var c = 0; c < db[id]; c++) pile.push(id);
+  }
+  return shuffleArray(pile);
+}
+
+function drawCards() {
+  if (!Game.combat) return;
+  var handSize = getHandSize();
+  while (Game.combat.hand.length < handSize) {
+    if (Game.combat.drawPile.length === 0) break;
+    Game.combat.hand.push(Game.combat.drawPile.pop());
+  }
+}
+
+function reshuffleDeck() {
+  if (!Game.combat) return;
+  var discard = Game.combat.discardPile || [];
+  var hand = Game.combat.hand || [];
+  // Put hand back in too
+  Game.combat.drawPile = shuffleArray(discard.concat(hand));
+  Game.combat.hand = [];
+  Game.combat.discardPile = [];
+  drawCards();
+  addLog('♻ Deck reshuffled! All ' + (Game.combat.drawPile.length + Game.combat.hand.length) + ' cards back in play.', 'system');
+}
+
+function manualReshuffle() {
+  if (Game.mode !== 'manual' || Game.phase !== 'waiting_input') return;
+  if (!Game.combat) return;
+  reshuffleDeck();
+  addLog('Used turn to reshuffle.', 'system');
+  Game.phase = 'player_pause';
+  updateUI();
+}
+
+function useCardFromHand(spellId) {
+  if (!Game.combat) return;
+  var idx = Game.combat.hand.indexOf(spellId);
+  if (idx !== -1) {
+    Game.combat.hand.splice(idx, 1);
+    Game.combat.discardPile.push(spellId);
+  }
+}
+
+function discardFromHand(index) {
+  if (!Game.combat || index < 0 || index >= Game.combat.hand.length) return;
+  var card = Game.combat.hand.splice(index, 1)[0];
+  Game.combat.discardPile.push(card);
+  // Draw replacement
+  if (Game.combat.drawPile.length > 0) {
+    Game.combat.hand.push(Game.combat.drawPile.pop());
+  }
+  addLog('Discarded ' + (SPELLS[card]?SPELLS[card].name:card), 'info');
+}
+
+function setDeckSpellCount(spellId, count) {
+  if (!Game.deckBuild) Game.deckBuild = {};
+  count = Math.max(0, Math.min(count, 6));
+  var currentTotal = getDeckCardCount();
+  var currentCount = Game.deckBuild[spellId] || 0;
+  var maxDeck = getDeckSize();
+  if (currentTotal - currentCount + count > maxDeck) {
+    count = maxDeck - (currentTotal - currentCount);
+  }
+  if (count <= 0) delete Game.deckBuild[spellId];
+  else Game.deckBuild[spellId] = count;
+  saveGame();
+}
 
 const SCHOOL_SPELLS = {
   storm: [
@@ -338,31 +450,31 @@ const SPELLS = {
 // ===== ENEMIES =====
 const ENEMIES = {
   // W1 Spindlewood
-  inkling_smear:{name:'Inkling Smear',school:'storm',hp:280,damage:[15,25],accuracy:75},
-  inkling_blot:{name:'Inkling Blot',school:'fire',hp:310,damage:[18,28],accuracy:75},
-  bindling_page:{name:'Loose Page',school:'myth',hp:360,damage:[20,30],accuracy:78},
-  bindling_tome:{name:'Rogue Tome',school:'ice',hp:460,damage:[22,35],accuracy:78},
-  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:420,damage:[18,30],accuracy:80},
-  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:520,damage:[25,38],accuracy:80},
-  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:380,damage:[15,25],accuracy:85},
-  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:550,damage:[28,42],accuracy:82},
-  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:650,damage:[30,50],accuracy:80},
-  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:240,damage:[20,35],accuracy:70},
-  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:330,damage:[25,40],accuracy:72},
-  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:2200,damage:[35,55],accuracy:85,boss:true},
+  inkling_smear:{name:'Inkling Smear',school:'storm',hp:200,damage:[12,20],accuracy:75},
+  inkling_blot:{name:'Inkling Blot',school:'fire',hp:240,damage:[15,24],accuracy:75},
+  bindling_page:{name:'Loose Page',school:'myth',hp:280,damage:[16,26],accuracy:78},
+  bindling_tome:{name:'Rogue Tome',school:'ice',hp:380,damage:[18,30],accuracy:78},
+  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:340,damage:[15,25],accuracy:80},
+  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:440,damage:[20,32],accuracy:80},
+  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:300,damage:[12,20],accuracy:85},
+  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:460,damage:[22,35],accuracy:82},
+  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:550,damage:[25,42],accuracy:80},
+  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:180,damage:[15,28],accuracy:70},
+  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:260,damage:[20,35],accuracy:72},
+  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:1800,damage:[30,48],accuracy:85,boss:true},
   // W2 Solara
-  mander_digger:{name:'Mander Digger',school:'fire',hp:580,damage:[28,42],accuracy:78},
-  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:720,damage:[25,38],accuracy:80},
-  mander_keeper:{name:'Mander Keeper',school:'life',hp:650,damage:[22,35],accuracy:82},
-  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:620,damage:[30,45],accuracy:76},
-  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:820,damage:[32,50],accuracy:78},
-  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:520,damage:[35,48],accuracy:75},
-  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:680,damage:[30,45],accuracy:80},
-  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:560,damage:[38,55],accuracy:72},
-  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:750,damage:[35,52],accuracy:78},
-  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:490,damage:[40,58],accuracy:74},
-  jackal_raider:{name:'Jackal Raider',school:'fire',hp:650,damage:[38,55],accuracy:76},
-  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:4000,damage:[40,60],accuracy:85,boss:true,cheats:['self_heal_3']},
+  mander_digger:{name:'Mander Digger',school:'fire',hp:500,damage:[25,38],accuracy:78},
+  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:650,damage:[22,35],accuracy:80},
+  mander_keeper:{name:'Mander Keeper',school:'life',hp:580,damage:[20,32],accuracy:82},
+  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:550,damage:[28,42],accuracy:76},
+  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:750,damage:[30,45],accuracy:78},
+  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:450,damage:[32,45],accuracy:75},
+  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:620,damage:[28,42],accuracy:80},
+  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:500,damage:[35,50],accuracy:72},
+  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:680,damage:[32,48],accuracy:78},
+  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:440,damage:[36,52],accuracy:74},
+  jackal_raider:{name:'Jackal Raider',school:'fire',hp:600,damage:[35,50],accuracy:76},
+  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:3500,damage:[38,55],accuracy:85,boss:true,cheats:['self_heal_3']},
   // W3 Pendleton
   cogs_worker:{name:'Cogsworth Worker',school:'myth',hp:920,damage:[32,48],accuracy:78},
   cogs_foreman:{name:'Cogsworth Foreman',school:'ice',hp:1150,damage:[38,55],accuracy:80},
@@ -386,7 +498,7 @@ const ENEMIES = {
   stonewarden_elder:{name:'Stonewarden Elder',school:'death',hp:2300,damage:[58,85],accuracy:82},
   bamboo_stalker:{name:'Bamboo Stalker',school:'myth',hp:1580,damage:[55,80],accuracy:80},
   bamboo_ronin:{name:'Bamboo Ronin',school:'fire',hp:1900,damage:[60,88],accuracy:78},
-  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:12500,damage:[65,95],accuracy:88,boss:true,cheats:['stacking_dot']},
+  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:10000,damage:[60,88],accuracy:88,boss:true,cheats:['stacking_dot']},
   // W5 Pyralis
   ash_knight:{name:'Ash Knight',school:'fire',hp:2100,damage:[65,92],accuracy:80},
   ash_champion:{name:'Ash Champion',school:'death',hp:2600,damage:[72,105],accuracy:82},
@@ -400,7 +512,7 @@ const ENEMIES = {
   obsidian_titan:{name:'Obsidian Titan',school:'myth',hp:3800,damage:[80,115],accuracy:82},
   slag_crawler:{name:'Slag Crawler',school:'fire',hp:2250,damage:[75,108],accuracy:75},
   slag_horror:{name:'Slag Horror',school:'storm',hp:2800,damage:[82,118],accuracy:74},
-  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:20000,damage:[85,120],accuracy:88,boss:true,cheats:['blade_shatter']},
+  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:16000,damage:[85,120],accuracy:88,boss:true,cheats:['blade_shatter']},
   // W6 Abyssia
   coral_warden:{name:'Coral Warden',school:'ice',hp:2950,damage:[82,118],accuracy:82},
   coral_sentinel:{name:'Coral Sentinel',school:'life',hp:3450,damage:[78,112],accuracy:84},
@@ -414,7 +526,7 @@ const ENEMIES = {
   pearl_oracle:{name:'Pearl Oracle',school:'myth',hp:3800,damage:[88,126],accuracy:83},
   lantern_angler:{name:'Lantern Angler',school:'death',hp:3200,damage:[92,132],accuracy:79},
   lantern_abyssal:{name:'Lantern Abyssal',school:'storm',hp:3600,damage:[95,138],accuracy:77},
-  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:30000,damage:[110,150],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
+  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:22000,damage:[100,140],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
   // W7 Penumbra
   echo_shade:{name:'Echo Shade',school:'death',hp:3950,damage:[105,148],accuracy:82},
   echo_wraith:{name:'Echo Wraith',school:'storm',hp:4450,damage:[112,158],accuracy:80},
@@ -428,7 +540,7 @@ const ENEMIES = {
   memory_torment:{name:'Memory Torment',school:'death',hp:4950,damage:[120,170],accuracy:83},
   unraveler:{name:'Unraveler',school:'storm',hp:4620,damage:[115,165],accuracy:78},
   unraveler_prime:{name:'Unraveler Prime',school:'ice',hp:5600,damage:[128,182],accuracy:82},
-  your_echo:{name:'Your Echo',school:'storm',hp:42000,damage:[140,190],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
+  your_echo:{name:'Your Echo',school:'storm',hp:28000,damage:[130,175],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
   // W8 Grand Practicum
   prac_inkling:{name:'Practicum Inkling',school:'storm',hp:5950,damage:[130,185],accuracy:82},
   prac_mander:{name:'Practicum Mander',school:'fire',hp:6250,damage:[135,192],accuracy:82},
@@ -438,7 +550,7 @@ const ENEMIES = {
   prac_warden:{name:'Practicum Warden',school:'ice',hp:7900,damage:[138,195],accuracy:84},
   prac_shade:{name:'Practicum Shade',school:'death',hp:7600,damage:[148,210],accuracy:83},
   prac_elite:{name:'Practicum Elite',school:'balance',hp:8600,damage:[150,215],accuracy:85},
-  the_culmination:{name:'The Culmination',school:'balance',hp:65000,damage:[170,220],accuracy:90,boss:true,cheats:['phase_boss']},
+  the_culmination:{name:'The Culmination',school:'balance',hp:45000,damage:[155,205],accuracy:90,boss:true,cheats:['phase_boss']},
 };
 
 // ===== WORLDS & ZONES =====
@@ -536,12 +648,75 @@ const WORLDS = [
 // ===== THE SPIRAL (Balance Endgame) =====
 const SPIRAL_VOICE = {
   1: '"You\'ve mastered six threads. Now weave them."',
+  2: '"It will try to come apart. That is its nature."',
+  3: '"The threads remember shapes they used to hold."',
   5: '"The Spiral does not teach. It measures."',
+  7: '"Something is watching from the gaps between threads."',
   10: '"You are still here. Good."',
+  15: '"The older wizards called this place the Loom. They never came back to explain why."',
+  20: '"Each cycle pulls tighter. Do you feel it?"',
   25: '"The Convergence remembers what it was. Do you?"',
+  30: '"Mote pressed against your leg just now. That has never happened before."',
+  40: '"The threads are singing. I don\'t know what that means."',
   50: '"Entropy has noticed you."',
+  60: '"Harlan tried to reach Cycle 60 once. He came back different. He won\'t say how."',
   75: '"You are holding it together. That is all anyone can do."',
   100: '"You cannot fix what was broken. You can only hold it together, one thread at a time, forever. That is enough."',
+  150: '"...there is nothing left to say. You already know."',
+  200: '"The fox is glowing."',
+};
+
+// ===== SPIRAL MODIFIERS =====
+const SPIRAL_MODIFIERS = {
+  armored:{name:'Armored',desc:'Enemies have +20% resist',apply:function(e){e._spiralResist=20;}},
+  frenzied:{name:'Frenzied',desc:'Enemies deal +30% damage',apply:function(e){e.damage=[Math.floor(e.damage[0]*1.3),Math.floor(e.damage[1]*1.3)];}},
+  shielded:{name:'Shielded',desc:'Enemies start with a shield',apply:function(e){e.shield={percent:40};}},
+  regenerating:{name:'Regenerating',desc:'Enemies heal 2% HP per round',apply:function(e){e._spiralRegen=0.02;}},
+  accurate:{name:'Precise',desc:'Enemies have +10% accuracy',apply:function(e){e.accuracy=Math.min(98,e.accuracy+10);}},
+  bulky:{name:'Bulky',desc:'Enemies have +40% HP',apply:function(e){e.hp=Math.floor(e.hp*1.4);e.maxHp=e.hp;}},
+  draining:{name:'Draining',desc:'Your spells cost +1 mana',apply:function(){}},
+  chaotic:{name:'Chaotic',desc:'Enemy schools randomize each encounter',apply:function(){}},
+  volatile:{name:'Volatile',desc:'Crits deal +50% but fizzles hurt you',apply:function(){}},
+  entropic:{name:'Entropic',desc:'Pips decay — lose 1 pip per 3 rounds',apply:function(){}},
+};
+const SPIRAL_MOD_KEYS = Object.keys(SPIRAL_MODIFIERS);
+
+function getSpiralModifiers(cycleNum) {
+  if (cycleNum <= 2) return [];
+  var count = cycleNum <= 5 ? 1 : cycleNum <= 15 ? 2 : 3;
+  var mods = [];
+  var pool = SPIRAL_MOD_KEYS.slice();
+  for (var i = 0; i < count && pool.length > 0; i++) {
+    var idx = Math.floor(Math.random() * pool.length);
+    mods.push(pool.splice(idx, 1)[0]);
+  }
+  return mods;
+}
+
+// ===== ENTROPY ASPECTS (milestone bosses) =====
+const ENTROPY_ASPECTS = {
+  5:{name:'The Unraveler',school:'death',hpMult:12,dmgMult:2,cheats:['stacking_dot'],
+    desc:'A shape that used to be a wizard, pulling threads loose.'},
+  15:{name:'The Mirror',school:'myth',hpMult:15,dmgMult:2.2,cheats:['mirror_spell','spawn_minion'],
+    desc:'It wears your face. It casts your spells. It is not you.'},
+  25:{name:'Resonance',school:'storm',hpMult:18,dmgMult:2.5,cheats:['blade_shatter','stacking_dot'],
+    desc:'The sound of every spell ever cast, all at once.'},
+  50:{name:'The Loom Keeper',school:'balance',hpMult:22,dmgMult:3,cheats:['phase_boss','heal_5'],
+    desc:'It does not want to fight you. It has to.'},
+  75:{name:'Entropy Prime',school:'fire',hpMult:28,dmgMult:3.5,cheats:['blade_shatter','stacking_dot','self_heal_3'],
+    desc:'The thing at the center. The thing that eats the threads.'},
+  100:{name:'The Convergence',school:'balance',hpMult:35,dmgMult:4,cheats:['phase_boss','full_school_resist','heal_5'],
+    desc:'Everything that was, everything that will be, woven into one shape that should not exist.',resistSchool:'balance',resistPercent:50},
+};
+
+// ===== SPIRAL DROPS =====
+const SPIRAL_GEAR = {
+  sp_hat_1:{id:'sp_hat_1',name:'Threadworn Hood',slot:'hat',world:7,cost:0,stats:{hp:280,accuracy:12,crit:5},desc:'+280 HP, +12% Acc, +5% Crit',dropOnly:true},
+  sp_robe_1:{id:'sp_robe_1',name:'Entropy Vestment',slot:'robe',world:7,cost:0,stats:{hp:340,damage:22,resist:8},desc:'+340 HP, +22% Dmg, +8% Res',dropOnly:true},
+  sp_wand_1:{id:'sp_wand_1',name:'Loom-Touched Staff',slot:'wand',world:7,cost:0,stats:{damage:28,mana:30,pierce:5},desc:'+28% Dmg, +30 Mana, +5% Pierce',dropOnly:true},
+  sp_ring_1:{id:'sp_ring_1',name:'Convergence Band',slot:'ring',world:7,cost:0,stats:{damage:20,crit:8,pierce:4},desc:'+20% Dmg, +8% Crit, +4% Pierce',dropOnly:true},
+  sp_boots_1:{id:'sp_boots_1',name:'Voidstep Treads',slot:'boots',world:7,cost:0,stats:{hp:220,resist:16,critBlock:8},desc:'+220 HP, +16% Res, +8% Crit Block',dropOnly:true},
+  sp_amulet_1:{id:'sp_amulet_1',name:'Thread of Eternity',slot:'amulet',world:7,cost:0,stats:{hp:180,mana:25,powerPip:28,crit:4},desc:'+180 HP, +25 Mana, +28% PP, +4% Crit',dropOnly:true},
 };
 
 const ENTROPY_SPAWN = {
@@ -561,44 +736,69 @@ const SPIRAL_SHARDS = {
 };
 
 function generateSpiralCycle(cycleNum) {
-  var scaleMult = 1 + (cycleNum - 1) * 0.15;
+  var scaleMult = 1 + (cycleNum - 1) * 0.12 + Math.pow(cycleNum, 1.2) * 0.01;
   var zones = [];
-  var zoneCount = Math.min(5 + Math.floor(cycleNum / 5), 12);
+  var zoneCount = Math.min(4 + Math.floor(cycleNum / 4), 12);
+  var modKeys = getSpiralModifiers(cycleNum);
+  var mods = modKeys.map(function(k){ return SPIRAL_MODIFIERS[k]; });
 
-  // Determine enemy tier based on cycle
-  var tierKey = cycleNum <= 10 ? 'entropy_mote' : cycleNum <= 25 ? 'entropy_walker' : cycleNum <= 50 ? 'entropy_titan' : 'entropy_sovereign';
+  var tierKey = cycleNum <= 8 ? 'entropy_mote' : cycleNum <= 20 ? 'entropy_walker' : cycleNum <= 45 ? 'entropy_titan' : 'entropy_sovereign';
   var baseTier = ENTROPY_SPAWN[tierKey];
+
+  // Check for Entropy Aspect milestone boss
+  var aspect = ENTROPY_ASPECTS[cycleNum];
 
   for (var z = 0; z < zoneCount; z++) {
     var isBossZone = z === zoneCount - 1;
     var encounters = [];
 
     if (isBossZone) {
-      // Boss: scaled version of a random world boss
-      var bossSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
-      var bossHp = Math.floor(baseTier.baseHp * scaleMult * 8);
-      encounters.push(['_spiral_boss_' + cycleNum]);
-      // Register dynamic boss
-      ENEMIES['_spiral_boss_' + cycleNum] = {
-        name:'Entropy ' + (cycleNum <= 10 ? 'Core' : cycleNum <= 25 ? 'Nexus' : cycleNum <= 50 ? 'Archon' : 'Sovereign') + ' (C' + cycleNum + ')',
-        school: bossSchool, hp: bossHp, damage: [Math.floor(baseTier.baseDmg[0]*scaleMult*1.5), Math.floor(baseTier.baseDmg[1]*scaleMult*1.5)],
-        accuracy: Math.min(baseTier.accuracy + cycleNum, 98), boss: true, cheats: cycleNum >= 10 ? ['stacking_dot'] : []
-      };
+      if (aspect) {
+        var bossId = '_spiral_aspect_' + cycleNum;
+        var aspectHp = Math.floor(baseTier.baseHp * aspect.hpMult * scaleMult);
+        var aspectDmg = [Math.floor(baseTier.baseDmg[0]*aspect.dmgMult*scaleMult), Math.floor(baseTier.baseDmg[1]*aspect.dmgMult*scaleMult)];
+        ENEMIES[bossId] = {
+          name: aspect.name + ' (C' + cycleNum + ')',
+          school: aspect.school, hp: aspectHp, damage: aspectDmg,
+          accuracy: Math.min(92, baseTier.accuracy + Math.floor(cycleNum/5)),
+          boss: true, cheats: aspect.cheats,
+          resistSchool: aspect.resistSchool, resistPercent: aspect.resistPercent
+        };
+        encounters.push([bossId]);
+      } else {
+        var bossSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
+        var bossHp = Math.floor(baseTier.baseHp * scaleMult * 8);
+        var bossId2 = '_spiral_boss_' + cycleNum;
+        ENEMIES[bossId2] = {
+          name:'Entropy ' + (cycleNum <= 8 ? 'Core' : cycleNum <= 20 ? 'Nexus' : cycleNum <= 45 ? 'Archon' : 'Sovereign') + ' (C' + cycleNum + ')',
+          school: bossSchool, hp: bossHp,
+          damage: [Math.floor(baseTier.baseDmg[0]*scaleMult*1.5), Math.floor(baseTier.baseDmg[1]*scaleMult*1.5)],
+          accuracy: Math.min(95, baseTier.accuracy + Math.floor(cycleNum/5)),
+          boss: true, cheats: cycleNum >= 10 ? ['stacking_dot'] : []
+        };
+        encounters.push([bossId2]);
+      }
     } else {
       var encCount = 3 + Math.floor(Math.random() * 3);
       for (var e = 0; e < encCount; e++) {
-        var enemyCount = 1 + Math.floor(Math.random() * 2);
+        var enemyCount = 1 + Math.floor(Math.random() * (cycleNum >= 15 ? 3 : 2));
         var enc = [];
         for (var ec = 0; ec < enemyCount; ec++) {
           var eSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
+          if (modKeys.indexOf('chaotic') !== -1) eSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
           var eId = '_spiral_' + cycleNum + '_' + z + '_' + e + '_' + ec;
-          ENEMIES[eId] = {
-            name: baseTier.name + ' (' + eSchool + ')',
-            school: eSchool,
-            hp: Math.floor(baseTier.baseHp * scaleMult * (0.8 + Math.random() * 0.4)),
-            damage: [Math.floor(baseTier.baseDmg[0]*scaleMult), Math.floor(baseTier.baseDmg[1]*scaleMult)],
-            accuracy: baseTier.accuracy
+          var eHp = Math.floor(baseTier.baseHp * scaleMult * (0.8 + Math.random() * 0.4));
+          var eDmg = [Math.floor(baseTier.baseDmg[0]*scaleMult), Math.floor(baseTier.baseDmg[1]*scaleMult)];
+          var enemy = {
+            name: baseTier.name,
+            school: eSchool, hp: eHp, maxHp: eHp,
+            damage: eDmg, accuracy: baseTier.accuracy
           };
+          // Apply modifiers to enemies
+          for (var mi = 0; mi < mods.length; mi++) {
+            if (mods[mi].apply) mods[mi].apply(enemy);
+          }
+          ENEMIES[eId] = enemy;
           enc.push(eId);
         }
         encounters.push(enc);
@@ -616,7 +816,9 @@ function generateSpiralCycle(cycleNum) {
     rank: 'Archmage',
     zones: zones,
     isSpiralCycle: true,
-    cycleNum: cycleNum
+    cycleNum: cycleNum,
+    modifiers: modKeys,
+    aspect: aspect ? aspect.name : null
   };
 }
 
@@ -642,7 +844,6 @@ function awardSpiralShard() {
 function enterSpiral() {
   if (!Game.spiralCycle) Game.spiralCycle = 1;
   var cycle = generateSpiralCycle(Game.spiralCycle);
-  // Replace or add as a temporary world
   Game._spiralWorld = cycle;
   Game.currentZone = 0;
   Game.currentEncounter = 0;
@@ -654,13 +855,47 @@ function enterSpiral() {
   Game.wizard.accuracyCharm = null;
   Game.combat = null;
 
-  // Spiral Voice
   var voice = SPIRAL_VOICE[Game.spiralCycle];
   addLog('', 'info');
   addLog('━━━ THE SPIRAL — CYCLE ' + Game.spiralCycle + ' ━━━', 'system');
   if (voice) { addLog(voice, 'system'); addLog('  — The Spiral\'s Voice', 'info'); }
 
-  // Visual theme
+  // Grant Mote as a pet on first Spiral entry
+  if (Game.spiralCycle === 1) {
+    var hasMote = Game.petRoster.some(function(p){ return p.species === 'mote'; });
+    if (!hasMote) {
+      var motePet = createPet('mote');
+      motePet.name = 'Mote';
+      Game.petRoster.push(motePet);
+      Game.pet = motePet;
+      addLog('', 'info');
+      addLog('🦊 Mote follows you into The Spiral.', 'crit');
+      addLog('The headmaster watches you both go.', 'info');
+      addHubLog('Mote joined your party!', 'crit');
+      recalcStats();
+    }
+  }
+
+  // Show modifiers
+  if (cycle.modifiers && cycle.modifiers.length > 0) {
+    addLog('', 'info');
+    addLog('Modifiers this cycle:', 'crit');
+    for (var mi = 0; mi < cycle.modifiers.length; mi++) {
+      var mod = SPIRAL_MODIFIERS[cycle.modifiers[mi]];
+      if (mod) addLog('  ◆ ' + mod.name + ' — ' + mod.desc, 'info');
+    }
+  }
+
+  // Show aspect boss preview
+  if (cycle.aspect) {
+    var asp = ENTROPY_ASPECTS[Game.spiralCycle];
+    addLog('', 'info');
+    addLog('★ ENTROPY ASPECT: ' + cycle.aspect, 'crit');
+    if (asp && asp.desc) addLog('  ' + asp.desc, 'info');
+  }
+
+  addLog(cycle.zones.length + ' zones | ' + (cycle.aspect ? 'Aspect Boss' : 'Entropy Boss') + ' awaits', 'info');
+
   document.body.classList.add('spiral-theme');
 
   Game.state = 'fighting';
@@ -671,16 +906,16 @@ function enterSpiral() {
 // ===== GRAND ENROLLMENT (Prestige) =====
 const MASTERY_AURAS = {
   storm: {id:'storm',name:'Surge',desc:'Crits deal +50% bonus damage',effect:'crit_bonus'},
-  fire:  {id:'fire',name:'Ember',desc:'All damage applies 15 DoT for 2 rounds',effect:'auto_dot'},
+  fire:  {id:'fire',name:'Ember',desc:'All damage applies 5% bonus as DoT over 2 rounds',effect:'auto_dot'},
   ice:   {id:'ice',name:'Permafrost',desc:'30% chance shields persist after being hit',effect:'shield_persist'},
-  life:  {id:'life',name:'Regrowth',desc:'Passive +2% max HP regen per round',effect:'passive_regen'},
+  life:  {id:'life',name:'Regrowth',desc:'Passive +3% max HP regen per round',effect:'passive_regen'},
   death: {id:'death',name:'Dark Harvest',desc:'All damage heals 10% of damage dealt',effect:'passive_drain'},
-  myth:  {id:'myth',name:'Architect',desc:'Passive minion deals 20 damage per round',effect:'passive_minion'},
+  myth:  {id:'myth',name:'Architect',desc:'Summons a persistent Spectral Construct that respawns each round if destroyed',effect:'passive_minion'},
 };
 
-const SILAS_ENROLLMENT = {
+const ENROLLMENT_QUOTES = {
   1: '"Back again. Good. I was starting to worry you\'d gotten comfortable."',
-  2: '"Three threads now. The Convergence stirs."',
+  2: '"Three threads now. The Convergence stirs. Even Thornscribe is paying attention."',
   3: '"You move faster than I did. That worries me, and relieves me."',
   4: '"I can feel the threads tightening. Two left."',
   5: '"One left. You know what\'s waiting on the other side. You\'ve always known, I think."',
@@ -724,6 +959,7 @@ function enrollNewSchool(school) {
 
   // Save carry-over data
   var carryOver = {
+    wizardName: Game.wizard.name,
     graduatedSchools: Game.graduatedSchools.slice(),
     masteryAuras: JSON.parse(JSON.stringify(Game.masteryAuras)),
     enrollmentCount: Game.enrollmentCount,
@@ -736,11 +972,11 @@ function enrollNewSchool(school) {
   };
 
   // Full reset
-  Game.wizard = createWizard(school);
+  Game.wizard = createWizard(school, carryOver.wizardName);
   Game.currentWorld = 0; Game.currentZone = 0; Game.currentEncounter = 0;
   Game.gold = 0; Game.tick = 0; Game.round = 0;
   Game.mode = 'manual'; Game.combat = null; Game.phase = 'none';
-  Game.snacks = 0; Game.reagents = getDefaultReagents();
+  Game.snacks=getDefaultSnacks(); Game.potions=getDefaultPotions(); Game.potions.mana_potion=3; Game.potions.health_potion=3; Game.reagents=getDefaultReagents();
   Game.autoUnlocked = false;
   Game.garden = createGarden();
   Game.farming = false; Game.homeWorld = undefined; Game.homeZone = undefined; Game.homeEncounter = undefined;
@@ -748,6 +984,8 @@ function enrollNewSchool(school) {
   Game.crafting = {rank: carryOver.craftingRank, xp: carryOver.craftingXp, queue: null, inventory:{enchantments:[],jewels:[]}};
   Game.events = {active:[], lastEventTick:0};
   Game.savedDecks = [];
+  Game.bazaar = null;
+  initBazaar();
   Game._spiralWorld = null;
 
   // Restore carry-over
@@ -763,6 +1001,18 @@ function enrollNewSchool(school) {
   // Mastery auras are the reward, not free spell access
 
   Game.deck = Game.wizard.learnedSpells.slice();
+  // Build default deckBuild — 3 copies of damage, 2 of utility, capped at deck size
+  Game.deckBuild = {};
+  var maxCards = getDeckSize();
+  var totalCards = 0;
+  for (var dbi = 0; dbi < Game.deck.length; dbi++) {
+    var dbsp = SPELLS[Game.deck[dbi]];
+    if (!dbsp) continue;
+    var copies = (dbsp.type === 'damage' || dbsp.type === 'drain') ? 5 : 3;
+    if (totalCards + copies > maxCards) copies = Math.max(0, maxCards - totalCards);
+    if (copies > 0) { Game.deckBuild[Game.deck[dbi]] = copies; totalCards += copies; }
+    if (totalCards >= maxCards) break;
+  }
 
   // Set default rules for new school
   var s = school;
@@ -775,7 +1025,7 @@ function enrollNewSchool(school) {
   else Game.rules = [{conditionId:'always',spellId:Game.deck[0]||''}];
 
   // Enrollment quote
-  var quote = SILAS_ENROLLMENT[Game.enrollmentCount] || '"The Spiral remembers every thread you weave." — Silas Stillwater';
+  var quote = ENROLLMENT_QUOTES[Game.enrollmentCount] || '"The Spiral remembers every thread you weave." — Harlan Duskhollow';
   addLog('', 'info');
   addLog('═══ THE GRAND ENROLLMENT ═══', 'system');
   addLog('School: ' + school.charAt(0).toUpperCase() + school.slice(1) + ' | Enrollment #' + (Game.enrollmentCount + 1), 'system');
@@ -807,17 +1057,20 @@ function processMasteryAuras() {
   // Surge (Storm): crits deal +50% bonus — handled in damage calc
   // Ember (Fire): all damage applies 15 DoT for 2 rounds — handled in castSpell
   // Permafrost (Ice): 30% chance shield persists — handled in enemyTurn
-  // Regrowth (Life): +2% max HP per round
+  // Regrowth (Life): +3% max HP per round
   if (Game.masteryAuras.life && Game.wizard.hp < Game.wizard.maxHp) {
-    var regenAmt = Math.floor(Game.wizard.maxHp * 0.02);
+    var regenAmt = Math.floor(Game.wizard.maxHp * 0.03);
     Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + regenAmt);
   }
   // Dark Harvest (Death): passive drain — handled in castSpell
-  // Architect (Myth): passive minion damage
-  if (Game.masteryAuras.myth && enemies.length > 0) {
-    var archTarget = enemies[0];
-    archTarget.hp = Math.max(0, archTarget.hp - 20);
-    if (archTarget.hp <= 0) addLog('  Architect aura defeats ' + archTarget.name + '!', 'kill');
+  // Architect (Myth): persistent aura minion — auto-spawns if missing
+  if (Game.masteryAuras.myth) {
+    if (!Game.wizard.minion || Game.wizard.minion.hp <= 0) {
+      var archHp = Math.floor(Game.wizard.maxHp * 0.25);
+      var archDmg = Math.max(10, Math.floor(Game.wizard.maxHp * 0.03));
+      Game.wizard.minion = {name:'Spectral Construct', hp:archHp, maxHp:archHp, damage:[archDmg, Math.floor(archDmg*1.3)], accuracy:85, auraMinion:true};
+      addLog('  ◆ Architect aura summons Spectral Construct!', 'cast');
+    }
   }
 }
 
@@ -836,6 +1089,10 @@ const ACHIEVEMENTS = {
   master_weaver:{name:'Master Weaver',desc:'Graduate all 6 schools',check:function(){return Game.graduatedSchools&&Game.graduatedSchools.length>=6;}},
   spiral_initiate:{name:'Spiral Initiate',desc:'Complete Spiral Cycle 1',check:function(){return (Game.spiralCycle||1)>1;}},
   spiral_veteran:{name:'Spiral Veteran',desc:'Reach Spiral Cycle 10',check:function(){return (Game.spiralCycle||1)>10;}},
+  spiral_master:{name:'Spiral Master',desc:'Reach Spiral Cycle 25',check:function(){return (Game.spiralCycle||1)>25;}},
+  spiral_eternal:{name:'Spiral Eternal',desc:'Reach Spiral Cycle 50',check:function(){return (Game.spiralCycle||1)>50;}},
+  aspect_slayer:{name:'Aspect Slayer',desc:'Defeat an Entropy Aspect',check:function(){return (Game.spiralCycle||1)>5;}},
+  convergence:{name:'The Convergence',desc:'Defeat The Convergence at Cycle 100',check:function(){return (Game.spiralCycle||1)>100;}},
   pet_parent:{name:'Pet Parent',desc:'Hatch your first pet',check:function(){return Game.petRoster&&Game.petRoster.length>=2;}},
   green_thumb:{name:'Green Thumb',desc:'Harvest an Elder plant',check:function(){return Game.stats.elderHarvests>=1;}},
   artisan:{name:'Artisan',desc:'Reach Master Crafter',check:function(){return Game.crafting&&Game.crafting.rank>=5;}},
@@ -977,6 +1234,9 @@ const GEAR = {
   c_amulet_x:{id:'c_amulet_x',name:'Convergence Pendant',slot:'amulet',world:6,cost:0,stats:{hp:200,mana:22,powerPip:24,resist:6},desc:'+200 HP, +22 Mana, +24% PP, +6% Res',crafted:true},
 };
 
+// Add Spiral gear to GEAR catalog
+for (var sgk in SPIRAL_GEAR) GEAR[sgk] = SPIRAL_GEAR[sgk];
+
 const SHOPS = {
   0:{name:"Tilly Brasswick's Shop",vendor:'Tilly Brasswick',items:['sw_hat','sw_robe','sw_boots','sw_wand','sw_amulet','sw_ring']},
   1:{name:"Khemri's Wares",vendor:'Khemri',items:['sol_hat','sol_robe','sol_boots','sol_wand','sol_amulet','sol_ring']},
@@ -987,6 +1247,265 @@ const SHOPS = {
   6:{name:"The Drifting Vendor",vendor:'The Drifting Vendor',items:['pnb_hat','pnb_robe','pnb_boots','pnb_wand','pnb_amulet','pnb_ring']},
 };
 
+// ===== BAZAAR =====
+const BAZAAR_REAGENT_BASE_PRICES = {
+  mist_wood:10, cat_tail:8, iron_ore:35, spring_water:40,
+  sunstone:85, black_pearl:100, blood_moss:200, amber_dust:240,
+  void_shard:450, astral_thread:650
+};
+const BAZAAR_SNACK_PRICE = 12;
+const BAZAAR_SEED_PRICES = {dandelweed:20,sunsprout:30,gear_sprout:60,jade_lotus:100,magma_root:180,pearl_kelp:300};
+const BAZAAR_REFRESH_TICKS = 250;
+
+const BAZAAR_NPC_NAMES = [
+  'Finley Ashglow','Wren Kettleworth','Sibyl Duskmantle','Orin Copperleaf',
+  'Mabel Foxvane','Jasper Roothollow','Elara Stormwick','Calder Ironthread',
+  'Pip Thornberry','Nessa Brightwell','Aldric Coalspire','Fern Silkgrave',
+  'Tobias Flintmere','Ivy Lanternwalk','Quinn Dusthollow','Marjorie Brassfoot'
+];
+
+function initBazaar() {
+  if (!Game.bazaar) Game.bazaar = {};
+  if (!Game.bazaar.reagentPrices) Game.bazaar.reagentPrices = {};
+  if (!Game.bazaar.reagentStock) Game.bazaar.reagentStock = {};
+  if (!Game.bazaar.gearListings) Game.bazaar.gearListings = [];
+  if (!Game.bazaar.lastRefresh) Game.bazaar.lastRefresh = 0;
+  if (!Game.bazaar.demandShift) Game.bazaar.demandShift = {};
+  if (!Game.bazaar.soldLog) Game.bazaar.soldLog = [];
+  refreshBazaarPrices();
+  if (Game.bazaar.gearListings.length === 0) generateNPCListings();
+}
+
+function pickNPCName() {
+  return BAZAAR_NPC_NAMES[Math.floor(Math.random() * BAZAAR_NPC_NAMES.length)];
+}
+
+function generateNPCListings() {
+  var maxWorld = Math.min(Game.furthestWorld, 6);
+  var count = 3 + Math.floor(Math.random() * 4);
+  var gearKeys = Object.keys(GEAR);
+  var eligible = gearKeys.filter(function(k) {
+    var g = GEAR[k];
+    return g.world <= maxWorld && !g.crafted && !g.dropOnly && g.cost > 0;
+  });
+  if (eligible.length === 0) return;
+  var used = {};
+  for (var i = 0; i < count && eligible.length > 0; i++) {
+    var idx = Math.floor(Math.random() * eligible.length);
+    var gid = eligible[idx];
+    if (used[gid]) { eligible.splice(idx, 1); continue; }
+    used[gid] = true;
+    var item = GEAR[gid];
+    var basePrice = item.cost || 30;
+    var npcPrice = Math.floor(basePrice * (0.6 + Math.random() * 0.5));
+    Game.bazaar.gearListings.push({
+      id: gid,
+      price: npcPrice,
+      listed: Game.tick,
+      seller: pickNPCName(),
+      npc: true
+    });
+  }
+}
+
+function refreshBazaarPrices() {
+  for (var i = 0; i < REAGENT_IDS.length; i++) {
+    var rid = REAGENT_IDS[i];
+    var base = BAZAAR_REAGENT_BASE_PRICES[rid] || 10;
+    var shift = (Game.bazaar.demandShift[rid] || 0);
+    var variance = Math.floor(base * 0.3 * (Math.random() * 2 - 1));
+    Game.bazaar.reagentPrices[rid] = Math.max(1, base + shift + variance);
+    var tier = ALL_REAGENTS[rid].tier;
+    var stockBase = Math.max(1, 12 - tier * 2);
+    Game.bazaar.reagentStock[rid] = Math.floor(stockBase + Math.random() * stockBase);
+  }
+  Game.bazaar.snackPrices = {};
+  Game.bazaar.snackStock = {};
+  var SNACK_BASE_PRICES = {breadcrumb:8,herb_cake:20,honey_bun:50,iron_biscuit:90,crystal_treat:200,arcane_truffle:420,starfruit:800,spiral_morsel:1800};
+  for (var si = 0; si < SNACK_IDS.length; si++) {
+    var snk = SNACKS[SNACK_IDS[si]];
+    var basePrice = SNACK_BASE_PRICES[SNACK_IDS[si]] || Math.floor(snk.xp * 5);
+    Game.bazaar.snackPrices[SNACK_IDS[si]] = Math.max(2, basePrice + Math.floor(basePrice * 0.25 * (Math.random()*2-1)));
+    var stockBase = Math.max(1, 6 - snk.tier);
+    Game.bazaar.snackStock[SNACK_IDS[si]] = Math.floor(stockBase + Math.random() * stockBase);
+  }
+  Game.bazaar.lastRefresh = Game.tick;
+}
+
+function bazaarTick() {
+  if (!Game.bazaar) return;
+
+  // NPC activity — simulate other wizards buying/selling
+  if (Game.tick % 20 === 0) {
+    // NPCs occasionally buy reagents from stock
+    var rIdx = Math.floor(Math.random() * REAGENT_IDS.length);
+    var rid = REAGENT_IDS[rIdx];
+    if ((Game.bazaar.reagentStock[rid]||0) > 0 && Math.random() < 0.3) {
+      Game.bazaar.reagentStock[rid]--;
+    }
+    // NPCs occasionally sell reagents, adding to stock
+    if (Math.random() < 0.15) {
+      var addIdx = Math.floor(Math.random() * REAGENT_IDS.length);
+      var addRid = REAGENT_IDS[addIdx];
+      var maxStock = Math.max(1, 12 - ALL_REAGENTS[addRid].tier * 2) * 2;
+      if ((Game.bazaar.reagentStock[addRid]||0) < maxStock) {
+        Game.bazaar.reagentStock[addRid] = (Game.bazaar.reagentStock[addRid]||0) + 1;
+      }
+    }
+    // NPCs buy snacks
+    if (Game.bazaar.snackStock && Math.random() < 0.2) {
+      var snkIdx = Math.floor(Math.random() * SNACK_IDS.length);
+      var snkId = SNACK_IDS[snkIdx];
+      if ((Game.bazaar.snackStock[snkId]||0) > 0) Game.bazaar.snackStock[snkId]--;
+    }
+  }
+
+  // NPC gear purchases — player listings get bought over time
+  if (Game.tick % 40 === 0 && Game.bazaar.gearListings.length > 0) {
+    var playerListings = [];
+    for (var pi = 0; pi < Game.bazaar.gearListings.length; pi++) {
+      if (!Game.bazaar.gearListings[pi].npc) playerListings.push(pi);
+    }
+    if (playerListings.length > 0 && Math.random() < 0.25) {
+      var buyIdx = playerListings[Math.floor(Math.random() * playerListings.length)];
+      var bought = Game.bazaar.gearListings[buyIdx];
+      var bItem = GEAR[bought.id];
+      var buyerName = pickNPCName();
+      Game.gold += bought.price;
+      Game.bazaar.soldLog.push({
+        item: bItem ? bItem.name : bought.id,
+        price: bought.price,
+        buyer: buyerName,
+        tick: Game.tick
+      });
+      if (Game.bazaar.soldLog.length > 10) Game.bazaar.soldLog.shift();
+      addHubLog(buyerName + ' bought your ' + (bItem?bItem.name:bought.id) + ' for ' + bought.price + 'g!', 'crit');
+      Game.bazaar.gearListings.splice(buyIdx, 1);
+    }
+  }
+
+  // Full refresh cycle
+  if (Game.tick - Game.bazaar.lastRefresh >= BAZAAR_REFRESH_TICKS) {
+    for (var di = 0; di < REAGENT_IDS.length; di++) {
+      var drid = REAGENT_IDS[di];
+      var cur = Game.bazaar.demandShift[drid] || 0;
+      cur += Math.floor(3 * (Math.random() * 2 - 1));
+      var dbase = BAZAAR_REAGENT_BASE_PRICES[drid] || 10;
+      cur = Math.max(-Math.floor(dbase*0.4), Math.min(Math.floor(dbase*0.5), cur));
+      Game.bazaar.demandShift[drid] = cur;
+    }
+    refreshBazaarPrices();
+    // Remove old NPC listings and generate fresh ones
+    Game.bazaar.gearListings = Game.bazaar.gearListings.filter(function(l) { return !l.npc; });
+    generateNPCListings();
+    addHubLog('Bazaar prices have shifted. New listings posted.', 'info');
+  }
+}
+
+function bazaarBuyReagent(rid) {
+  if (!Game.bazaar) return;
+  var price = Game.bazaar.reagentPrices[rid];
+  if (!price || Game.gold < price) return;
+  if ((Game.bazaar.reagentStock[rid] || 0) <= 0) return;
+  Game.gold -= price;
+  Game.reagents[rid] = (Game.reagents[rid]||0) + 1;
+  Game.bazaar.reagentStock[rid]--;
+  addLog('Bought ' + ALL_REAGENTS[rid].name + ' for ' + price + 'g', 'system');
+  saveGame();
+}
+
+function bazaarSellReagent(rid) {
+  if (!Game.bazaar) return;
+  if ((Game.reagents[rid]||0) <= 0) return;
+  var price = Math.max(1, Math.floor((Game.bazaar.reagentPrices[rid]||5) * 0.6));
+  Game.reagents[rid]--;
+  Game.gold += price;
+  Game.bazaar.reagentStock[rid] = (Game.bazaar.reagentStock[rid]||0) + 1;
+  addLog('Sold ' + ALL_REAGENTS[rid].name + ' for ' + price + 'g', 'system');
+  saveGame();
+}
+
+function bazaarBuySnack(snackId) {
+  if (!Game.bazaar) return;
+  var snack = SNACKS[snackId];
+  if (!snack) return;
+  var price = Game.bazaar.snackPrices ? (Game.bazaar.snackPrices[snackId]||snack.xp) : snack.xp;
+  if (Game.gold < price || (Game.bazaar.snackStock && (Game.bazaar.snackStock[snackId]||0) <= 0)) return;
+  Game.gold -= price;
+  migrateSnacks();
+  addSnack(snackId, 1);
+  if (Game.bazaar.snackStock) Game.bazaar.snackStock[snackId]--;
+  addLog('Bought ' + snack.name + ' for ' + price + 'g', 'system');
+  saveGame();
+}
+
+function bazaarSellSnack(snackId) {
+  migrateSnacks();
+  if (!Game.bazaar || !Game.snacks[snackId] || Game.snacks[snackId] <= 0) return;
+  var snack = SNACKS[snackId];
+  if (!snack) return;
+  var SELL_PRICES = {breadcrumb:3,herb_cake:8,honey_bun:20,iron_biscuit:35,crystal_treat:80,arcane_truffle:160,starfruit:320,spiral_morsel:700};
+  var price = SELL_PRICES[snackId] || Math.max(1, Math.floor(snack.xp * 2));
+  Game.snacks[snackId]--;
+  Game.gold += price;
+  addLog('Sold ' + snack.name + ' for ' + price + 'g', 'system');
+  saveGame();
+}
+
+function bazaarBuySeed(seedId) {
+  if (!Game.bazaar) return;
+  var price = BAZAAR_SEED_PRICES[seedId];
+  if (!price || Game.gold < price) return;
+  var seed = SEEDS[seedId];
+  if (!seed) return;
+  Game.gold -= price;
+  if (!Game.garden) createGarden();
+  Game.garden.seeds[seedId] = (Game.garden.seeds[seedId]||0) + 1;
+  addLog('Bought ' + seed.name + ' seed for ' + price + 'g', 'system');
+  saveGame();
+}
+
+function bazaarListGear(gearId) {
+  var idx = Game.wizard.inventory.indexOf(gearId);
+  if (idx === -1) return;
+  var item = GEAR[gearId];
+  if (!item) return;
+  var price = Math.max(10, Math.floor((item.cost||30) * 0.5));
+  Game.wizard.inventory.splice(idx, 1);
+  Game.bazaar.gearListings.push({id:gearId, price:price, listed:Game.tick, seller:'You', npc:false});
+  addLog('Listed ' + item.name + ' on the Bazaar for ' + price + 'g', 'system');
+  addHubLog('Listed ' + item.name + ' on Bazaar — NPCs may buy it', 'system');
+  saveGame();
+}
+
+function bazaarBuyGear(listIdx) {
+  if (!Game.bazaar || listIdx < 0 || listIdx >= Game.bazaar.gearListings.length) return;
+  var listing = Game.bazaar.gearListings[listIdx];
+  if (Game.gold < listing.price) return;
+  var item = GEAR[listing.id];
+  if (!item) return;
+  if (Game.wizard.inventory.includes(listing.id) || Object.values(Game.wizard.gear).includes(listing.id)) return;
+  Game.gold -= listing.price;
+  Game.wizard.inventory.push(listing.id);
+  Game.bazaar.gearListings.splice(listIdx, 1);
+  var sellerName = listing.seller || 'Unknown';
+  addLog('Bought ' + item.name + ' from ' + sellerName + ' for ' + listing.price + 'g', 'system');
+  addHubLog('Bought ' + item.name + ' from Bazaar (-' + listing.price + 'g)', 'system');
+  saveGame();
+}
+
+function bazaarQuickSellGear(gearId) {
+  var idx = Game.wizard.inventory.indexOf(gearId);
+  if (idx === -1) return;
+  var item = GEAR[gearId];
+  var price = Math.max(5, Math.floor((item.cost||20) * 0.3));
+  Game.wizard.inventory.splice(idx, 1);
+  Game.gold += price;
+  addLog('Quick-sold ' + item.name + ' for ' + price + 'g', 'system');
+  addHubLog('Quick-sold ' + item.name + ' (+' + price + 'g)', 'system');
+  saveGame();
+}
+
 function getBazaarItems() {
   const items = [];
   for (let w = 0; w <= Game.currentWorld; w++) {
@@ -994,6 +1513,13 @@ function getBazaarItems() {
     if (shop) items.push(...shop.items);
   }
   return [...new Set(items)];
+}
+
+function getBazaarTimeLeft() {
+  if (!Game.bazaar) return 0;
+  var elapsed = Game.tick - Game.bazaar.lastRefresh;
+  var left = BAZAAR_REFRESH_TICKS - elapsed;
+  return Math.max(0, left);
 }
 
 // ===== SEEDS =====
@@ -1005,13 +1531,13 @@ const SEEDS = {
     desc:'Basic plant. Produces gold and Mist Wood.'},
   sunsprout:{id:'sunsprout',name:'Sunsprout',rank:1,cost:15,
     growth:{seedling:50,young:100,mature:150},needFreq:55,
-    matureReward:function(){return{snacks:1,gold:Math.floor(Math.random()*5)+2};},
-    elderReward:function(){return{snacks:3,gold:Math.floor(Math.random()*10)+5,cat_tail:2,seedReturn:Math.random()<0.85?'sunsprout':null};},
+    matureReward:function(){return{snack_type:'breadcrumb',snack_qty:2,gold:Math.floor(Math.random()*5)+2};},
+    elderReward:function(){return{snack_type:'herb_cake',snack_qty:2,gold:Math.floor(Math.random()*10)+5,cat_tail:2,seedReturn:Math.random()<0.85?'sunsprout':null};},
     desc:'Produces snacks for pet training.'},
   lazy_tuber:{id:'lazy_tuber',name:'Lazy Tuber',rank:3,cost:0,
     growth:{seedling:80,young:160,mature:240},needFreq:50,
-    matureReward:function(){return{snacks:2,gold:Math.floor(Math.random()*15)+10,mist_wood:1,iron_ore:1};},
-    elderReward:function(){return{snacks:5,gold:Math.floor(Math.random()*30)+20,iron_ore:2,spring_water:1,seedReturn:'lazy_tuber'};},
+    matureReward:function(){return{snack_type:'honey_bun',snack_qty:1,gold:Math.floor(Math.random()*15)+10,mist_wood:1,iron_ore:1};},
+    elderReward:function(){return{snack_type:'iron_biscuit',snack_qty:2,gold:Math.floor(Math.random()*30)+20,iron_ore:2,spring_water:1,seedReturn:'lazy_tuber'};},
     desc:'Premium plant. Guaranteed self-seed at Elder.',dropOnly:true},
   gear_sprout:{id:'gear_sprout',name:'Gear Sprout',rank:2,cost:20,
     growth:{seedling:55,young:110,mature:165},needFreq:50,
@@ -1020,23 +1546,23 @@ const SEEDS = {
     desc:'Clockwork-fed plant. Produces Iron Ore.'},
   jade_lotus:{id:'jade_lotus',name:'Jade Lotus',rank:3,cost:30,
     growth:{seedling:70,young:140,mature:210},needFreq:45,
-    matureReward:function(){return{snacks:2,spring_water:2,gold:Math.floor(Math.random()*10)+5};},
-    elderReward:function(){return{snacks:4,spring_water:2,sunstone:1,gold:Math.floor(Math.random()*20)+15,seedReturn:Math.random()<0.8?'jade_lotus':null};},
+    matureReward:function(){return{snack_type:'honey_bun',snack_qty:2,spring_water:2,gold:Math.floor(Math.random()*10)+5};},
+    elderReward:function(){return{snack_type:'crystal_treat',snack_qty:2,spring_water:2,sunstone:1,gold:Math.floor(Math.random()*20)+15,seedReturn:Math.random()<0.8?'jade_lotus':null};},
     desc:'Mountain bloom. Produces Spring Water.'},
   magma_root:{id:'magma_root',name:'Magma Root',rank:4,cost:50,
     growth:{seedling:90,young:180,mature:270},needFreq:40,
-    matureReward:function(){return{sunstone:1,iron_ore:1,snacks:3,gold:Math.floor(Math.random()*15)+10};},
-    elderReward:function(){return{sunstone:2,blood_moss:1,snacks:6,gold:Math.floor(Math.random()*35)+25,seedReturn:Math.random()<0.75?'magma_root':null};},
+    matureReward:function(){return{sunstone:1,iron_ore:1,snack_type:'crystal_treat',snack_qty:1,gold:Math.floor(Math.random()*15)+10};},
+    elderReward:function(){return{sunstone:2,blood_moss:1,snack_type:'arcane_truffle',snack_qty:2,gold:Math.floor(Math.random()*35)+25,seedReturn:Math.random()<0.75?'magma_root':null};},
     desc:'Volcanic plant. Produces Sunstone.'},
   pearl_kelp:{id:'pearl_kelp',name:'Pearl Kelp',rank:5,cost:80,
     growth:{seedling:100,young:200,mature:300},needFreq:35,
-    matureReward:function(){return{black_pearl:1,spring_water:1,snacks:3,gold:Math.floor(Math.random()*20)+15};},
-    elderReward:function(){return{black_pearl:2,blood_moss:1,amber_dust:1,snacks:8,gold:Math.floor(Math.random()*50)+35,seedReturn:Math.random()<0.7?'pearl_kelp':null};},
+    matureReward:function(){return{black_pearl:1,spring_water:1,snack_type:'arcane_truffle',snack_qty:1,gold:Math.floor(Math.random()*20)+15};},
+    elderReward:function(){return{black_pearl:2,blood_moss:1,amber_dust:1,snack_type:'starfruit',snack_qty:2,gold:Math.floor(Math.random()*50)+35,seedReturn:Math.random()<0.7?'pearl_kelp':null};},
     desc:'Deep-sea plant. Produces Black Pearl.'},
   void_blossom:{id:'void_blossom',name:'Void Blossom',rank:7,cost:0,
     growth:{seedling:120,young:240,mature:360},needFreq:30,
-    matureReward:function(){return{blood_moss:1,void_shard:1,snacks:5,gold:Math.floor(Math.random()*30)+20};},
-    elderReward:function(){return{void_shard:2,astral_thread:1,amber_dust:2,snacks:12,gold:Math.floor(Math.random()*80)+50,seedReturn:Math.random()<0.5?'void_blossom':null};},
+    matureReward:function(){return{blood_moss:1,void_shard:1,snack_type:'starfruit',snack_qty:2,gold:Math.floor(Math.random()*30)+20};},
+    elderReward:function(){return{void_shard:2,astral_thread:1,amber_dust:2,snack_type:'spiral_morsel',snack_qty:1,gold:Math.floor(Math.random()*80)+50,seedReturn:Math.random()<0.5?'void_blossom':null};},
     desc:'Shadow plant. ~50% self-seed. Produces Void Shards.',dropOnly:true},
 };
 
@@ -1141,11 +1667,106 @@ const PET_JEWELS = {
   opal:{name:'Opal',stats:{hp:100},desc:'+100 HP'},
 };
 
+// ===== POTIONS =====
+const POTIONS = {
+  mana_potion:{id:'mana_potion',name:'Mana Potion',color:'#4fc3f7',desc:'Restores 30% max mana.',effect:'mana',percent:30,bazaarPrice:40},
+  mana_elixir:{id:'mana_elixir',name:'Mana Elixir',color:'#2196f3',desc:'Restores 60% max mana.',effect:'mana',percent:60,bazaarPrice:150},
+  health_potion:{id:'health_potion',name:'Health Potion',color:'#ef5350',desc:'Restores 35% max HP.',effect:'hp',percent:35,bazaarPrice:35},
+  health_elixir:{id:'health_elixir',name:'Health Elixir',color:'#c62828',desc:'Restores 70% max HP.',effect:'hp',percent:70,bazaarPrice:130},
+  restorative:{id:'restorative',name:'Restorative Draught',color:'#ce93d8',desc:'Restores 25% HP and 25% mana.',effect:'both',percent:25,bazaarPrice:120},
+  wisps_brew:{id:'wisps_brew',name:"Wisp's Brew",color:'#ffd54f',desc:'Restores 50% HP and 50% mana.',effect:'both',percent:50,bazaarPrice:400},
+};
+const POTION_IDS = Object.keys(POTIONS);
+
+function getDefaultPotions() {
+  var p = {};
+  for (var i = 0; i < POTION_IDS.length; i++) p[POTION_IDS[i]] = 0;
+  return p;
+}
+
+function migratePotions() {
+  if (!Game.potions || typeof Game.potions !== 'object') Game.potions = getDefaultPotions();
+  for (var i = 0; i < POTION_IDS.length; i++) {
+    if (Game.potions[POTION_IDS[i]] === undefined) Game.potions[POTION_IDS[i]] = 0;
+  }
+}
+
+function usePotion(potionId) {
+  migratePotions();
+  if (!Game.potions[potionId] || Game.potions[potionId] <= 0) return false;
+  var pot = POTIONS[potionId];
+  if (!pot) return false;
+  Game.potions[potionId]--;
+  var healAmt = 0, manaAmt = 0;
+  if (pot.effect === 'hp' || pot.effect === 'both') {
+    healAmt = Math.floor(Game.wizard.maxHp * pot.percent / 100);
+    Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + healAmt);
+  }
+  if (pot.effect === 'mana' || pot.effect === 'both') {
+    manaAmt = Math.floor(Game.wizard.maxMana * pot.percent / 100);
+    Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana + manaAmt);
+  }
+  var desc = [];
+  if (healAmt > 0) desc.push('+' + healAmt + ' HP');
+  if (manaAmt > 0) desc.push('+' + manaAmt + ' mana');
+  addLog('Used ' + pot.name + ' (' + desc.join(', ') + ')', 'heal');
+  return true;
+}
+
+function autoPotions() {
+  if (Game.autoPotions === false) return;
+  migratePotions();
+  var hpPct = Game.wizard.hp / Game.wizard.maxHp;
+  var manaPct = Game.wizard.mana / Game.wizard.maxMana;
+  // Use health potion at <30% HP
+  if (hpPct < 0.3) {
+    if (Game.potions.health_elixir > 0) { usePotion('health_elixir'); return; }
+    if (Game.potions.wisps_brew > 0) { usePotion('wisps_brew'); return; }
+    if (Game.potions.restorative > 0) { usePotion('restorative'); return; }
+    if (Game.potions.health_potion > 0) { usePotion('health_potion'); return; }
+  }
+  // Use mana potion when can't cast cheapest spell
+  if (Game.combat && Game.combat.hand) {
+    var canCastAny = false;
+    for (var i = 0; i < Game.combat.hand.length; i++) {
+      var sp = SPELLS[Game.combat.hand[i]];
+      if (sp && sp.mana > 0 && Game.wizard.mana >= sp.mana) { canCastAny = true; break; }
+    }
+    if (!canCastAny && Game.wizard.mana < Game.wizard.maxMana * 0.3) {
+      if (Game.potions.mana_elixir > 0) { usePotion('mana_elixir'); return; }
+      if (Game.potions.wisps_brew > 0) { usePotion('wisps_brew'); return; }
+      if (Game.potions.restorative > 0) { usePotion('restorative'); return; }
+      if (Game.potions.mana_potion > 0) { usePotion('mana_potion'); return; }
+    }
+  }
+}
+
+function bazaarBuyPotion(potionId) {
+  migratePotions();
+  var pot = POTIONS[potionId];
+  if (!pot || Game.gold < pot.bazaarPrice) return;
+  Game.gold -= pot.bazaarPrice;
+  Game.potions[potionId]++;
+  addLog('Bought ' + pot.name + ' for ' + pot.bazaarPrice + 'g', 'system');
+  saveGame();
+}
+
 const RECIPES = {
+  // Potions
+  mana_potion_r:{name:'Mana Potion',type:'potion',cost:{mist_wood:3,cat_tail:1},result:{potion:'mana_potion',potionQty:2},time:4,xp:4,rankReq:0},
+  health_potion_r:{name:'Health Potion',type:'potion',cost:{cat_tail:3,mist_wood:1},result:{potion:'health_potion',potionQty:2},time:4,xp:4,rankReq:0},
+  mana_elixir_r:{name:'Mana Elixir',type:'potion',cost:{spring_water:3,iron_ore:1},result:{potion:'mana_elixir',potionQty:2},time:10,xp:15,rankReq:2},
+  health_elixir_r:{name:'Health Elixir',type:'potion',cost:{iron_ore:3,spring_water:1},result:{potion:'health_elixir',potionQty:2},time:10,xp:15,rankReq:2},
+  restorative_r:{name:'Restorative Draught',type:'potion',cost:{sunstone:1,spring_water:2},result:{potion:'restorative',potionQty:2},time:14,xp:20,rankReq:2},
+  wisps_brew_r:{name:"Wisp's Brew",type:'potion',cost:{blood_moss:2,amber_dust:1,black_pearl:1},result:{potion:'wisps_brew',potionQty:1},time:20,xp:35,rankReq:4},
   // Snacks
-  herb_cake:{name:'Herb Cake',type:'snack',cost:{mist_wood:2,cat_tail:1},result:{snacks:3},time:5,xp:5,rankReq:0},
-  iron_biscuit:{name:'Iron Biscuit',type:'snack',cost:{iron_ore:2},result:{snacks:6},time:8,xp:10,rankReq:1},
-  crystal_treat:{name:'Crystal Treat',type:'snack',cost:{sunstone:1},result:{snacks:10},time:12,xp:15,rankReq:2},
+  herb_cake:{name:'Herb Cake',type:'snack',cost:{mist_wood:3,cat_tail:2},result:{snack:'herb_cake',snackQty:2},time:5,xp:5,rankReq:0},
+  honey_bun:{name:'Honey Bun',type:'snack',cost:{cat_tail:4,mist_wood:2},result:{snack:'honey_bun',snackQty:2},time:8,xp:8,rankReq:0},
+  iron_biscuit:{name:'Iron Biscuit',type:'snack',cost:{iron_ore:3,cat_tail:2},result:{snack:'iron_biscuit',snackQty:2},time:10,xp:12,rankReq:1},
+  crystal_treat:{name:'Crystal Treat',type:'snack',cost:{sunstone:2,spring_water:2},result:{snack:'crystal_treat',snackQty:2},time:14,xp:18,rankReq:2},
+  arcane_truffle:{name:'Arcane Truffle',type:'snack',cost:{blood_moss:2,black_pearl:2},result:{snack:'arcane_truffle',snackQty:2},time:18,xp:28,rankReq:3},
+  starfruit_r:{name:'Starfruit',type:'snack',cost:{amber_dust:3,blood_moss:2},result:{snack:'starfruit',snackQty:1},time:22,xp:40,rankReq:4},
+  spiral_morsel_r:{name:'Spiral Morsel',type:'snack',cost:{void_shard:3,astral_thread:2},result:{snack:'spiral_morsel',snackQty:1},time:30,xp:60,rankReq:5},
   // Enchantments
   keen_edge_r:{name:'Keen Edge',type:'enchantment',cost:{iron_ore:2,cat_tail:2},result:{enchantment:'keen_edge'},time:10,xp:15,rankReq:1},
   sharp_edge_r:{name:'Sharp Edge',type:'enchantment',cost:{sunstone:1,spring_water:2},result:{enchantment:'sharp_edge'},time:15,xp:25,rankReq:2},
@@ -1213,14 +1834,16 @@ function craftingTick() {
   if (Game.crafting.queue.ticksLeft <= 0) {
     var r = RECIPES[Game.crafting.queue.recipeId];
     if (r) {
-      if (r.result.snacks) { Game.snacks += r.result.snacks; addLog('Crafted: ' + r.name + ' (+' + r.result.snacks + ' snacks)', 'crit'); addHubLog('Crafted ' + r.name + ' (+' + r.result.snacks + ' snacks)', 'crit'); }
+      if (r.result.snack) { migrateSnacks(); var sq = r.result.snackQty||1; addSnack(r.result.snack, sq); addLog('Crafted: ' + SNACKS[r.result.snack].name + ' x' + sq, 'crit'); addHubLog('Crafted ' + SNACKS[r.result.snack].name + ' x' + sq, 'crit'); }
+      if (r.result.snacks) { migrateSnacks(); addSnack('breadcrumb', r.result.snacks); addLog('Crafted: ' + r.name + ' (+' + r.result.snacks + ' Breadcrumbs)', 'crit'); }
+      if (r.result.potion) { migratePotions(); var pq = r.result.potionQty||1; Game.potions[r.result.potion] = (Game.potions[r.result.potion]||0) + pq; addLog('Crafted: ' + POTIONS[r.result.potion].name + ' x' + pq, 'crit'); addHubLog('Crafted ' + POTIONS[r.result.potion].name + ' x' + pq, 'crit'); }
       if (r.result.enchantment) { Game.crafting.inventory.enchantments.push(r.result.enchantment); addLog('Crafted: ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment!', 'crit'); addHubLog('Crafted ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment', 'crit'); }
       if (r.result.jewel) { Game.crafting.inventory.jewels.push(r.result.jewel); addLog('Crafted: ' + PET_JEWELS[r.result.jewel].name + ' jewel!', 'crit'); addHubLog('Crafted ' + PET_JEWELS[r.result.jewel].name + ' jewel', 'crit'); }
       if (r.result.gear) {
         var gid = r.result.gear;
         if (!Game.wizard.inventory.includes(gid) && Game.wizard.gear[GEAR[gid].slot] !== gid) {
           Game.wizard.inventory.push(gid);
-          addLog('Crafted: ' + GEAR[gid].name + '! Check Gear tab.', 'crit'); addHubLog('Crafted ' + GEAR[gid].name, 'crit');
+          addLog('Crafted: ' + GEAR[gid].name + '! Check Wizard tab.', 'crit'); addHubLog('Crafted ' + GEAR[gid].name, 'crit');
         } else { addLog('Crafted: ' + GEAR[gid].name + ' (already owned, +50g)', 'system'); Game.gold += 50; }
       }
       Game.crafting.xp += r.xp;
@@ -1283,8 +1906,9 @@ function getSpellEnchantBonus(spellId, stat) {
 
 // ===== EVENT SYSTEM =====
 const EVENT_TYPES = [
-  {id:'professor_summons',name:'Professor Summons',desc:'Professor Galesworth has a reward for you.',instant:true,effect:function(){
-    var g = (Game.currentWorld+1)*25; Game.gold += g; addLog('Professor Galesworth gives you ' + g + ' gold!', 'crit'); addHubLog('Professor Summons: +' + g + ' gold', 'crit');}},
+  {id:'professor_summons',name:'Professor Summons',desc:'Your professor has a reward for you.',instant:true,effect:function(){
+    var prof = getProfessorName();
+    var g = (Game.currentWorld+1)*25; Game.gold += g; addLog(prof + ' gives you ' + g + ' gold!', 'crit'); addHubLog('Professor Summons: +' + g + ' gold', 'crit');}},
   {id:'magical_surge',name:'Magical Surge',desc:'Wild magic surges — +15% damage for 50 ticks!',instant:false,buff:{damage:15},duration:50},
   {id:'accuracy_surge',name:'Clarity Wave',desc:'The air sharpens — +10% accuracy for 50 ticks!',instant:false,buff:{accuracy:10},duration:50},
   {id:'treasure',name:'Treasure Discovery',desc:'You stumble upon a hidden cache!',instant:true,effect:function(){
@@ -1299,7 +1923,12 @@ const EVENT_TYPES = [
     Game.garden.seeds[pick] = (Game.garden.seeds[pick]||0) + 2;
     addLog('Merchant gives you 2x ' + SEEDS[pick].name + ' seeds!', 'crit'); addHubLog('Merchant: +2 ' + SEEDS[pick].name + ' seeds', 'crit');}},
   {id:'snack_bonus',name:'Kitchen Surplus',desc:'The Spindlewood kitchen had leftovers.',instant:true,effect:function(){
-    var s = (Game.currentWorld+1)*3; Game.snacks += s; addLog('Received ' + s + ' snacks!', 'crit'); addHubLog('Kitchen Surplus: +' + s + ' snacks', 'crit');}},
+    migrateSnacks();
+    var tierSnacks = ['breadcrumb','breadcrumb','herb_cake','honey_bun','iron_biscuit','crystal_treat','arcane_truffle','starfruit'];
+    var pick = tierSnacks[Math.min(Game.currentWorld, tierSnacks.length-1)];
+    var qty = 2 + Math.floor(Math.random()*3);
+    addSnack(pick, qty);
+    addLog('Received ' + qty + 'x ' + SNACKS[pick].name + '!', 'crit'); addHubLog('Kitchen Surplus: +' + qty + ' ' + SNACKS[pick].name, 'crit');}},
   {id:'disruption',name:'Magical Disruption',desc:'An arcane disturbance — -10% accuracy for 40 ticks.',instant:false,buff:{accuracy:-10},duration:40},
   {id:'garden_bloom',name:'Garden Bloom',desc:'Your garden plants grow faster for a while!',instant:true,effect:function(){
     if (!Game.garden || !Game.garden.unlocked) return;
@@ -1319,12 +1948,15 @@ function generateEvent() {
   });
   var evt = available[Math.floor(Math.random()*available.length)];
   if (!evt) return;
-  Game.events.active.push({...evt, startTick: Game.tick, ticksLeft: evt.duration||0});
+  var newEvt = Object.assign({}, evt, {startTick: Game.tick, ticksLeft: evt.duration||0, expireTicks: 120, claimed: false});
+  Game.events.active.push(newEvt);
+  addLog('📜 Event: ' + evt.name + ' — ' + evt.desc, 'crit');
 }
 
 function respondToEvent(eventIndex) {
   var evt = Game.events.active[eventIndex];
-  if (!evt) return;
+  if (!evt || evt.claimed) return;
+  evt.claimed = true;
   if (evt.instant && evt.effect) evt.effect();
   if (evt.buff) {
     if (evt.buff.damage) { Game.wizard._eventDmgBuff = (Game.wizard._eventDmgBuff||0) + evt.buff.damage; recalcStats(); }
@@ -1332,13 +1964,44 @@ function respondToEvent(eventIndex) {
     var buffDesc = [];
     if (evt.buff.damage) buffDesc.push((evt.buff.damage>0?'+':'') + evt.buff.damage + '% damage');
     if (evt.buff.accuracy) buffDesc.push((evt.buff.accuracy>0?'+':'') + evt.buff.accuracy + '% accuracy');
-    addHubLog(evt.name + ': ' + buffDesc.join(', ') + ' (' + evt.duration + ' ticks)', evt.buff.damage > 0 || evt.buff.accuracy > 0 ? 'crit' : 'fizzle');
+    var durSecs = Math.ceil(evt.duration * Game.TICK_MS / 1000);
+    addLog('Activated: ' + evt.name + ' — ' + buffDesc.join(', ') + ' for ' + durSecs + 's', 'crit');
+    addHubLog(evt.name + ': ' + buffDesc.join(', ') + ' (' + durSecs + 's)', 'crit');
   }
+  // Remove from banners immediately — buffs tick down silently, expiry logged
   Game.events.active.splice(eventIndex, 1);
+  // If buff, re-add as a background-only event (no banner)
+  if (evt.buff) {
+    Game.events.active.push({id:evt.id, name:evt.name, buff:evt.buff, ticksLeft:evt.duration, claimed:true, background:true});
+  }
   saveGame();
 }
 
 function eventTick() {
+  // Periodic flavor text — Mote, Duskhollow, ambient lore
+  if (Game.tick % 500 === 0 && Game.tick > 0 && Game.state === 'fighting') {
+    var flavor = [];
+    if (Game.enrollmentCount >= 1) {
+      flavor.push('🦊 You catch a glimpse of a small fox at the edge of the zone. It vanishes.');
+      flavor.push('"Don\'t rush. The Spiral has patience. You should too." — Harlan Duskhollow');
+    }
+    if (Game.enrollmentCount >= 3) {
+      flavor.push('🦊 Mote\'s ear twitches. Something is watching from between the threads.');
+      flavor.push('"Thornscribe asked about you again. I told her you were busy saving everything." — Harlan Duskhollow');
+    }
+    if (Game._spiralWorld) {
+      flavor.push('🦊 Mote presses against your ankle. The Spiral hums.');
+      flavor.push('The threads here feel older. Frayed.');
+      flavor.push('Something moved in the gap between realities. You pretend you didn\'t see it.');
+    }
+    flavor.push('"Keep moving. Staying still is how the Spiral finds your seams." — Harlan Duskhollow');
+    flavor.push('The air smells like parchment and ozone.');
+    flavor.push('A distant bell rings. No one else seems to hear it.');
+    if (flavor.length > 0) {
+      addLog(flavor[Math.floor(Math.random() * flavor.length)], 'info');
+    }
+  }
+
   // Generate events every ~200 ticks
   if (Game.tick - Game.events.lastEventTick > 200 + Math.floor(Math.random()*100)) {
     if (Game.state === 'fighting' || Game.state === 'resting') {
@@ -1346,14 +2009,30 @@ function eventTick() {
       Game.events.lastEventTick = Game.tick;
     }
   }
-  // Tick down active buff events
+  // Tick down active buff events and expire unclaimed events
   for (var i = Game.events.active.length-1; i >= 0; i--) {
     var evt = Game.events.active[i];
-    if (!evt.instant && evt.buff && evt.ticksLeft > 0) {
+
+    // Expire timer for unclaimed events
+    if (!evt.claimed && evt.expireTicks !== undefined) {
+      evt.expireTicks--;
+      if (evt.expireTicks <= 0) {
+        if (evt.instant && evt.effect) {
+          evt.effect();
+          addLog('Auto-claimed: ' + evt.name, 'info');
+        }
+        Game.events.active.splice(i, 1);
+        continue;
+      }
+    }
+
+    // Tick down background buffs
+    if (evt.background && evt.buff && evt.ticksLeft > 0) {
       evt.ticksLeft--;
       if (evt.ticksLeft <= 0) {
         if (evt.buff.damage) Game.wizard._eventDmgBuff = (Game.wizard._eventDmgBuff||0) - evt.buff.damage;
         if (evt.buff.accuracy) Game.wizard._eventAccBuff = (Game.wizard._eventAccBuff||0) - evt.buff.accuracy;
+        recalcStats();
         addLog('Event expired: ' + evt.name, 'info');
         Game.events.active.splice(i, 1);
       }
@@ -1416,6 +2095,14 @@ function buyTPSpell(tpId) {
   Game.wizard.trainingPoints -= tp.tpCost;
   Game.wizard.learnedSpells.push(realId);
   if (!Game.deck.includes(realId)) Game.deck.push(realId);
+  // Auto-add to deckBuild if room
+  if (!Game.deckBuild) Game.deckBuild = {};
+  var tpSp = SPELLS[realId];
+  var tpCopies = (tpSp && (tpSp.type === 'damage' || tpSp.type === 'drain')) ? 2 : 1;
+  var tpTotal = getDeckCardCount();
+  var tpMax = getDeckSize();
+  if (tpTotal + tpCopies > tpMax) tpCopies = Math.max(0, tpMax - tpTotal);
+  if (tpCopies > 0) Game.deckBuild[realId] = tpCopies;
   addLog('★ Learned ' + tp.name + ' (' + tp.tpCost + ' TP)!', 'crit');
   addHubLog('Learned ' + tp.name + ' (' + tp.school + ', ' + tp.tpCost + ' TP)', 'crit');
   saveGame();
@@ -1428,6 +2115,7 @@ function saveDeckSlot(slotIndex, name) {
   Game.savedDecks[slotIndex] = {
     name: name || ('Deck ' + (slotIndex+1)),
     deck: Game.deck.slice(),
+    deckBuild: JSON.parse(JSON.stringify(Game.deckBuild || {})),
     rules: JSON.parse(JSON.stringify(Game.rules)),
   };
   addLog('Saved deck: ' + Game.savedDecks[slotIndex].name, 'system');
@@ -1438,6 +2126,7 @@ function loadDeckSlot(slotIndex) {
   if (!Game.savedDecks || !Game.savedDecks[slotIndex]) return;
   var saved = Game.savedDecks[slotIndex];
   Game.deck = saved.deck.slice();
+  Game.deckBuild = saved.deckBuild ? JSON.parse(JSON.stringify(saved.deckBuild)) : {};
   Game.rules = JSON.parse(JSON.stringify(saved.rules));
   addLog('Loaded deck: ' + saved.name, 'system');
   saveGame();
@@ -1502,7 +2191,8 @@ function harvestPlot(plotIndex, asElder) {
   if (asElder && plot.stage === 'elder') {
     var r = seed.elderReward();
     if (r.gold) { Game.gold += r.gold; rewards.push('+' + r.gold + ' gold'); }
-    if (r.snacks) { Game.snacks += r.snacks; rewards.push('+' + r.snacks + ' snack(s)'); }
+    if (r.snack_type) { migrateSnacks(); addSnack(r.snack_type, r.snack_qty||1); rewards.push('+' + (r.snack_qty||1) + ' ' + SNACKS[r.snack_type].name); }
+    if (r.snacks) { migrateSnacks(); addSnack('breadcrumb', r.snacks); rewards.push('+' + r.snacks + ' Breadcrumb'); }
     collectReagents(r, rewards);
     if (r.seedReturn) {
       Game.garden.seeds[r.seedReturn] = (Game.garden.seeds[r.seedReturn]||0) + 1;
@@ -1516,7 +2206,8 @@ function harvestPlot(plotIndex, asElder) {
   } else if (plot.stage === 'mature') {
     var r2 = seed.matureReward();
     if (r2.gold) { Game.gold += r2.gold; rewards.push('+' + r2.gold + ' gold'); }
-    if (r2.snacks) { Game.snacks += r2.snacks; rewards.push('+' + r2.snacks + ' snack(s)'); }
+    if (r2.snack_type) { migrateSnacks(); addSnack(r2.snack_type, r2.snack_qty||1); rewards.push('+' + (r2.snack_qty||1) + ' ' + SNACKS[r2.snack_type].name); }
+    if (r2.snacks) { migrateSnacks(); addSnack('breadcrumb', r2.snacks); rewards.push('+' + r2.snacks + ' Breadcrumb'); }
     collectReagents(r2, rewards);
     plot.lastHarvest = 'Harvested: ' + rewards.join(', ');
     addLog('Harvested ' + seed.name + ': ' + rewards.join(', '), 'system');
@@ -1580,8 +2271,83 @@ function gardenTick() {
   }
 }
 
+// ===== SNACK SYSTEM =====
+const SNACKS = {
+  breadcrumb:{id:'breadcrumb',name:'Breadcrumb',xp:4,tier:1,color:'#a5d6a7',desc:'A stale crumb. Pets eat anything.'},
+  herb_cake:{id:'herb_cake',name:'Herb Cake',xp:8,tier:1,color:'#66bb6a',desc:'Simple garden herbs baked into a treat.'},
+  honey_bun:{id:'honey_bun',name:'Honey Bun',xp:15,tier:2,color:'#ffd54f',desc:'Sweet roll glazed with wildflower honey.'},
+  iron_biscuit:{id:'iron_biscuit',name:'Iron Biscuit',xp:22,tier:2,color:'#90a4ae',desc:'Dense and metallic. Pets love the crunch.'},
+  crystal_treat:{id:'crystal_treat',name:'Crystal Treat',xp:35,tier:3,color:'#4fc3f7',desc:'Sunstone-infused candy that sparkles.'},
+  arcane_truffle:{id:'arcane_truffle',name:'Arcane Truffle',xp:55,tier:3,color:'#b39ddb',desc:'Mushroom grown in pure mana soil.'},
+  starfruit:{id:'starfruit',name:'Starfruit',xp:85,tier:4,color:'#ffab91',desc:'Grows only in Abyssia\'s deepest groves.'},
+  spiral_morsel:{id:'spiral_morsel',name:'Spiral Morsel',xp:150,tier:4,color:'#ce93d8',desc:'A bite of concentrated entropy. Intoxicating.'},
+};
+const SNACK_IDS = Object.keys(SNACKS);
+
+function getDefaultSnacks() {
+  var s = {};
+  for (var i = 0; i < SNACK_IDS.length; i++) s[SNACK_IDS[i]] = 0;
+  return s;
+}
+
+function getTotalSnacks() {
+  if (typeof Game.snacks === 'number') return Game.snacks;
+  var total = 0;
+  for (var k in Game.snacks) total += (Game.snacks[k]||0);
+  return total;
+}
+
+function migrateSnacks() {
+  if (typeof Game.snacks === 'number') {
+    var old = Game.snacks;
+    Game.snacks = getDefaultSnacks();
+    Game.snacks.breadcrumb = old;
+  }
+  if (!Game.snacks || typeof Game.snacks !== 'object') Game.snacks = getDefaultSnacks();
+  for (var i = 0; i < SNACK_IDS.length; i++) {
+    if (Game.snacks[SNACK_IDS[i]] === undefined) Game.snacks[SNACK_IDS[i]] = 0;
+  }
+}
+
+function addSnack(snackId, count) {
+  migrateSnacks();
+  count = count || 1;
+  Game.snacks[snackId] = (Game.snacks[snackId]||0) + count;
+}
+
+function feedPetSnack(petId, snackId) {
+  migrateSnacks();
+  if (!Game.snacks[snackId] || Game.snacks[snackId] <= 0) return;
+  var pet = findPet(petId);
+  if (!pet) return;
+  var snack = SNACKS[snackId];
+  if (!snack) return;
+  Game.snacks[snackId]--;
+  pet.xp += snack.xp;
+  addLog('Fed ' + pet.name + ' a ' + snack.name + ' (+' + snack.xp + ' XP)', 'system');
+  while (pet.stageIndex < PET_STAGES.length-1 && pet.xp >= PET_STAGE_XP[pet.stageIndex+1]) {
+    pet.stageIndex++;
+    addLog('', 'info');
+    addLog('★ ' + pet.name + ' grew to ' + PET_STAGES[pet.stageIndex] + '!', 'crit');
+    addHubLog(pet.name + ' grew to ' + PET_STAGES[pet.stageIndex] + '!', 'crit');
+    if (pet.manifested.length < 5) {
+      var unmanifested = pet.talentPool.filter(function(t){ return pet.manifested.indexOf(t)===-1; });
+      if (unmanifested.length > 0) {
+        var talent = unmanifested[Math.floor(Math.random()*unmanifested.length)];
+        pet.manifested.push(talent);
+        var t = PET_TALENTS[talent];
+        addLog('  Talent revealed: ' + (t?t.name:talent) + '!', 'crit');
+      }
+    }
+  }
+  recalcStats();
+  saveGame();
+}
+
 // ===== PET SYSTEM =====
 const PET_SPECIES = {
+  // Special
+  mote:{id:'mote',name:'Mote',school:'balance',rarity:'legendary'},
   spark_otter:{id:'spark_otter',name:'Spark Otter',school:'storm',rarity:'common'},
   galefin_pet:{id:'galefin_pet',name:'Galefin',school:'storm',rarity:'common'},
   voltjaw:{id:'voltjaw',name:'Voltjaw',school:'storm',rarity:'common'},
@@ -1675,11 +2441,12 @@ function createPet(speciesId) {
 }
 
 function feedPet(petId, snackCount) {
-  if (Game.snacks < snackCount) return;
+  migrateSnacks();
+  if (Game.snacks.breadcrumb < snackCount) return;
   var pet = findPet(petId);
   if (!pet) return;
-  Game.snacks -= snackCount;
-  var xpGain = snackCount * 10;
+  Game.snacks.breadcrumb -= snackCount;
+  var xpGain = snackCount * 4;
   pet.xp += xpGain;
   addLog('Fed ' + pet.name + ' ' + snackCount + ' snack(s) (+' + xpGain + ' XP)', 'system');
   while (pet.stageIndex < PET_STAGES.length-1 && pet.xp >= PET_STAGE_XP[pet.stageIndex+1]) {
@@ -1783,7 +2550,7 @@ function devSkipWorld() {
 function devUnlockAll() {
   Game.autoUnlocked=true;
   if (Game.garden) Game.garden.unlocked=true;
-  Game.gold+=2000; Game.snacks+=100;
+  Game.gold+=2000; migrateSnacks(); for(var ski=0;ski<SNACK_IDS.length;ski++) Game.snacks[SNACK_IDS[ski]]=(Game.snacks[SNACK_IDS[ski]]||0)+10;
   for (var ri=0;ri<REAGENT_IDS.length;ri++) Game.reagents[REAGENT_IDS[ri]]=(Game.reagents[REAGENT_IDS[ri]]||0)+50;
   var schoolSpells = SCHOOL_SPELLS[Game.wizard.school] || SCHOOL_SPELLS.storm;
   for (var r=0;r<schoolSpells.length;r++) {
@@ -1837,16 +2604,31 @@ function applySchoolTheme(school) {
   for (var i = 0; i < classes.length; i++) document.body.classList.remove(classes[i]);
   if (school === 'balance') document.body.classList.add('spiral-theme');
   else document.body.classList.add('school-' + school);
+  // Multi-colored title for Balance
+  var titleEl = document.querySelector('.game-title');
+  if (titleEl) {
+    if (school === 'balance') {
+      var deathColor = '#78909c';
+      var boundColors = ['#b39ddb','#ef5350','#4fc3f7','#66bb6a','#ffd54f'];
+      var html = '';
+      for (var ci = 0; ci < 6; ci++) html += '<span style="color:' + deathColor + '">' + 'SPIRAL'[ci] + '</span>';
+      for (var bi = 0; bi < 5; bi++) html += '<span style="color:' + boundColors[bi] + '">' + 'BOUND'[bi] + '</span>';
+      titleEl.innerHTML = html;
+    } else {
+      titleEl.innerHTML = 'SPIRAL<span>BOUND</span>';
+    }
+  }
 }
 
-function createWizard(school) {
+function createWizard(school, wizardName) {
   school = school || 'storm';
   const rank = RANKS[0];
   const ss = SCHOOL_STATS[school] || SCHOOL_STATS.storm;
   const baseHp = Math.floor(rank.baseHp * ss.hpScale);
   const startSpells = SCHOOL_SPELLS[school] ? SCHOOL_SPELLS[school][0] : SCHOOL_SPELLS.storm[0];
+  var name = wizardName || 'Novice Wizard';
   return {
-    name:'Novice Wizard', school:school, rank:rank.name, rankIndex:0,
+    name:name, school:school, rank:rank.name, rankIndex:0,
     baseHp:baseHp, baseMana:rank.baseMana,
     hp:baseHp, maxHp:baseHp, mana:rank.baseMana, maxMana:rank.baseMana,
     pips:[], maxPips:7, powerPipChance:rank.powerPipBase,
@@ -1875,14 +2657,22 @@ function rankUp() {
     if (!w.learnedSpells.includes(spellId)) {
       w.learnedSpells.push(spellId);
       if (!Game.deck.includes(spellId)) Game.deck.push(spellId);
+      // Auto-add to deckBuild if room
+      if (!Game.deckBuild) Game.deckBuild = {};
+      var sp = SPELLS[spellId];
+      var copies = (sp && (sp.type === 'damage' || sp.type === 'drain')) ? 3 : 2;
+      var curTotal = getDeckCardCount();
+      var maxD = getDeckSize();
+      if (curTotal + copies > maxD) copies = Math.max(0, maxD - curTotal);
+      if (copies > 0) Game.deckBuild[spellId] = copies;
       addLog('  ★ Learned: ' + SPELLS[spellId].name + '!', 'crit');
     }
   }
   recalcStats();
   w.hp = w.maxHp; w.mana = w.maxMana;
   addLog('', 'info');
-  addLog('═══ RANK UP: ' + rank.name + ' ═══', 'system');
-  addHubLog('Rank up: ' + rank.name + '!', 'crit');
+  addLog('═══ RANK UP: ' + getWizardTitle() + ' ═══', 'system');
+  addHubLog('Rank up: ' + getWizardTitle() + '!', 'crit');
   if (rank.powerPipBase > 0) addLog('  Power Pip chance: ' + rank.powerPipBase + '%', 'system');
 }
 
@@ -1981,8 +2771,9 @@ function spendPips(cost) {
   Game.wizard.pips = newPips;
 }
 function canAffordSpell(spell) {
-  if (spell.pips === 'X') return getPipValue() >= 1 && Game.wizard.mana >= (spell.effect.dynamicMana ? 1 : (spell.mana||0));
-  return getPipValue() >= spell.pips && Game.wizard.mana >= spell.mana;
+  var drainExtra = (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) ? 1 : 0;
+  if (spell.pips === 'X') return getPipValue() >= 1 && Game.wizard.mana >= ((spell.effect.dynamicMana ? 1 : (spell.mana||0)) + drainExtra);
+  return getPipValue() >= spell.pips && Game.wizard.mana >= (spell.mana + drainExtra);
 }
 function generatePip() {
   if (Game.wizard.pips.length >= Game.wizard.maxPips) return;
@@ -2022,10 +2813,13 @@ function castSpell(spell, targetIndex) {
     if (xPipVal < 1) return false;
     Game.wizard.pips = [];
     var xManaCost = spell.effect.dynamicMana ? xPipVal : (spell.mana||0);
+    if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) xManaCost += 1;
     Game.wizard.mana = Math.max(0, Game.wizard.mana - xManaCost);
   } else {
     spendPips(spell.pips);
-    Game.wizard.mana = Math.max(0, Game.wizard.mana - spell.mana);
+    var manaCost = spell.mana;
+    if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) manaCost += 1;
+    Game.wizard.mana = Math.max(0, Game.wizard.mana - manaCost);
   }
 
   // Fizzle check (utility spells never fizzle)
@@ -2113,6 +2907,8 @@ function castSpell(spell, targetIndex) {
         if (tgt.bossShield) { dmg = Math.floor(dmg * 0.5); }
         // Single-target shield (Tidebound Chorus)
         if (!isAoe && tgt.singleTargetShield) { dmg = Math.floor(dmg * 0.5); }
+        // Spiral Armored modifier
+        if (tgt._spiralResist) { dmg = Math.floor(dmg * (1 - tgt._spiralResist/100)); }
 
         tgt.hp = Math.max(0, tgt.hp - dmg);
         totalDmgDealt += dmg;
@@ -2167,8 +2963,9 @@ function castSpell(spell, targetIndex) {
           addLog('  ↳ ' + tgt.name + ' defeated!', 'kill');
           if (!Game.stats) Game.stats = {};
           Game.stats.enemiesDefeated = (Game.stats.enemiesDefeated||0) + 1;
+          recordBestiaryKill(tgt.id || tgt.name, tgt.name);
           var worldMult = Game.currentWorld + 1;
-          Game.gold += Math.floor(Math.random() * 8 * worldMult) + 5 * worldMult;
+          Game.gold += Math.floor(Math.random() * 10 * worldMult) + 8 * worldMult;
           Game.wizard.xp += (typeof spell.pips === 'number' ? spell.pips : xPipVal)*3+3;
           if (tgt.boss) handleBossDrop(tgt);
           // Seed drops
@@ -2192,7 +2989,7 @@ function castSpell(spell, targetIndex) {
             for (var pi = 0; pi < Game.pet.manifested.length; pi++) {
               var pt = PET_TALENTS[Game.pet.manifested[pi]];
               if (pt && pt.effect.bonusGold && Math.random() < 0.2) { Game.gold += worldMult*3; addLog('  Pet finds extra gold!', 'info'); }
-              if (pt && pt.effect.bonusSnacks && Math.random() < 0.15) { Game.snacks += 1; addLog('  Pet finds a snack!', 'info'); }
+              if (pt && pt.effect.bonusSnacks && Math.random() < 0.15) { migrateSnacks(); addSnack('breadcrumb',1); addLog('  Pet finds a Breadcrumb!', 'info'); }
             }
           }
         }
@@ -2209,12 +3006,13 @@ function castSpell(spell, targetIndex) {
         Game.wizard.hots.push({heal:spell.effect.hot.heal, rounds:spell.effect.hot.rounds||3});
         addLog('  💚 HoT applied: +' + spell.effect.hot.heal + '/rd for ' + (spell.effect.hot.rounds||3) + ' rounds', 'heal');
       }
-      // Mastery Aura: Ember — auto DoT on all damage
+      // Mastery Aura: Ember — auto DoT scaling with damage dealt
       if (Game.masteryAuras && Game.masteryAuras.fire && totalDmgDealt > 0) {
+        var emberDot = Math.max(5, Math.floor(totalDmgDealt * 0.05));
         var emberTargets = getAliveEnemies();
         for (var eti = 0; eti < emberTargets.length; eti++) {
           if (!emberTargets[eti].dots) emberTargets[eti].dots = [];
-          emberTargets[eti].dots.push({dmg:15, rounds:2, school:'fire'});
+          emberTargets[eti].dots.push({dmg:emberDot, rounds:2, school:'fire'});
         }
       }
       // Mastery Aura: Dark Harvest — all damage heals 10%
@@ -2385,8 +3183,8 @@ function castSpell(spell, targetIndex) {
 // ===== BOSS DROPS =====
 function handleBossDrop(target) {
   var bossDrops = {
-    'Aldric Grimsworth': {unlock:'auto', items:[{id:'sw_boss_robe',chance:0.35}]},
-    'Khet-Amun the Sealed': {items:[{id:'sol_boss_hat',chance:0.30},{id:'sol_wand',chance:0.15}], pet:'spark_otter'},
+    'Aldric Grimsworth': {unlock:'auto', items:[{id:'sw_boss_robe',chance:0.35}], pet:'school'},
+    'Khet-Amun the Sealed': {items:[{id:'sol_boss_hat',chance:0.30},{id:'sol_wand',chance:0.15}]},
     'Magnus Prime': {items:[{id:'pen_boss_wand',chance:0.30},{id:'pen_hat',chance:0.15}]},
     'Kaelith the Unbroken': {items:[{id:'mis_boss_boots',chance:0.25},{id:'mis_robe',chance:0.15}]},
     'Pyrrhus the Architect': {items:[{id:'pyr_boss_ring',chance:0.25},{id:'pyr_wand',chance:0.15},{id:'pyr_hat',chance:0.10}]},
@@ -2401,7 +3199,7 @@ function handleBossDrop(target) {
     Game.autoUnlocked = true;
     addLog('', 'info');
     addLog('★ AUTO COMBAT UNLOCKED!', 'crit');
-    addLog('Set priority rules in the Deck tab to automate fights.', 'system');
+    addLog('Set priority rules in the Spellbook tab to automate fights.', 'system');
   }
   if (bd.items) {
     for (var di = 0; di < bd.items.length; di++) {
@@ -2416,10 +3214,17 @@ function handleBossDrop(target) {
     }
   }
   if (bd.pet && Game.petRoster.length === 0) {
-    var pet = createPet(bd.pet);
+    var petId = bd.pet;
+    if (petId === 'school') {
+      var petMap = {storm:'spark_otter',fire:'cinder_toad',ice:'crystal_cub',life:'petal_hare',death:'bone_rat',myth:'stone_cat',balance:'sand_fox'};
+      petId = petMap[Game.wizard.school] || 'spark_otter';
+      if (!PET_SPECIES[petId]) petId = 'spark_otter';
+    }
+    var pet = createPet(petId);
     Game.petRoster.push(pet); Game.pet = pet;
     addLog('  ★ PET EGG: ' + pet.name + ' hatched!', 'crit');
-    addLog('  Visit the Pet tab to feed and train your pet.', 'system');
+    addLog('  Visit the Familiar tab to feed and train your companion.', 'system');
+    recalcStats();
   }
   // Pet egg drops from later bosses (rare species)
   if (target.name === 'Magnus Prime' && Math.random() < 0.15) {
@@ -2437,6 +3242,148 @@ function handleBossDrop(target) {
     Game.petRoster.push(rp3);
     addLog('  ★ RARE PET: Gale Whelp!', 'crit');
   }
+}
+
+// ===== BESTIARY =====
+const BESTIARY_LORE = {
+  inkling_smear:'Ink given form and bad intentions. Harmless alone.',
+  inkling_blot:'A larger ink creature. Still mostly harmless.',
+  bindling_page:'A page torn from the wrong book. It bites.',
+  bindling_tome:'An entire rogue textbook. Surprisingly aggressive.',
+  thornwick_shoot:'A plant that learned violence. Barlow denies involvement.',
+  thornwick_creep:'The vines move when you\'re not looking.',
+  dummy_sparring:'Built for practice. Doesn\'t know when to stop.',
+  dummy_dueling:'An advanced training construct. Takes its job seriously.',
+  dummy_rogue:'This one wasn\'t supposed to fight back.',
+  glow_sprite:'A mote of wild magic. Pretty. Angry.',
+  glow_sprite_wild:'A sprite that rejected domestication.',
+  grimsworth:'The Spindlewood librarian. Lost himself in the restricted section decades ago.',
+  mander_digger:'They dig because they\'ve forgotten what they\'re looking for.',
+  mander_sentinel:'Sworn to guard the tombs. No one remembers from what.',
+  mander_keeper:'Tends the dead with more care than the living.',
+  dustwrap_shuffler:'Bandages animated by old curses. Smells like papyrus.',
+  dustwrap_guardian:'The wrappings are thicker. The curse is older.',
+  scarab_tomb:'Gilded insects that feed on ambient magic.',
+  scarab_gilded:'Worth more alive than dead. Don\'t tell the Bazaar.',
+  sandcaster_acolyte:'Young sand mages. Overconfident.',
+  sandcaster_shaper:'Masters of sand. The desert listens to them.',
+  jackal_prowler:'Desert predators. Hunt in pairs.',
+  jackal_raider:'The alpha. Considerably meaner.',
+  khet_amun:'Sealed beneath Solara for a thousand years. The seal cracked.',
+  cogs_worker:'Clockwork laborers. They never got the memo to stop.',
+  cogs_foreman:'Manages workers that don\'t need managing.',
+  brass_patrol:'Guard dogs made of brass. No bark, all bite.',
+  brass_alpha:'The pack leader. Runs on spite and gear oil.',
+  piston_guard:'Steam-powered sentinels. Efficient.',
+  piston_captain:'Upgraded with better weapons and worse temperament.',
+  steam_spinner:'Weaves steam into solid shapes. Then throws them.',
+  steam_queen:'The hive mind of Pendleton\'s steam network.',
+  chimney_wisp:'Soot given sentience by factory runoff.',
+  chimney_blaze:'A wisp that found a furnace.',
+  magnus_prime:'The clockwork heart of Pendleton. It thinks, therefore it fights.',
+  jade_monk:'Trains endlessly. Has achieved inner violence.',
+  jade_elder:'So old even the mountain respects them.',
+  paper_sentinel:'Origami warriors. Surprisingly durable.',
+  paper_master:'Folds reality like paper.',
+  cloud_serpent:'Lives in the storms above Mistral. Comes down to hunt.',
+  cloud_wyrm:'A serpent that ate enough lightning to become one.',
+  stonewarden:'Carved from the monastery itself. Part of the architecture.',
+  stonewarden_elder:'The oldest stone. It remembers when the mountain was a hill.',
+  bamboo_stalker:'The bamboo forest is alive. This is why.',
+  bamboo_ronin:'A masterless warrior made of wood and fury.',
+  kaelith:'The monastery\'s greatest monk. She has never lost.',
+  ash_knight:'Armor fused to bone by volcanic heat.',
+  ash_champion:'The strongest survived the eruption. This is what survived.',
+  glassborn:'Obsidian given form. Beautiful and sharp.',
+  glassborn_shaper:'Shapes molten glass into weapons mid-combat.',
+  cinder_wolf:'Hunts in packs across the lava fields.',
+  cinder_alpha:'The biggest, meanest wolf. Still on fire.',
+  forge_wraith:'The ghost of a blacksmith who never finished their masterwork.',
+  forge_specter:'A wraith that found better materials.',
+  obsidian_golem:'Volcanic rock animated by deep earth magic.',
+  obsidian_titan:'A golem that kept growing.',
+  slag_crawler:'Molten metal that learned to crawl.',
+  slag_horror:'A crawler that learned to be angry.',
+  pyrrhus:'He built the forges. Then the forges built him.',
+  coral_warden:'Guards the reef approaches. Patient.',
+  coral_sentinel:'Older coral. Harder. Angrier.',
+  tide_crawler:'Crustacean the size of a cart. Pincers to match.',
+  tide_ravager:'A crawler that outgrew its shell and its patience.',
+  kelp_horror:'The kelp forests hide things. This is one of them.',
+  kelp_leviathan:'The forest itself, moving.',
+  pressure_drone:'Deep-sea construct. Built for depths that crush steel.',
+  pressure_engine:'An upgraded drone. Built for depths that crush hope.',
+  pearl_shaper:'Shapes pearls into weapons using pure pressure.',
+  pearl_oracle:'Sees the future in pearl formations. The future is violent.',
+  lantern_angler:'Lures prey with false light. Classic.',
+  lantern_abyssal:'The light is brighter. The teeth are bigger.',
+  tidebound_chorus:'Not one voice but many, singing in frequencies that crack stone.',
+  echo_shade:'A shadow of something that used to exist here.',
+  echo_wraith:'A shade that remembers what it lost.',
+  rift_stalker:'Hunts between the cracks in reality.',
+  rift_predator:'The apex predator of the void between worlds.',
+  void_mote:'A fragment of nothing. Somehow hostile.',
+  void_devourer:'A mote that ate enough reality to want more.',
+  fractured_golem:'Built from broken pieces of multiple worlds.',
+  fractured_titan:'A golem assembled from the ruins of everything.',
+  memory_wisp:'Someone\'s lost memory, given form. It misses being remembered.',
+  memory_torment:'A memory that doesn\'t want to be forgotten.',
+  unraveler:'It pulls at the threads of reality. Casually.',
+  unraveler_prime:'The best at what it does. What it does is end things.',
+  your_echo:'It has your spells. Your face. It is not you.',
+  prac_inkling:'The Practicum\'s version. Harder.',
+  prac_mander:'Refined by the Grand Practicum. No mercy.',
+  prac_cogsworth:'Rebuilt. Upgraded. Angry about it.',
+  prac_monk:'Perfected discipline. Perfected violence.',
+  prac_knight:'The Practicum\'s elite. Forged in every fire.',
+  prac_warden:'Ice and stone and centuries of patience.',
+  prac_shade:'Death distilled into a final exam.',
+  prac_elite:'The best of everything. Your last test.',
+  the_culmination:'Every lesson, every world, every thread — woven into one final shape.',
+};
+
+function recordBestiaryKill(enemyId, enemyName) {
+  if (!Game.bestiary) Game.bestiary = {};
+  var cleanId = enemyId.replace(/_spiral_\d+_\d+_\d+_\d+/,'_spiral_mob');
+  if (cleanId.startsWith('_spiral_boss_') || cleanId.startsWith('_spiral_aspect_')) cleanId = enemyId;
+  if (!Game.bestiary[cleanId]) {
+    Game.bestiary[cleanId] = {name: enemyName, kills: 0, firstSeen: Date.now()};
+  }
+  Game.bestiary[cleanId].kills++;
+  Game.bestiary[cleanId].name = enemyName;
+}
+
+function getBestiaryCount() {
+  if (!Game.bestiary) return 0;
+  return Object.keys(Game.bestiary).length;
+}
+
+// ===== SPIRAL MODIFIER PROCESSING =====
+function processSpiralModifiers() {
+  if (!Game._spiralWorld || !Game._spiralWorld.modifiers) return;
+  var mods = Game._spiralWorld.modifiers;
+  var alive = getAliveEnemies();
+
+  // Regenerating — enemies heal 2% per round
+  if (mods.indexOf('regenerating') !== -1) {
+    for (var i = 0; i < alive.length; i++) {
+      var heal = Math.floor(alive[i].maxHp * 0.02);
+      if (alive[i].hp < alive[i].maxHp) {
+        alive[i].hp = Math.min(alive[i].maxHp, alive[i].hp + heal);
+      }
+    }
+  }
+
+  // Entropic — player loses 1 pip every 3 rounds
+  if (mods.indexOf('entropic') !== -1 && Game.round % 3 === 0) {
+    if (Game.wizard.pips.length > 0) {
+      Game.wizard.pips.pop();
+      addLog('  ⚡ Entropic decay — lost a pip!', 'fizzle');
+    }
+  }
+
+  // Armored — apply resist on damage calc (handled via _spiralResist on enemy)
+  // Volatile — handled in castSpell crit/fizzle
 }
 
 // ===== BOSS CHEATS =====
@@ -2653,12 +3600,13 @@ function enemyTurn() {
 }
 
 function evaluateRules() {
+  var hand = Game.combat ? Game.combat.hand : [];
   for (const rule of Game.rules) {
     if (!rule.conditionId || !rule.spellId) continue;
     const cond = CONDITIONS[rule.conditionId];
     const spell = SPELLS[rule.spellId];
     if (!cond || !spell) continue;
-    if (!Game.deck.includes(spell.id)) continue;
+    if (hand.indexOf(spell.id) === -1) continue;
     if (cond.check() && canAffordSpell(spell)) return spell;
   }
   return null;
@@ -2727,7 +3675,7 @@ function startEncounter() {
   if (!encounterDef) return;
   const enemyIds = Array.isArray(encounterDef[0]) ? encounterDef[0] : encounterDef;
   const schoolPool = ['storm','fire','ice','life','death','myth'];
-  const runScale = 1 + (Game.enrollmentCount || 0) * 0.15;
+  const runScale = 1 + (Game.enrollmentCount || 0) * 0.12 + Math.pow((Game.enrollmentCount || 0), 1.3) * 0.02;
   const enemies = enemyIds.map(id => {
     const t = ENEMIES[id];
     if (!t) return {name:'Unknown',school:'balance',hp:100,maxHp:100,damage:[10,20],accuracy:70,trap:null,prism:null,stunRounds:0,dots:[],weakness:0};
@@ -2742,12 +3690,13 @@ function startEncounter() {
     // Difficulty scaling: +15% per enrollment
     var scaledHp = Math.floor(t.hp * runScale);
     var scaledDmg = [Math.floor(t.damage[0] * runScale), Math.floor(t.damage[1] * runScale)];
-    return {...t, school:eSchool, hp:scaledHp, maxHp:scaledHp, damage:scaledDmg, trap:null, trapStack:[], prism:null, stunRounds:0, dots:[], weakness:0};
+    return {...t, id:id, school:eSchool, hp:scaledHp, maxHp:scaledHp, damage:scaledDmg, trap:null, trapStack:[], prism:null, stunRounds:0, dots:[], weakness:0};
   });
 
   const hasBoss = enemies.some(e => e.boss);
   if (hasBoss) {
-    Game.combat = {enemies, global:{}, lastPlayerDamage:0};
+    Game.combat = {enemies, global:{}, lastPlayerDamage:0, hand:[], drawPile:buildDrawPile(), discardPile:[]};
+    drawCards();
     Game.round = 0; Game.state = 'waiting_boss'; Game.phase = 'none';
     const bossName = enemies.find(e => e.boss).name;
     addLog('', 'info');
@@ -2756,7 +3705,18 @@ function startEncounter() {
     return;
   }
 
-  Game.combat = {enemies, global:{}, lastPlayerDamage:0};
+  // Reuse existing draw pile within a zone, fresh pile on new zone/encounter 0
+  var existingPile = Game.combat && Game.combat.drawPile;
+  var existingHand = Game.combat && Game.combat.hand;
+  var existingDiscard = Game.combat && Game.combat.discardPile;
+  var reuseCards = existingPile && Game.currentEncounter > 0;
+
+  Game.combat = {enemies, global:{}, lastPlayerDamage:0,
+    hand: reuseCards ? existingHand : [],
+    drawPile: reuseCards ? existingPile : buildDrawPile(),
+    discardPile: reuseCards ? existingDiscard : []
+  };
+  if (!reuseCards) drawCards();
   Game.round = 0; Game.state = 'fighting'; Game.phase = 'round_start';
   addLog('', 'info');
   const world = getCurrentWorld();
@@ -2783,6 +3743,20 @@ function combatTick() {
     case 'round_start':
       Game.round++;
       addLog('── Round ' + Game.round + ' ──', 'system');
+      // Draw cards to fill hand
+      if (Game.combat.hand.length < getHandSize()) {
+        if (Game.combat.drawPile.length === 0 && Game.combat.discardPile.length > 0) {
+          if (Game.autoReshuffle !== false || Game.mode === 'manual') {
+            reshuffleDeck();
+          }
+        }
+        drawCards();
+      }
+      // Passive mana recovery
+      if (Game.wizard.mana < Game.wizard.maxMana) {
+        var passiveMana = Math.max(1, Math.floor(Game.wizard.maxMana * 0.02));
+        Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana + passiveMana);
+      }
       generatePip();
       processDoTs();
       processHoTs();
@@ -2810,29 +3784,46 @@ function combatTick() {
         }
       }
       processBossCheats();
+      processSpiralModifiers();
       processMasteryAuras();
+      if (Game.mode === 'auto') autoPotions();
       if (Game.wizard.hp <= 0) { handleDeath(); return; }
       Game.phase = Game.mode==='auto' ? 'player_turn' : 'waiting_input';
       break;
     case 'player_turn': {
       const spell = evaluateRules();
-      if (spell) castSpell(spell); else passTurn();
+      if (spell) { useCardFromHand(spell.id); castSpell(spell); } else passTurn();
       Game.phase = getAliveEnemies().length===0 ? 'round_end' : 'player_pause';
       break;
     }
     case 'waiting_input':
       if (getAliveEnemies().length===0) { Game.phase = 'round_end'; }
       break;
-    case 'player_pause': Game.phase = 'enemy_turn'; break;
+    case 'player_pause':
+      Game.phase = 'enemy_turn';
+      if (Game.mode === 'auto') { enemyTurn(); if (Game.wizard.hp <= 0) { handleDeath(); return; } Game.phase = 'round_end'; }
+      break;
     case 'enemy_turn':
       enemyTurn();
       if (Game.wizard.hp <= 0) { handleDeath(); return; }
-      Game.phase = 'enemy_pause';
+      Game.phase = 'round_end';
       break;
     case 'enemy_pause': Game.phase = 'round_end'; break;
     case 'round_end':
       if (getAliveEnemies().length===0) { advanceEncounter(); return; }
-      if (Game.wizard.mana<=0) { Game.state='resting'; Game.phase='none'; addLog('Out of mana. Resting...','system'); return; }
+      // Rest if mana too low to cast any damage spell in deck
+      var minCastCost = 999;
+      var deckKeys = Game.deckBuild ? Object.keys(Game.deckBuild) : Game.deck;
+      for (var dci = 0; dci < deckKeys.length; dci++) {
+        var dcs = SPELLS[deckKeys[dci]];
+        if (dcs && typeof dcs.pips === 'number' && dcs.pips > 0 && dcs.mana < minCastCost) minCastCost = dcs.mana;
+      }
+      if (Game.wizard.mana < minCastCost) {
+        // Try auto-potion before resting
+        if (Game.mode === 'auto') autoPotions();
+        if (Game.wizard.mana >= minCastCost) { Game.phase = 'round_start'; break; }
+        Game.state='resting'; Game.phase='none'; addLog('Low mana. Resting...','system'); return;
+      }
       Game.phase = 'round_start';
       break;
   }
@@ -2842,6 +3833,8 @@ function manualCast(spellId) {
   if (Game.mode!=='manual'||Game.phase!=='waiting_input') return;
   const spell = SPELLS[spellId];
   if (!spell||!canAffordSpell(spell)) return;
+  if (Game.combat && Game.combat.hand.indexOf(spellId) === -1) return;
+  useCardFromHand(spellId);
   castSpell(spell, window._selectedTarget||0);
   Game.phase = getAliveEnemies().length===0 ? 'round_end' : 'player_pause';
   updateUI();
@@ -2897,7 +3890,35 @@ function advanceEncounter() {
         addLog('', 'info');
         addLog('★ CYCLE ' + Game.spiralCycle + ' COMPLETE ★', 'crit');
         addHubLog('Spiral Cycle ' + Game.spiralCycle + ' complete!', 'crit');
-        if (Game.spiralCycle % 10 === 0) awardSpiralShard();
+
+        // Scaling gold reward
+        var spiralGold = Math.floor(200 * Game.spiralCycle + 100);
+        Game.gold += spiralGold;
+        addLog('  +' + spiralGold + ' gold', 'system');
+
+        // Reagent bonus every cycle
+        var spiralReagentCount = 1 + Math.floor(Game.spiralCycle / 5);
+        for (var sri = 0; sri < spiralReagentCount; sri++) {
+          var srId = REAGENT_IDS[Math.floor(Math.random() * REAGENT_IDS.length)];
+          Game.reagents[srId] = (Game.reagents[srId]||0) + 1;
+        }
+        addLog('  +' + spiralReagentCount + ' reagents', 'system');
+
+        // Shards every 5 cycles
+        if (Game.spiralCycle % 5 === 0) awardSpiralShard();
+
+        // Spiral gear drops from Aspect bosses
+        if (ENTROPY_ASPECTS[Game.spiralCycle]) {
+          var spGearKeys = Object.keys(SPIRAL_GEAR);
+          var spDrop = spGearKeys[Math.floor(Math.random() * spGearKeys.length)];
+          var spItem = GEAR[spDrop];
+          if (spItem && !Game.wizard.inventory.includes(spDrop) && Game.wizard.gear[spItem.slot] !== spDrop) {
+            Game.wizard.inventory.push(spDrop);
+            addLog('  ★ ' + spItem.name + ' dropped!', 'crit');
+            addHubLog('Spiral drop: ' + spItem.name, 'crit');
+          }
+        }
+
         Game.spiralCycle++;
         Game._spiralWorld = null;
         enterSpiral();
@@ -2930,13 +3951,13 @@ function advanceEncounter() {
         expandGarden();
 
         var worldQuotes = [
-          '"I could tell you what\'s ahead. But I think you\'d rather find out." — Silas Stillwater',
-          '"The gears never stop turning in Pendleton. Neither should you." — Silas Stillwater',
-          '"The monks have been waiting. They don\'t receive visitors often." — Silas Stillwater',
-          '"What burned there hasn\'t stopped burning. Be ready." — Silas Stillwater',
-          '"The ocean remembers everyone it\'s swallowed." — Silas Stillwater',
-          '"What you find there... it\'s not another world. It\'s the spaces between them." — Silas Stillwater',
-          '"This is your final exam. Everything you\'ve learned. Everything you are." — Silas Stillwater',
+          '"I could tell you what\'s ahead. But I think you\'d rather find out." — Harlan Duskhollow',
+          '"The gears never stop turning in Pendleton. Neither should you." — Harlan Duskhollow',
+          '"The monks have been waiting. They don\'t receive visitors often." — Harlan Duskhollow',
+          '"What burned there hasn\'t stopped burning. Be ready." — Harlan Duskhollow',
+          '"The ocean remembers everyone it\'s swallowed." — Harlan Duskhollow',
+          '"What you find there... it\'s not another world. It\'s the spaces between them." — Harlan Duskhollow',
+          '"This is your final exam. Everything you\'ve learned. Everything you are." — Harlan Duskhollow',
         ];
         if (worldQuotes[Game.currentWorld-1]) addLog(worldQuotes[Game.currentWorld-1], 'info');
 
@@ -2950,7 +3971,7 @@ function advanceEncounter() {
       } else {
         // Campaign complete — graduate and show enrollment
         graduate();
-        addLog('"I\'ve waited a very long time for you. Longer than you know." — Silas Stillwater', 'system');
+        addLog('"I\'ve waited a very long time for you. Longer than you know." — Harlan Duskhollow', 'system');
         Game.state = 'complete'; Game.phase = 'none';
         return;
       }
@@ -2966,8 +3987,8 @@ function handleDeath() {
   const zone = getCurrentWorld().zones[Game.currentZone];
   addLog('Sent back to start of ' + zone.name + '.', 'death');
   Game.currentEncounter = 0;
-  Game.wizard.hp = Math.floor(Game.wizard.maxHp*0.5);
-  Game.wizard.mana = Math.floor(Game.wizard.maxMana*0.5);
+  Game.wizard.hp = Math.floor(Game.wizard.maxHp*0.75);
+  Game.wizard.mana = Math.floor(Game.wizard.maxMana*0.75);
   Game.wizard.pips = []; Game.wizard.blade = null;
   Game.wizard.shield = null; Game.wizard.accuracyCharm = null;
   Game.state = 'resting'; Game.phase = 'none';
@@ -2978,9 +3999,9 @@ function gameTick() {
   Game.tick++;
   if (Game.state==='fighting') combatTick();
   if (Game.state==='resting') {
-    var manaRegen = Math.max(1, Math.floor(Game.wizard.maxMana * 0.03));
-    var hpRegen = Math.max(5, Math.floor(Game.wizard.maxHp * 0.02));
-    if (Game.tick%3===0 && Game.wizard.mana<Game.wizard.maxMana) Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana+manaRegen);
+    var manaRegen = Math.max(2, Math.floor(Game.wizard.maxMana * 0.05));
+    var hpRegen = Math.max(8, Math.floor(Game.wizard.maxHp * 0.04));
+    if (Game.tick%2===0 && Game.wizard.mana<Game.wizard.maxMana) Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana+manaRegen);
     if (Game.tick%2===0 && Game.wizard.hp<Game.wizard.maxHp) Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp+hpRegen);
     if (Game.wizard.mana>=Game.wizard.maxMana && Game.wizard.hp>=Game.wizard.maxHp) {
       Game.wizard.mana=Game.wizard.maxMana; Game.wizard.hp=Game.wizard.maxHp;
@@ -2992,6 +4013,7 @@ function gameTick() {
   if (Game.tick%2===0) gardenTick();
   craftingTick();
   eventTick();
+  bazaarTick();
   if (Game.tick%30===0) checkAchievements();
   updateUI();
 }
@@ -3001,16 +4023,17 @@ function saveGame() {
   localStorage.setItem('spiralbound_save', JSON.stringify({
     wizard:Game.wizard, currentWorld:Game.currentWorld, currentZone:Game.currentZone,
     currentEncounter:Game.currentEncounter, gold:Game.gold, rules:Game.rules,
-    deck:Game.deck, mode:Game.mode, state:Game.state, round:Game.round,
-    garden:Game.garden, snacks:Game.snacks, reagents:Game.reagents,
+    deck:Game.deck, deckBuild:Game.deckBuild, mode:Game.mode, state:Game.state, round:Game.round,
+    garden:Game.garden, snacks:Game.snacks, potions:Game.potions, reagents:Game.reagents,
     autoUnlocked:Game.autoUnlocked, pet:Game.pet, petRoster:Game.petRoster,
     farming:Game.farming, homeWorld:Game.homeWorld, homeZone:Game.homeZone, homeEncounter:Game.homeEncounter,
     furthestWorld:Game.furthestWorld, furthestZone:Game.furthestZone,
     crafting:Game.crafting, events:Game.events, savedDecks:Game.savedDecks,
-    hubLog:Game.hubLog, logMode:Game.logMode,
+    hubLog:Game.hubLog, logMode:Game.logMode, bazaar:Game.bazaar,
     spiralCycle:Game.spiralCycle,
     graduatedSchools:Game.graduatedSchools, masteryAuras:Game.masteryAuras, enrollmentCount:Game.enrollmentCount,
-    achievements:Game.achievements, stats:Game.stats,
+    achievements:Game.achievements, stats:Game.stats, bestiary:Game.bestiary,
+    autoPotions:Game.autoPotions, autoReshuffle:Game.autoReshuffle, showTabDots:Game.showTabDots,
     lastSaveTime:Date.now(),
   }));
 }
@@ -3032,11 +4055,28 @@ function loadGame() {
     Game.gold = d.gold||0;
     Game.rules = d.rules||[];
     Game.deck = d.deck||Game.wizard.learnedSpells.slice();
+    // Deck system — convert old format or load new
+    if (d.deckBuild) {
+      Game.deckBuild = d.deckBuild;
+    } else {
+      // Migrate old deck array → deckBuild with 2 copies of damage spells, 1 of utility
+      Game.deckBuild = {};
+      var oldDeck = Game.deck || Game.wizard.learnedSpells || [];
+      for (var odi = 0; odi < oldDeck.length; odi++) {
+        var odsp = SPELLS[oldDeck[odi]];
+        if (!odsp) continue;
+        var copies = (odsp.type === 'damage' || odsp.type === 'drain' || odsp.type === 'heal') ? 3 : 2;
+        Game.deckBuild[oldDeck[odi]] = copies;
+      }
+    }
     Game.mode = d.mode||'manual';
     Game.state = d.state||'idle';
     Game.round = d.round||0;
     Game.garden = d.garden||createGarden();
     Game.snacks = d.snacks||0;
+    migrateSnacks();
+    Game.potions = d.potions||null;
+    migratePotions();
     // Reagent backward compatibility
     var dr = getDefaultReagents();
     if (typeof d.reagents === 'number' || !d.reagents) {
@@ -3066,6 +4106,8 @@ function loadGame() {
     Game.savedDecks = d.savedDecks||[];
     Game.hubLog = d.hubLog||[];
     Game.logMode = d.logMode||'verbose';
+    Game.bazaar = d.bazaar||null;
+    initBazaar();
     Game.spiralCycle = d.spiralCycle||1;
     if (Game.wizard.school === 'balance') document.body.classList.add('spiral-theme');
     applySchoolTheme(Game.wizard.school);
@@ -3073,6 +4115,10 @@ function loadGame() {
     Game.masteryAuras = d.masteryAuras||{};
     Game.enrollmentCount = d.enrollmentCount||0;
     Game.achievements = d.achievements||{};
+    Game.bestiary = d.bestiary||{};
+    Game.autoPotions = d.autoPotions !== undefined ? d.autoPotions : true;
+    Game.autoReshuffle = d.autoReshuffle !== undefined ? d.autoReshuffle : true;
+    Game.showTabDots = d.showTabDots !== undefined ? d.showTabDots : true;
     Game.stats = d.stats||{encountersCleared:0,enemiesDefeated:0,spellsCast:0,fizzles:0,crits:0,goldEarned:0,deathCount:0};
     if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
     if (!Game.wizard.enchantments) Game.wizard.enchantments = {};
@@ -3085,8 +4131,10 @@ function loadGame() {
 }
 function resetGame() {
   localStorage.removeItem('spiralbound_save');
+  localStorage.removeItem('spiralbound_tutorial_done');
   if (Game.tickInterval) { clearInterval(Game.tickInterval); Game.tickInterval = null; }
   Game.state = 'idle'; Game.combat = null; Game._spiralWorld = null;
+  Game.graduatedSchools = []; Game.masteryAuras = {}; Game.enrollmentCount = 0;
   applySchoolTheme('');
 }
 
@@ -3174,7 +4222,9 @@ function processOfflineProgress() {
       if (Game.crafting.queue.ticksLeft <= 0) {
         var r = RECIPES[Game.crafting.queue.recipeId];
         if (r) {
-          if (r.result.snacks) { Game.snacks += r.result.snacks; summary.snacks += r.result.snacks; }
+          if (r.result.snack) { migrateSnacks(); addSnack(r.result.snack, r.result.snackQty||1); summary.snacks += (r.result.snackQty||1); }
+          if (r.result.snacks) { migrateSnacks(); addSnack('breadcrumb', r.result.snacks); summary.snacks += r.result.snacks; }
+          if (r.result.potion) { migratePotions(); var opq = r.result.potionQty||1; Game.potions[r.result.potion] = (Game.potions[r.result.potion]||0) + opq; }
           if (r.result.enchantment) Game.crafting.inventory.enchantments.push(r.result.enchantment);
           if (r.result.jewel) Game.crafting.inventory.jewels.push(r.result.jewel);
           if (r.result.gear) {
@@ -3211,12 +4261,12 @@ function processOfflineProgress() {
   } catch(e) { console.error('Offline progress error:', e); }
 }
 
-function initGame(school) {
-  Game.wizard = createWizard(school || 'storm');
+function initGame(school, wizardName) {
+  Game.wizard = createWizard(school || 'storm', wizardName);
   Game.currentWorld=0; Game.currentZone=0; Game.currentEncounter=0;
   Game.gold=0; Game.log=[]; Game.tick=0; Game.round=0;
   Game.mode='manual'; Game.combat=null; Game.phase='none';
-  Game.snacks=0; Game.reagents=getDefaultReagents();
+  Game.snacks=getDefaultSnacks(); Game.potions=getDefaultPotions(); Game.potions.mana_potion=3; Game.potions.health_potion=3; Game.reagents=getDefaultReagents();
   Game.autoUnlocked=false;
   Game.garden = createGarden();
   Game.pet = null; Game.petRoster = [];
@@ -3226,12 +4276,36 @@ function initGame(school) {
   Game.events = {active:[],lastEventTick:0};
   Game.savedDecks = [];
   Game.hubLog = [];
+  Game.bazaar = null;
+  initBazaar();
   Game.spiralCycle = 1;
   Game._spiralWorld = null;
-  Game.graduatedSchools = Game.graduatedSchools || [];
-  Game.masteryAuras = Game.masteryAuras || {};
-  Game.enrollmentCount = Game.enrollmentCount || 0;
+  Game.graduatedSchools = [];
+  Game.masteryAuras = {};
+  Game.enrollmentCount = 0;
+  Game.bestiary = {};
+  // Balance requires all 6 schools graduated — auto-grant for direct selection
+  if (school === 'balance') {
+    var allSchoolsList = ['storm','fire','ice','life','death','myth'];
+    for (var gsi = 0; gsi < allSchoolsList.length; gsi++) {
+      if (Game.graduatedSchools.indexOf(allSchoolsList[gsi]) === -1) Game.graduatedSchools.push(allSchoolsList[gsi]);
+      Game.masteryAuras[allSchoolsList[gsi]] = true;
+    }
+    if (Game.enrollmentCount < 6) Game.enrollmentCount = 6;
+  }
   Game.deck = Game.wizard.learnedSpells.slice();
+  // Build default deckBuild — 3 copies of damage, 2 of utility, capped at deck size
+  Game.deckBuild = {};
+  var maxCards = getDeckSize();
+  var totalCards = 0;
+  for (var dbi = 0; dbi < Game.deck.length; dbi++) {
+    var dbsp = SPELLS[Game.deck[dbi]];
+    if (!dbsp) continue;
+    var copies = (dbsp.type === 'damage' || dbsp.type === 'drain') ? 5 : 3;
+    if (totalCards + copies > maxCards) copies = Math.max(0, maxCards - totalCards);
+    if (copies > 0) { Game.deckBuild[Game.deck[dbi]] = copies; totalCards += copies; }
+    if (totalCards >= maxCards) break;
+  }
   var s = Game.wizard.school;
   if (s === 'storm') {
     Game.rules = [{conditionId:'pips_above_2',spellId:'crackling_crows'},{conditionId:'always',spellId:'volt_asp'}];
@@ -3268,11 +4342,23 @@ function initGame(school) {
       if (Game.wizard.learnedSpells.indexOf(tpKeys[ti]) === -1) Game.wizard.learnedSpells.push(tpKeys[ti]);
     }
     Game.deck = Game.wizard.learnedSpells.slice();
+  // Build default deckBuild — 3 copies of damage, 2 of utility, capped at deck size
+  Game.deckBuild = {};
+  var maxCards = getDeckSize();
+  var totalCards = 0;
+  for (var dbi = 0; dbi < Game.deck.length; dbi++) {
+    var dbsp = SPELLS[Game.deck[dbi]];
+    if (!dbsp) continue;
+    var copies = (dbsp.type === 'damage' || dbsp.type === 'drain') ? 5 : 3;
+    if (totalCards + copies > maxCards) copies = Math.max(0, maxCards - totalCards);
+    if (copies > 0) { Game.deckBuild[Game.deck[dbi]] = copies; totalCards += copies; }
+    if (totalCards >= maxCards) break;
+  }
     Game.autoUnlocked = true;
     if (Game.garden) Game.garden.unlocked = true;
     Game.wizard.trainingPoints = 20;
     Game.gold = 5000;
-    Game.snacks = 100;
+    migrateSnacks(); for(var bsi=0;bsi<SNACK_IDS.length;bsi++) Game.snacks[SNACK_IDS[bsi]]=(Game.snacks[SNACK_IDS[bsi]]||0)+15;
     for (var rr = 0; rr < REAGENT_IDS.length; rr++) Game.reagents[REAGENT_IDS[rr]] = 50;
     recalcStats();
     Game.wizard.hp = Game.wizard.maxHp;
@@ -3292,14 +4378,15 @@ function initGame(school) {
   if (s !== 'balance') {
     addLog('Welcome to Spiralbound.','system');
     addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design."','system');
-    addLog('  — Headmaster Silas Stillwater','info');
-    addLog('School: ' + s.charAt(0).toUpperCase()+s.slice(1) + ' | Rank: Novice | Accuracy: ' + ss.baseAccuracy + '%','info');
+    addLog('  — Headmaster Harlan Duskhollow','info');
+    addLog('A small fox watches from the headmaster\'s coat pocket. It doesn\'t look at you.', 'info');
+    addLog(getWizardTitle() + ' | Accuracy: ' + ss.baseAccuracy + '%','info');
   }
   if (s === 'balance') {
     addLog('You enter The Spiral.', 'system');
     addLog('"I can\'t follow you past this point. No one can teach you what comes next."', 'system');
     addLog('"...I\'m proud of you. Don\'t tell Thornscribe I said that."', 'system');
-    addLog('  — Headmaster Silas Stillwater', 'info');
+    addLog('  — Headmaster Harlan Duskhollow', 'info');
     addLog('', 'info');
     Game.spiralCycle = Game.spiralCycle || 1;
     if (Game.tickInterval) clearInterval(Game.tickInterval);
@@ -3318,7 +4405,7 @@ function initGame(school) {
 // ===== EXPORTS =====
 window.Game=Game; window.SPELLS=SPELLS; window.WORLDS=WORLDS; window.CONDITIONS=CONDITIONS;
 window.GEAR=GEAR; window.GEAR_SLOTS=GEAR_SLOTS; window.SHOPS=SHOPS; window.RANKS=RANKS;
-window.SCHOOL_STATS=SCHOOL_STATS; window.SCHOOL_SPELLS=SCHOOL_SPELLS;
+window.SCHOOL_STATS=SCHOOL_STATS; window.SCHOOL_SPELLS=SCHOOL_SPELLS; window.getWizardTitle=getWizardTitle; window.getProfessorName=getProfessorName;
 window.ENEMIES=ENEMIES; window.getBazaarItems=getBazaarItems;
 window.initGame=initGame; window.loadGame=loadGame; window.saveGame=saveGame; window.resetGame=resetGame;
 window.manualCast=manualCast; window.manualPass=manualPass;
@@ -3337,7 +4424,7 @@ window.setActivePet=setActivePet; window.findPet=findPet;
 window.startBossFight=startBossFight; window.expandGarden=expandGarden;
 window.devSkipZone=devSkipZone; window.devSkipWorld=devSkipWorld;
 window.devUnlockAll=devUnlockAll; window.devAddSeeds=devAddSeeds; window.devKillEnemies=devKillEnemies;
-// v1.1 systems
+// v2.0 systems
 window.ALL_REAGENTS=ALL_REAGENTS; window.REAGENT_IDS=REAGENT_IDS; window.REAGENT_TIER_NAMES=REAGENT_TIER_NAMES; window.REAGENT_TIER_COLORS=REAGENT_TIER_COLORS;
 window.transmute=transmute; window.collectReagents=collectReagents; window.getDefaultReagents=getDefaultReagents; window.getReagentDropsForWorld=getReagentDropsForWorld;
 window.CRAFTING_RANKS=CRAFTING_RANKS; window.CRAFT_RANK_XP=CRAFT_RANK_XP;
@@ -3349,6 +4436,22 @@ window.TP_SPELLS=TP_SPELLS; window.buyTPSpell=buyTPSpell;
 window.saveDeckSlot=saveDeckSlot; window.loadDeckSlot=loadDeckSlot; window.getMaxDecks=getMaxDecks;
 window.processOfflineProgress=processOfflineProgress;
 window.enterSpiral=enterSpiral; window.SPIRAL_VOICE=SPIRAL_VOICE; window.SPIRAL_SHARDS=SPIRAL_SHARDS;
+window.SPIRAL_MODIFIERS=SPIRAL_MODIFIERS; window.ENTROPY_ASPECTS=ENTROPY_ASPECTS; window.SPIRAL_GEAR=SPIRAL_GEAR;
 window.MASTERY_AURAS=MASTERY_AURAS; window.graduate=graduate; window.enrollNewSchool=enrollNewSchool;
 window.ACHIEVEMENTS=ACHIEVEMENTS; window.checkAchievements=checkAchievements; window.sellGear=sellGear;
+window.BESTIARY_LORE=BESTIARY_LORE; window.getBestiaryCount=getBestiaryCount;
+window.initBazaar=initBazaar; window.bazaarBuyReagent=bazaarBuyReagent; window.bazaarSellReagent=bazaarSellReagent;
+window.bazaarBuySnack=bazaarBuySnack; window.bazaarSellSnack=bazaarSellSnack; window.bazaarBuySeed=bazaarBuySeed;
+window.bazaarListGear=bazaarListGear; window.bazaarBuyGear=bazaarBuyGear; window.bazaarQuickSellGear=bazaarQuickSellGear;
+window.getBazaarTimeLeft=getBazaarTimeLeft; window.BAZAAR_REAGENT_BASE_PRICES=BAZAAR_REAGENT_BASE_PRICES;
+window.BAZAAR_SEED_PRICES=BAZAAR_SEED_PRICES;
 window.applySchoolTheme=applySchoolTheme;
+window.getDeckSize=getDeckSize; window.getHandSize=getHandSize; window.getDeckCardCount=getDeckCardCount;
+window.setDeckSpellCount=setDeckSpellCount; window.discardFromHand=discardFromHand;
+window.DECK_SIZES=DECK_SIZES; window.HAND_SIZES=HAND_SIZES;
+window.manualReshuffle=manualReshuffle;
+window.SNACKS=SNACKS; window.SNACK_IDS=SNACK_IDS; window.feedPetSnack=feedPetSnack;
+window.migrateSnacks=migrateSnacks; window.addSnack=addSnack; window.getTotalSnacks=getTotalSnacks;
+window.bazaarBuySnack=bazaarBuySnack; window.bazaarSellSnack=bazaarSellSnack;
+window.POTIONS=POTIONS; window.POTION_IDS=POTION_IDS; window.usePotion=usePotion;
+window.migratePotions=migratePotions; window.bazaarBuyPotion=bazaarBuyPotion;

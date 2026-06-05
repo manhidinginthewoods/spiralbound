@@ -17,7 +17,7 @@
   --life: #66bb6a;
   --death: #78909c;
   --myth: #ffd54f;
-  --balance: #ffab91;
+  --balance: #d4b896;
   --gold: #ffd700;
   --crit: #ffd700;
   --fizzle: #ef5350;
@@ -25,6 +25,7 @@
   --cast: #b39ddb;
   --border: #2a2a4a;
   --border-light: #3a3a5a;
+  --cast: #b39ddb;
   --pip: #e0e0e0;
   --powerpip: #ffd700;
   --hp-bar: #ef5350;
@@ -59,7 +60,7 @@ body {
 }
 
 .game-title span {
-  color: var(--storm);
+  color: var(--cast);
 }
 
 .header-stats {
@@ -138,16 +139,60 @@ body {
 .pip-dot.power { background: var(--powerpip); }
 .pip-dot.empty { background: var(--bg); }
 
+/* ---- LAYOUT ---- */
+.game-layout {
+  display: flex;
+  height: calc(100vh - 74px);
+  overflow: hidden;
+}
+
+.log-sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.log-sidebar-header {
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-sidebar .combat-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.game-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
 /* ---- TAB BAR ---- */
 .tab-bar {
   display: flex;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  gap: 0;
 }
 
 .tab-btn {
-  flex: 1;
-  padding: 10px 4px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -157,20 +202,20 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
+  white-space: nowrap;
 }
 
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active {
-  color: var(--storm);
-  border-bottom-color: var(--storm);
+  color: var(--cast);
+  border-bottom-color: var(--cast);
 }
 
 /* ---- TAB CONTENT ---- */
 .tab-content {
   display: none;
   padding: 12px 16px;
-  min-height: calc(100vh - 140px);
-  max-height: calc(100vh - 140px);
+  flex: 1;
   overflow-y: auto;
 }
 
@@ -193,7 +238,7 @@ body {
 
 .status-line {
   font-size: 13px;
-  color: var(--storm);
+  color: var(--cast);
   margin-bottom: 4px;
 }
 
@@ -253,7 +298,7 @@ body {
 .log-entry.info { color: var(--text-dim); }
 .log-entry.kill { color: var(--text-bright); }
 .log-entry.death { color: var(--fizzle); font-weight: normal; }
-.log-entry.system { color: var(--storm); }
+.log-entry.system { color: var(--cast); }
 
 .combat-controls {
   display: flex;
@@ -279,15 +324,15 @@ body {
 }
 
 .btn.active {
-  background: var(--storm);
+  background: var(--cast);
   color: var(--bg);
-  border-color: var(--storm);
+  border-color: var(--cast);
 }
 
 .btn.primary {
-  background: var(--storm);
+  background: var(--cast);
   color: var(--bg);
-  border-color: var(--storm);
+  border-color: var(--cast);
 }
 
 /* ---- ENEMY DISPLAY ---- */
@@ -334,8 +379,8 @@ body {
 }
 
 .enemy-card.targeted {
-  border-color: var(--storm);
-  box-shadow: 0 0 6px rgba(179, 157, 219, 0.3);
+  border-color: var(--cast);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
 }
 
 /* ---- MANUAL COMBAT HAND ---- */
@@ -362,11 +407,11 @@ body {
   min-width: 80px;
 }
 
-.spell-card:hover { border-color: var(--storm); color: var(--text-bright); }
+.spell-card:hover { border-color: var(--cast); color: var(--text-bright); }
 .spell-card.disabled { opacity: 0.4; cursor: not-allowed; }
 .spell-card .spell-name { color: var(--text-bright); font-size: 12px; }
 .spell-card .spell-cost { color: var(--text-dim); font-size: 10px; }
-.spell-card .spell-type { color: var(--storm); font-size: 10px; }
+.spell-card .spell-type { color: var(--cast); font-size: 10px; }
 
 /* ---- DECK / PRIORITY RULES ---- */
 .rule-list {
@@ -438,12 +483,12 @@ body {
 }
 
 .zone-row.completed {
-  border-color: var(--storm);
+  border-color: var(--cast);
   opacity: 0.7;
 }
 
 .zone-row.current {
-  border-color: var(--storm);
+  border-color: var(--cast);
   background: var(--bg-surface);
 }
 
@@ -481,13 +526,18 @@ body {
 
 /* ---- SPIRAL THEME (Balance endgame) ---- */
 body.spiral-theme {
-  --bg: #1a1510; --bg-surface: #2a1f15; --bg-card: #3a2a1a;
-  --bg-input: #2a1f15; --border: #4a3a2a; --border-light: #5a4a3a;
-  --text: #e0d0c0; --text-dim: #a08060; --text-bright: #ffe8d0;
+  --bg: #161514; --bg-surface: #1e1d1a; --bg-card: #2a2824;
+  --bg-input: #1e1d1a; --border: #3e3a34; --border-light: #4e4a42;
+  --text: #ddd8d0; --text-dim: #908880; --text-bright: #f4f0e8;
   --cast: var(--balance);
 }
+body.spiral-theme .game-title { letter-spacing: 3px; }
 body.spiral-theme .game-title span { color: var(--balance); }
-body.spiral-theme .tab-btn.active { color: var(--balance); border-bottom-color: var(--balance); }
+body.spiral-theme .tab-btn.active { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life), var(--ice), var(--death)) 1; }
+body.spiral-theme .section-head { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life)) 1; }
+body.spiral-theme .log-sidebar { border-right-color: transparent; border-image: linear-gradient(180deg, var(--storm), var(--fire), var(--ice), var(--life), var(--death), var(--myth)) 1; border-right-width: 2px; border-right-style: solid; }
+body.spiral-theme .btn.active, body.spiral-theme .btn.primary { background: linear-gradient(90deg, var(--storm), var(--fire), var(--myth)); -webkit-background-clip: text; background-clip: text; color: transparent; border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth)) 1; }
+body.spiral-theme .enemy-card.targeted { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--ice)) 1; box-shadow: 0 0 8px rgba(255,255,255,0.15); }
 
 /* ---- SCHOOL THEMES ---- */
 body.school-storm {
@@ -496,34 +546,30 @@ body.school-storm {
   --cast: var(--storm);
 }
 body.school-storm .game-title span { color: var(--storm); }
-body.school-storm .tab-btn.active { color: var(--storm); border-bottom-color: var(--storm); }
 
 body.school-fire {
-  --bg: #1f1410; --bg-surface: #2a1a14; --bg-card: #3a2218;
-  --bg-input: #2a1a14; --border: #4a3020; --border-light: #5a4030;
-  --text: #f0ddd0; --text-dim: #a07860; --text-bright: #fff0e0;
+  --bg: #1a1210; --bg-surface: #251810; --bg-card: #332014;
+  --bg-input: #251810; --border: #4a2e1a; --border-light: #5a3e2a;
+  --text: #f2e0d0; --text-dim: #b08060; --text-bright: #fff2e6;
   --cast: var(--fire);
 }
 body.school-fire .game-title span { color: var(--fire); }
-body.school-fire .tab-btn.active { color: var(--fire); border-bottom-color: var(--fire); }
 
 body.school-ice {
-  --bg: #101820; --bg-surface: #142230; --bg-card: #1a2e42;
-  --bg-input: #142235; --border: #253a50; --border-light: #354a60;
-  --text: #d0e4f0; --text-dim: #6090b0; --text-bright: #e8f4ff;
+  --bg: #0c1520; --bg-surface: #112030; --bg-card: #182c45;
+  --bg-input: #112030; --border: #203a55; --border-light: #305068;
+  --text: #d4e8f4; --text-dim: #5898c0; --text-bright: #eaf6ff;
   --cast: var(--ice);
 }
 body.school-ice .game-title span { color: var(--ice); }
-body.school-ice .tab-btn.active { color: var(--ice); border-bottom-color: var(--ice); }
 
 body.school-life {
-  --bg: #121a14; --bg-surface: #182418; --bg-card: #1e3020;
-  --bg-input: #182418; --border: #2a4028; --border-light: #3a5038;
-  --text: #d4e8d0; --text-dim: #608858; --text-bright: #e8ffe4;
+  --bg: #0e160f; --bg-surface: #142016; --bg-card: #1c2e1e;
+  --bg-input: #142016; --border: #284428; --border-light: #385838;
+  --text: #d4ecd0; --text-dim: #5a9050; --text-bright: #e8ffe4;
   --cast: var(--life);
 }
 body.school-life .game-title span { color: var(--life); }
-body.school-life .tab-btn.active { color: var(--life); border-bottom-color: var(--life); }
 
 body.school-death {
   --bg: #141416; --bg-surface: #1a1a1e; --bg-card: #222228;
@@ -532,7 +578,6 @@ body.school-death {
   --cast: var(--death);
 }
 body.school-death .game-title span { color: var(--death); }
-body.school-death .tab-btn.active { color: var(--death); border-bottom-color: var(--death); }
 
 body.school-myth {
   --bg: #1a1810; --bg-surface: #242018; --bg-card: #302a1a;
@@ -541,14 +586,63 @@ body.school-myth {
   --cast: var(--myth);
 }
 body.school-myth .game-title span { color: var(--myth); }
-body.school-myth .tab-btn.active { color: var(--myth); border-bottom-color: var(--myth); }
 
 /* ---- RESPONSIVE ---- */
+
+/* ---- BAZAAR ---- */
+.bazaar-tab { font-size: 11px !important; padding: 4px 12px !important; }
+.bazaar-tab.active { background: var(--cast) !important; color: var(--bg) !important; border-color: var(--cast) !important; }
+.bazaar-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 10px; margin-bottom: 4px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 4px; font-size: 12px;
+}
+.bazaar-row:hover { border-color: var(--border-light); }
+.bazaar-row .item-info { flex: 1; }
+.bazaar-row .item-name { color: var(--text-bright); }
+.bazaar-row .item-meta { color: var(--text-dim); font-size: 11px; }
+.bazaar-row .item-actions { display: flex; gap: 4px; align-items: center; }
+.bazaar-row .price-tag { font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+.bazaar-row .price-up { color: var(--fizzle); }
+.bazaar-row .price-down { color: var(--heal); }
+.bazaar-row .price-normal { color: var(--gold); }
+.bazaar-row .stock-tag { color: var(--text-dim); font-size: 10px; margin-left: 4px; }
+.bazaar-section-head { font-size: 12px; color: var(--cast); margin: 10px 0 6px 0; padding-bottom: 3px; border-bottom: 1px solid var(--border); }
+
+/* ---- COMBAT FEEDBACK ---- */
+@keyframes damage-flash { 0% { background: var(--fizzle); } 100% { background: var(--bg-card); } }
+@keyframes crit-flash { 0% { box-shadow: 0 0 12px var(--crit); } 100% { box-shadow: none; } }
+@keyframes heal-flash { 0% { background: var(--heal); } 100% { background: var(--bg-card); } }
+.enemy-card.hit { animation: damage-flash 0.4s ease-out; }
+.enemy-card.crit-hit { animation: crit-flash 0.6s ease-out; border-color: var(--crit) !important; }
+.enemy-card.healed { animation: heal-flash 0.4s ease-out; }
+.enemy-card.defeated { opacity: 0.3; border-color: var(--border) !important; }
+
+/* ---- QUILL LOG STYLING ---- */
+.log-sidebar .log-entry { padding: 2px 4px; border-radius: 2px; }
+.log-sidebar .log-entry.system { border-left: 2px solid var(--cast); padding-left: 6px; }
+.log-sidebar .log-entry.crit { border-left: 2px solid var(--crit); padding-left: 6px; }
+.log-sidebar .log-entry.kill { border-left: 2px solid var(--text-bright); padding-left: 6px; }
+.log-sidebar .log-entry.death { border-left: 2px solid var(--fizzle); padding-left: 6px; }
+
+/* ---- COLLAPSIBLE SECTIONS ---- */
+details summary { user-select: none; }
+details summary::-webkit-details-marker { display: none; }
+details[open] > summary { border-color: var(--border-light); background: var(--bg-surface); }
+.tri::after { content: '▸'; }
+details[open] > summary .tri::after { content: '▾'; }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .game-layout { flex-direction: column; height: auto; }
+  .log-sidebar { width: 100%; min-width: 100%; height: 150px; border-right: none; border-bottom: 1px solid var(--border); }
+  .game-main { height: calc(100vh - 224px); }
+  .tab-content { min-height: 0; }
+}
 @media (max-width: 600px) {
   .resource-panel { gap: 6px; }
   .resource-bar { min-width: 80px; }
   .tab-btn { font-size: 10px; padding: 8px 2px; }
-  .combat-log { height: 250px; }
   .rule-row { flex-wrap: wrap; }
   .rule-row select { min-width: 100px; }
 }
