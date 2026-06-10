@@ -12,20 +12,20 @@
   <div class="game-header">
     <div class="game-title">SPIRAL<span>BOUND</span></div>
     <div class="header-stats">
-      <span>Gold: <span class="stat-val" id="header-gold">0</span></span>
+      <span title="Gold — earned from combat, fish sales, events, and assignments. Spent on gear, seeds, bazaar items, and garden tending.">Gold: <span class="stat-val" id="header-gold">0</span></span>
       <span id="header-location" style="color:var(--text-dim)"></span>
     </div>
   </div>
 
   <!-- RESOURCE BARS -->
   <div class="resource-panel">
-    <div class="resource-bar">
+    <div class="resource-bar" title="Health Points — reach 0 and you're defeated. Regenerates while resting.">
       <div class="bar-label"><span>HP</span><span id="hp-text">400/400</span></div>
-      <div class="bar-track"><div class="bar-fill hp" id="hp-fill" style="width:100%"></div></div>
+      <div class="bar-track thick"><div class="bar-fill hp" id="hp-fill" style="width:100%"></div></div>
     </div>
-    <div class="resource-bar">
+    <div class="resource-bar" title="Mana — each spell costs mana. When you run out, you rest to recharge.">
       <div class="bar-label"><span>Mana</span><span id="mana-text">15/15</span></div>
-      <div class="bar-track"><div class="bar-fill mana" id="mana-fill" style="width:100%"></div></div>
+      <div class="bar-track thick"><div class="bar-fill mana" id="mana-fill" style="width:100%"></div></div>
     </div>
     <div class="pip-display" id="pip-container">
       <span class="pip-label">Pips:</span>
@@ -33,28 +33,28 @@
   </div>
 
   <!-- SCHOOL SELECTION OVERLAY -->
-  <div id="school-select" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0a14;z-index:100;overflow-y:auto">
+  <div id="school-select" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0e0e10;z-index:100;overflow-y:auto">
     <div style="max-width:560px;margin:0 auto;padding:40px 20px;text-align:center">
-      <div style="font-size:32px;color:#fff;letter-spacing:6px;margin-bottom:6px;font-family:'Courier New',monospace">SPIRAL<span style="color:#b39ddb">BOUND</span></div>
-      <div style="width:60px;height:1px;background:#b39ddb;margin:0 auto 20px"></div>
+      <div style="font-size:32px;color:#fff;letter-spacing:6px;margin-bottom:6px;font-family:'Courier New',monospace">SPIRAL<span style="color:#c0b8a0">BOUND</span></div>
+      <div style="width:60px;height:1px;background:#c0b8a0;margin:0 auto 20px"></div>
       <div style="font-size:13px;color:#887;margin-bottom:8px;font-style:italic;line-height:1.6">"Welcome to Spindlewood. You'll find it confusing at first.<br>That's by design."</div>
       <div style="font-size:11px;color:#665;margin-bottom:40px">— Headmaster Harlan Duskhollow</div>
 
       <div style="font-size:11px;color:#999;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase">Name Your Wizard</div>
-      <input type="text" id="wizard-name-input" placeholder="Enter name..." maxlength="24" style="background:#16162a;border:1px solid #b39ddb40;border-radius:6px;padding:10px 16px;font-family:'Courier New',monospace;font-size:14px;color:#fff;text-align:center;width:260px;margin-bottom:24px;outline:none" onfocus="this.style.borderColor='#b39ddb'" onblur="this.style.borderColor='#b39ddb40'">
+      <input type="text" id="wizard-name-input" placeholder="Enter name..." maxlength="24" style="background:#1a1a1c;border:1px solid #c0b8a040;border-radius:6px;padding:10px 16px;font-family:'Courier New',monospace;font-size:14px;color:#fff;text-align:center;width:260px;margin-bottom:24px;outline:none" onfocus="this.style.borderColor='#c0b8a0'" onblur="this.style.borderColor='#c0b8a040'">
 
       <div style="font-size:11px;color:#999;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">Choose Your School</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-        <div class="school-card" onclick="selectSchool('storm')" style="background:#12122a;border:1px solid #b39ddb40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#b39ddb';this.style.background='#1a1a35'" onmouseout="this.style.borderColor='#b39ddb40';this.style.background='#12122a'">
-          <div style="font-size:18px;color:#b39ddb;margin-bottom:6px">Storm</div>
+        <div class="school-card" onclick="selectSchool('storm')" style="background:#12122a;border:1px solid #9c7cf240;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#9c7cf2';this.style.background='#1a1a35'" onmouseout="this.style.borderColor='#9c7cf240';this.style.background='#12122a'">
+          <div style="font-size:18px;color:#9c7cf2;margin-bottom:6px">Storm</div>
           <div style="font-size:11px;color:#888;line-height:1.5">Stormcallers deal devastating damage but have the lowest health and their spells fizzle more than any other school. When a storm spell lands, the fight is usually over.</div>
-          <div style="font-size:10px;color:#b39ddb80;margin-top:8px">Stormcaller · Prof. Galesworth</div>
+          <div style="font-size:10px;color:#9c7cf280;margin-top:8px">Stormcaller · Prof. Galesworth</div>
         </div>
-        <div class="school-card" onclick="selectSchool('fire')" style="background:#1a1210;border:1px solid #ef535040;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#ef5350';this.style.background='#241a14'" onmouseout="this.style.borderColor='#ef535040';this.style.background='#1a1210'">
-          <div style="font-size:18px;color:#ef5350;margin-bottom:6px">Fire</div>
+        <div class="school-card" onclick="selectSchool('fire')" style="background:#1a1210;border:1px solid #f0604040;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#f06040';this.style.background='#241a14'" onmouseout="this.style.borderColor='#f0604040';this.style.background='#1a1210'">
+          <div style="font-size:18px;color:#f06040;margin-bottom:6px">Fire</div>
           <div style="font-size:11px;color:#888;line-height:1.5">Pyromancers specialize in damage that burns over time. Their spells keep dealing damage round after round, and some even heal the caster while burning the enemy.</div>
-          <div style="font-size:10px;color:#ef535080;margin-top:8px">Pyromancer · Prof. Ashveil</div>
+          <div style="font-size:10px;color:#f0604080;margin-top:8px">Pyromancer · Prof. Ashveil</div>
         </div>
         <div class="school-card" onclick="selectSchool('ice')" style="background:#0e1620;border:1px solid #4fc3f740;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#4fc3f7';this.style.background='#142230'" onmouseout="this.style.borderColor='#4fc3f740';this.style.background='#0e1620'">
           <div style="font-size:18px;color:#4fc3f7;margin-bottom:6px">Ice</div>
@@ -66,15 +66,15 @@
           <div style="font-size:11px;color:#888;line-height:1.5">Verdancers have the most reliable spells of any school and powerful healing magic. When they heal more than they need, the excess turns into damage.</div>
           <div style="font-size:10px;color:#66bb6a80;margin-top:8px">Verdancer · Prof. Fernsby</div>
         </div>
-        <div class="school-card" onclick="selectSchool('death')" style="background:#121214;border:1px solid #78909c40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#78909c';this.style.background='#1a1a1e'" onmouseout="this.style.borderColor='#78909c40';this.style.background='#121214'">
-          <div style="font-size:18px;color:#78909c;margin-bottom:6px">Death</div>
+        <div class="school-card" onclick="selectSchool('death')" style="background:#121214;border:1px solid #8a8a9a40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#8a8a9a';this.style.background='#1a1a1e'" onmouseout="this.style.borderColor='#8a8a9a40';this.style.background='#121214'">
+          <div style="font-size:18px;color:#8a8a9a;margin-bottom:6px">Death</div>
           <div style="font-size:11px;color:#888;line-height:1.5">Wraiths steal life from their enemies. Many of their attacks heal the caster for a portion of the damage dealt, making them incredibly hard to take down.</div>
-          <div style="font-size:10px;color:#78909c80;margin-top:8px">Wraith · Prof. Marrowick</div>
+          <div style="font-size:10px;color:#8a8a9a80;margin-top:8px">Wraith · Prof. Marrowick</div>
         </div>
-        <div class="school-card" onclick="selectSchool('myth')" style="background:#161410;border:1px solid #ffd54f40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#ffd54f';this.style.background='#242018'" onmouseout="this.style.borderColor='#ffd54f40';this.style.background='#161410'">
-          <div style="font-size:18px;color:#ffd54f;margin-bottom:6px">Myth</div>
+        <div class="school-card" onclick="selectSchool('myth')" style="background:#161410;border:1px solid #e8b83040;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#e8b830';this.style.background='#242018'" onmouseout="this.style.borderColor='#e8b83040';this.style.background='#161410'">
+          <div style="font-size:18px;color:#e8b830;margin-bottom:6px">Myth</div>
           <div style="font-size:11px;color:#888;line-height:1.5">Fabulists summon minions to fight alongside them and take hits in their place. They also have spells that hit multiple times, punching through enemy shields.</div>
-          <div style="font-size:10px;color:#ffd54f80;margin-top:8px">Fabulist · Prof. Thornscribe</div>
+          <div style="font-size:10px;color:#e8b83080;margin-top:8px">Fabulist · Prof. Thornscribe</div>
         </div>
       </div>
 
@@ -108,25 +108,28 @@
 
   <!-- TAB BAR -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-tab="gear" onclick="switchTab('gear')">Wizard</button>
-    <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')">Spellbook</button>
-    <button class="tab-btn" data-tab="pet" onclick="switchTab('pet')">Familiar</button>
-    <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')">Battle</button>
-    <button class="tab-btn" data-tab="map" onclick="switchTab('map')">Atlas</button>
-    <button class="tab-btn" data-tab="bestiary" onclick="switchTab('bestiary')">Bestiary</button>
-    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">Shop</button>
-    <button class="tab-btn" data-tab="craft" onclick="switchTab('craft')">Workshop</button>
-    <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')">Garden</button>
-    <button class="tab-btn" data-tab="options" onclick="switchTab('options')">Options</button>
+    <button class="tab-btn active" data-tab="gear" onclick="switchTab('gear')" title="Character sheet, stats, gear, and professor's assignments">Wizard</button>
+    <button class="tab-btn" data-tab="deck" onclick="switchTab('deck')" title="Your spell deck, priority rules for auto-combat, and training point spells">Spellbook</button>
+    <button class="tab-btn" data-tab="pet" onclick="switchTab('pet')" title="Your familiar, roster, hatchery, and expeditions">Familiar</button>
+    <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')" title="Active combat, spell hand, The Spire, and Dueling Club">Battle</button>
+    <button class="tab-btn" data-tab="map" onclick="switchTab('map')" title="World map — travel between worlds and zones">Atlas</button>
+    <button class="tab-btn" data-tab="bestiary" onclick="switchTab('bestiary')" title="Enemy encyclopedia, monstrology, and treasure card crafting">Bestiary</button>
+    <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')" title="World vendor gear and the Bazaar marketplace">Shop</button>
+    <button class="tab-btn" data-tab="craft" onclick="switchTab('craft')" title="Craft potions, snacks, enchantments, jewels, and gear from reagents">Workshop</button>
+    <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')" title="Plant seeds, grow reagents and snacks, harvest elder rewards">Garden</button>
+    <button class="tab-btn" data-tab="fishing" onclick="switchTab('fishing')" title="Cast your line, catch fish for gold, complete the Fish Tome">Fishing</button>
+    <button class="tab-btn" data-tab="options" onclick="switchTab('options')" title="Game settings, save data, and dev tools">Options</button>
   </div>
 
   <!-- ===== WIZARD TAB ===== -->
   <div class="tab-content active" id="tab-gear">
     <div id="wizard-status"></div>
     <div id="wizard-profile"></div>
-    <details open style="margin-top:12px">
+    <div id="wizard-assignments"></div>
+    <details style="margin-top:12px">
       <summary class="section-head" style="cursor:pointer;list-style:none"><span class="tri"></span> Equipped Gear</summary>
       <div id="gear-equipped"></div>
+      <div id="wand-craft-panel"></div>
     </details>
     <details style="margin-top:12px">
       <summary class="section-head" style="cursor:pointer;list-style:none"><span class="tri"></span> Inventory</summary>
@@ -153,6 +156,9 @@
     <div id="potion-bar" style="display:none;margin-top:8px"></div>
 
     <div class="spell-hand" id="spell-hand" style="display:none"></div>
+
+    <div id="spire-panel" style="margin-top:16px"></div>
+    <div id="duel-panel" style="margin-top:8px"></div>
   </div>
 
   <!-- ===== SPELLBOOK TAB ===== -->
@@ -162,12 +168,12 @@
 
   <!-- ===== SHOP TAB ===== -->
   <div class="tab-content" id="tab-shop">
-    <details open id="shop-vendor-section">
+    <details id="shop-vendor-section">
       <summary class="section-head" id="shop-title" style="cursor:pointer;list-style:none"><span class="tri"></span> Shop</summary>
       <div id="shop-vendor"></div>
     </details>
 
-    <details open id="bazaar-section" style="margin-top:20px">
+    <details id="bazaar-section" style="margin-top:20px">
       <summary style="cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:8px">
         <span><span class="tri"></span> The Bazaar</span>
         <span id="bazaar-refresh-timer" style="font-size:11px;color:var(--text-dim);font-weight:normal"></span>
@@ -198,6 +204,11 @@
     <div id="garden-content"></div>
   </div>
 
+  <!-- ===== FISHING TAB ===== -->
+  <div class="tab-content" id="tab-fishing">
+    <div id="fishing-content"></div>
+  </div>
+
   <!-- ===== PET TAB ===== -->
   <div class="tab-content" id="tab-pet">
     <div id="pet-content"></div>
@@ -211,117 +222,281 @@
   <!-- ===== BESTIARY TAB ===== -->
   <div class="tab-content" id="tab-bestiary">
     <div id="bestiary-content"></div>
+    <div id="grimoire-content" style="margin-top:16px"></div>
   </div>
 
   <!-- ===== OPTIONS TAB ===== -->
   <div class="tab-content" id="tab-options">
     <div class="section-head">Options</div>
 
-    <div class="status-box">
-      <h3>Gameplay</h3>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
-        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
-          <span>Combat Log Mode</span>
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Combat & Speed</h3></summary>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Controls how much detail the Quill shows during combat.">
+          <span>Combat Log</span>
           <select onchange="Game.logMode=this.value;saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
-            <option value="verbose" selected>Verbose (all details)</option>
-            <option value="summary">Summary (results only)</option>
+            <option value="verbose" selected>Verbose</option>
+            <option value="summary">Summary</option>
           </select>
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
-          <span title="Game speed. Normal = 0.8s per tick.">Game Speed</span>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Controls how fast the game ticks. Affects combat speed, garden growth, and all timers.">
+          <span>Game Speed</span>
           <select onchange="Game.TICK_MS=parseInt(this.value);if(Game.tickInterval){clearInterval(Game.tickInterval);Game.tickInterval=setInterval(gameTick,Game.TICK_MS);}saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
-            <option value="1200">Slow (1.2s)</option>
-            <option value="800" selected>Normal (0.8s)</option>
-            <option value="500">Fast (0.5s)</option>
-            <option value="300">Turbo (0.3s)</option>
+            <option value="1200">Slow</option>
+            <option value="800" selected>Normal</option>
+            <option value="500">Fast</option>
+            <option value="300">Turbo</option>
           </select>
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
-          <span>Auto-Potion Use</span>
+      </div>
+    </details>
+
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Automation</h3></summary>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically use potions when HP or mana drops below 25% during auto-combat.">
+          <span>Auto-Potion</span>
           <select onchange="Game.autoPotions=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
-            <option value="on" selected>On (use when low)</option>
-            <option value="off">Off (manual only)</option>
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
           </select>
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
-          <span>Auto-Reshuffle (Auto Mode)</span>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically reshuffle your deck when the draw pile is empty during auto-combat.">
+          <span>Auto-Reshuffle</span>
           <select onchange="Game.autoReshuffle=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
-            <option value="on" selected>On (reshuffle when empty)</option>
-            <option value="off">Off (pass instead)</option>
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
           </select>
         </label>
-        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)">
-          <span>Tab Notification Dots</span>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically harvest mature garden plants. Elder plants still require manual harvest for bonus rewards.">
+          <span>Auto-Harvest Garden</span>
+          <select onchange="Game.autoHarvest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="on">On</option>
+            <option value="off" selected>Off</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically sell common-rarity fish when your bucket accumulates 10+. Rare, Epic, and Legendary fish are kept.">
+          <span>Auto-Sell Common Fish</span>
+          <select onchange="Game.autoSellFish=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="on">On</option>
+            <option value="off" selected>Off</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically pay gold to skip rest and resume combat. Costs 5% of max HP in gold each time.">
+          <span>Auto-Skip Rest</span>
+          <select onchange="Game.autoSkipRest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="on">On</option>
+            <option value="off" selected>Off</option>
+          </select>
+        </label>
+      </div>
+    </details>
+
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Display</h3></summary>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Show colored notification dots on tabs when actions are available.">
+          <span>Tab Notifications</span>
           <select onchange="Game.showTabDots=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on" selected>On</option>
             <option value="off">Off</option>
           </select>
         </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Switch between 12-hour and 24-hour time format in the Quill log.">
+          <span>Time Format</span>
+          <select onchange="Game.use24Hour=this.value==='24';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="12" selected>12-hour</option>
+            <option value="24">24-hour</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Toggle sound effects for combat, level ups, achievements, and other events.">
+          <span>Sound Effects</span>
+          <select onchange="_soundEnabled=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Adjust sound effect volume.">
+          <span>Sound Volume</span>
+          <input type="range" min="0" max="100" value="30" oninput="_soundVolume=this.value/100;" style="width:80px;accent-color:var(--cast)">
+        </label>
       </div>
-    </div>
+    </details>
 
-    <div class="status-box">
-      <h3>Save Data</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        <button class="btn" onclick="saveGame();addHubLog('Game saved.','system');updateUI();alert('Game saved!');">Save Now</button>
-        <button class="btn" onclick="if(confirm('Reset ALL progress? This cannot be undone.')) { resetGame(); document.getElementById('school-select').style.display='block'; }" style="color:var(--fizzle)">Reset Game</button>
-      </div>
-      <div style="margin-top:8px">
-        <button class="btn" onclick="var s=localStorage.getItem('spiralbound_save');if(s){navigator.clipboard.writeText(s).then(function(){alert('Save copied to clipboard!');});}">Export Save</button>
-        <button class="btn" onclick="var s=prompt('Paste save string:');if(s){try{JSON.parse(s);localStorage.setItem('spiralbound_save',s);location.reload();}catch(e){alert('Invalid save data.');}}" style="margin-left:4px">Import Save</button>
-      </div>
-      <div style="font-size:10px;color:var(--text-dim);margin-top:6px">Game auto-saves every 60 ticks. Export to back up or transfer between devices.</div>
-    </div>
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Save Data</h3></summary>
+      <div style="padding-top:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn primary" onclick="saveGame();addHubLog('Game saved.','system');updateUI();">Save Now</button>
+          <button class="btn" onclick="var s=localStorage.getItem('spiralbound_save');if(s){navigator.clipboard.writeText(s).then(function(){alert('Save copied to clipboard!');});}">Export Save</button>
+          <button class="btn" onclick="var s=prompt('Paste save string:');if(s){try{JSON.parse(s);localStorage.setItem('spiralbound_save',s);location.reload();}catch(e){alert('Invalid save data.');}}">Import Save</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:10px;line-height:1.6">
+          Auto-saves every 30 seconds. Export copies your save to clipboard as text. Import pastes a previously exported save.
+        </div>
 
-    <div class="status-box">
-      <h3>Help</h3>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-        <button class="btn" onclick="localStorage.removeItem('spiralbound_tutorial_done');showTutorial();">Replay Tutorial</button>
-        <button class="btn" onclick="Game.log=[];Game.hubLog=[];renderHub();addLog('Quill cleared.','system');">Clear Quill</button>
-      </div>
-      <div style="font-size:10px;color:var(--text-dim);line-height:1.6;margin-top:4px">
-        <strong style="color:var(--text-bright)">Keyboard Shortcuts</strong><br>
-        1-0: Switch tabs (Wizard, Spellbook, Familiar, Battle, Atlas, Bestiary, Shop, Workshop, Garden, Options)
-      </div>
-    </div>
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--text-bright);margin-bottom:6px">Save Slots</div>
+          <div id="save-slots-ui" style="display:flex;flex-direction:column;gap:6px"></div>
+          <script>
+            function renderSaveSlots() {
+              var el = document.getElementById('save-slots-ui');
+              if (!el) return;
+              var h = '';
+              for (var i = 0; i < SAVE_SLOT_COUNT; i++) {
+                var info = getSaveSlotInfo(i);
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:11px">';
+                h += '<div>';
+                h += '<span style="color:var(--text-dim)">Slot ' + (i+1) + ':</span> ';
+                if (info) {
+                  var schoolColor = 'var(--' + info.school + ')';
+                  var worldName = typeof WORLDS !== 'undefined' && WORLDS[info.world] ? WORLDS[info.world].name : 'The Spiral';
+                  var age = info.lastSaveTime ? Math.floor((Date.now() - info.lastSaveTime) / 60000) : 0;
+                  var ageStr = age < 1 ? 'just now' : age < 60 ? age + 'm ago' : age < 1440 ? Math.floor(age/60) + 'h ago' : Math.floor(age/1440) + 'd ago';
+                  h += '<span style="color:' + schoolColor + '">' + info.name + '</span>';
+                  h += ' <span style="color:var(--text-dim)">Lv' + info.level + ' ' + info.school.charAt(0).toUpperCase() + info.school.slice(1) + ' · ' + worldName;
+                  if (info.enrollment > 0) h += ' · Run ' + (info.enrollment+1);
+                  if (info.school === 'balance') h += ' · C' + info.spiralCycle;
+                  h += ' · ' + ageStr + '</span>';
+                } else {
+                  h += '<span style="color:var(--text-dim);font-style:italic">Empty</span>';
+                }
+                h += '</div><div style="display:flex;gap:4px">';
+                h += '<button class="btn" onclick="saveToSlot('+i+');renderSaveSlots();" style="font-size:9px;padding:2px 8px">Save</button>';
+                if (info) {
+                  h += '<button class="btn" onclick="if(confirm(\'Load slot '+(i+1)+'? Current unsaved progress will be lost.\')){loadFromSlot('+i+');}" style="font-size:9px;padding:2px 8px">Load</button>';
+                  h += '<button class="btn" onclick="if(confirm(\'Delete slot '+(i+1)+'?\')){deleteSlot('+i+');renderSaveSlots();}" style="font-size:9px;padding:2px 8px;color:var(--fizzle)">Del</button>';
+                }
+                h += '</div></div>';
+              }
+              el.innerHTML = h;
+            }
+            setTimeout(renderSaveSlots, 100);
+          </script>
+        </div>
 
-    <details class="status-box" style="margin-top:0">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline"><span class="tri"></span> Dev Menu</h3></summary>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:8px">
-        <button class="btn" onclick="Game.gold+=500;saveGame();updateUI();">+500 Gold</button>
-        <button class="btn" onclick="Game.gold+=5000;saveGame();updateUI();">+5000 Gold</button>
-        <button class="btn" onclick="migrateSnacks();for(var sk of SNACK_IDS)Game.snacks[sk]=(Game.snacks[sk]||0)+5;saveGame();updateUI();">+5 Each Snack</button>
-        <button class="btn" onclick="migratePotions();for(var pk of POTION_IDS)Game.potions[pk]=(Game.potions[pk]||0)+5;saveGame();updateUI();">+5 Each Potion</button>
-        <button class="btn" onclick="for(var t of REAGENT_IDS)Game.reagents[t]=(Game.reagents[t]||0)+20;saveGame();updateUI();">+20 Each Reagent</button>
-        <button class="btn" onclick="Game.wizard.trainingPoints=(Game.wizard.trainingPoints||0)+10;saveGame();updateUI();">+10 TP</button>
-        <button class="btn" onclick="Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;updateUI();">Full Heal</button>
-        <button class="btn" onclick="devSkipZone()">Skip Zone</button>
-        <button class="btn" onclick="devSkipWorld()">Skip World</button>
-        <button class="btn" onclick="devUnlockAll()">Unlock All</button>
-        <button class="btn" onclick="devAddSeeds()">+5 Each Seed</button>
-        <button class="btn" onclick="devKillEnemies()">Kill Enemies</button>
-        <button class="btn" onclick="Game.crafting.rank=Math.min(Game.crafting.rank+1,CRAFTING_RANKS.length-1);addLog('DEV: Crafting rank → '+CRAFTING_RANKS[Game.crafting.rank],'system');saveGame();updateUI();">Crafting Rank Up</button>
-        <button class="btn" onclick="Game.crafting.rank=CRAFTING_RANKS.length-1;addLog('DEV: Max crafting rank','system');saveGame();updateUI();">Max Crafting Rank</button>
-        <button class="btn" onclick="Game.crafting.inventory.enchantments.push('keen_edge','sharp_edge','brilliant_edge','precision','greater_precision','efficiency');addLog('DEV: +1 of each enchantment','system');saveGame();updateUI();">+All Enchantments</button>
-        <button class="btn" onclick="Game.crafting.inventory.jewels.push('ruby','sapphire','emerald','citrine','opal');addLog('DEV: +1 of each jewel','system');saveGame();updateUI();">+All Jewels</button>
-        <button class="btn" onclick="if(Game.pet){Game.pet.stageIndex=6;Game.pet.xp=6000;for(var mi=0;mi<Game.pet.talentPool.length&&Game.pet.manifested.length<5;mi++){if(Game.pet.manifested.indexOf(Game.pet.talentPool[mi])===-1)Game.pet.manifested.push(Game.pet.talentPool[mi]);}addLog('DEV: '+Game.pet.name+' → Ultra (all talents)','system');recalcStats();saveGame();updateUI();}else{addLog('DEV: No active pet','info');updateUI();}">Max Pet Stage</button>
-        <button class="btn" onclick="generateEvent();updateUI();">Force Event</button>
-        <button class="btn" onclick="Game.wizard.rankIndex=RANKS.length-2;rankUp();Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;saveGame();updateUI();">Max Rank</button>
-        <button class="btn" onclick="var s=prompt('Switch school to:','storm');if(s&&SCHOOL_STATS[s]){Game.wizard.school=s;applySchoolTheme(s);var ss=SCHOOL_SPELLS[s];for(var r=0;r<=Game.wizard.rankIndex&&r<ss.length;r++){for(var i=0;i<ss[r].length;i++){if(Game.wizard.learnedSpells.indexOf(ss[r][i])===-1){Game.wizard.learnedSpells.push(ss[r][i]);Game.deck.push(ss[r][i]);}}}recalcStats();addLog('DEV: School → '+s,'system');saveGame();updateUI();}">Switch School</button>
-        <button class="btn" onclick="graduate();saveGame();updateUI();">Graduate Now</button>
-        <button class="btn" onclick="['storm','fire','ice','life','death','myth'].forEach(function(s){if(Game.graduatedSchools.indexOf(s)===-1){Game.graduatedSchools.push(s);Game.masteryAuras[s]=true;}});Game.enrollmentCount=6;addLog('DEV: All schools graduated','crit');saveGame();updateUI();">Graduate All</button>
-        <button class="btn" onclick="Game.furthestWorld=WORLDS.length-1;Game.furthestZone=10;addLog('DEV: All worlds unlocked for Atlas/Bestiary','system');saveGame();updateUI();">Unlock All Worlds</button>
-        <button class="btn" onclick="Game.autoUnlocked=true;addLog('DEV: Auto-combat unlocked','system');saveGame();updateUI();">Unlock Auto</button>
+        <div style="border-top:1px solid var(--border);padding-top:8px">
+          <button class="btn" onclick="if(confirm('Reset ALL progress? This cannot be undone. Your wizard, gear, pets, and all progression will be permanently deleted.')) { resetGame(); document.getElementById('school-select').style.display='block'; }" style="color:var(--fizzle);font-size:10px">Reset Game</button>
+          <span style="font-size:9px;color:var(--text-dim);margin-left:8px">Permanently deletes all progress</span>
+        </div>
+      </div>
+    </details>
+
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Help & Info</h3></summary>
+      <div style="padding-top:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn" onclick="localStorage.removeItem('spiralbound_tutorial_done');showTutorial();">Replay Tutorial</button>
+          <button class="btn" onclick="Game.log=[];Game.hubLog=[];renderHub();addLog('Quill cleared.','system');">Clear Quill Log</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
+          <strong style="color:var(--text-bright)">Keyboard Shortcuts</strong><br>
+          1-9, 0 — Switch tabs<br>
+          <br>
+          <strong style="color:var(--text-bright)">Combat Keys</strong> (Battle tab, manual mode)<br>
+          1-9 — Cast spell from hand<br>
+          Q — Pass turn<br>
+          Tab — Cycle target<br>
+          M — Toggle auto/manual<br>
+          <br>
+          <strong style="color:var(--text-bright)">Game Info</strong><br>
+          8 worlds, 7 schools, 6 enrollment runs + Balance endgame<br>
+          Auto-combat unlocks after clearing Training Grounds (W1)<br>
+          Boss fights are always manual<br>
+          The Spire and Dueling Club are manual-only challenges
+        </div>
+      </div>
+    </details>
+
+    <details class="status-box" style="margin-bottom:8px">
+      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Dev Menu</h3></summary>
+      <div style="padding-top:8px">
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Resources</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="Game.gold+=500;saveGame();updateUI();">+500g</button>
+          <button class="btn" onclick="Game.gold+=5000;saveGame();updateUI();">+5kg</button>
+          <button class="btn" onclick="Game.gold+=50000;saveGame();updateUI();">+50kg</button>
+          <button class="btn" onclick="for(var t of REAGENT_IDS)Game.reagents[t]=(Game.reagents[t]||0)+20;saveGame();updateUI();">+Reagents</button>
+          <button class="btn" onclick="migrateSnacks();for(var sk of SNACK_IDS)Game.snacks[sk]=(Game.snacks[sk]||0)+10;saveGame();updateUI();">+Snacks</button>
+          <button class="btn" onclick="migratePotions();for(var pk of POTION_IDS)Game.potions[pk]=(Game.potions[pk]||0)+10;saveGame();updateUI();">+Potions</button>
+          <button class="btn" onclick="devAddSeeds()">+Seeds</button>
+          <button class="btn" onclick="Game.wizard.trainingPoints=(Game.wizard.trainingPoints||0)+10;saveGame();updateUI();">+10 TP</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Wizard</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;updateUI();">Full Heal</button>
+          <button class="btn" onclick="Game.wizard.xp=(Game.wizard.xp||0)+500;checkLevelUp();saveGame();updateUI();">+500 XP</button>
+          <button class="btn" onclick="Game.wizard.rankIndex=RANKS.length-2;rankUp();Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;saveGame();updateUI();">Max Rank</button>
+          <button class="btn" onclick="Game.wizard.level=40;Game.wizard.xp=28000;var ssl=SCHOOL_SPELL_LEVELS[Game.wizard.school];if(ssl){for(var l in ssl){for(var si=0;si<ssl[l].length;si++){if(Game.wizard.learnedSpells.indexOf(ssl[l][si])===-1)Game.wizard.learnedSpells.push(ssl[l][si]);}}}addLog('DEV: Max level + all spells','crit');saveGame();_deckDirty=true;updateUI();">Max Level</button>
+          <button class="btn" onclick="Game.autoUnlocked=true;addLog('DEV: Auto unlocked','system');saveGame();updateUI();">Unlock Auto</button>
+          <button class="btn" onclick="equipBest();_gearDirty=true;updateUI();">Equip Best</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Progression</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="devSkipZone()">Skip Zone</button>
+          <button class="btn" onclick="devSkipWorld()">Skip World</button>
+          <button class="btn" onclick="devKillEnemies()">Kill Enemies</button>
+          <button class="btn" onclick="Game.furthestWorld=WORLDS.length-1;Game.furthestZone=10;addLog('DEV: Worlds unlocked','system');saveGame();updateUI();">Unlock Worlds</button>
+          <button class="btn" onclick="graduate();saveGame();updateUI();">Graduate</button>
+          <button class="btn" onclick="['storm','fire','ice','life','death','myth'].forEach(function(s){if(Game.graduatedSchools.indexOf(s)===-1){Game.graduatedSchools.push(s);Game.masteryAuras[s]=true;}});Game.enrollmentCount=6;addLog('DEV: All graduated','crit');saveGame();updateUI();">Graduate All</button>
+          <button class="btn" onclick="devUnlockAll()">Unlock All</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Crafting & Gear</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="Game.crafting.rank=CRAFTING_RANKS.length-1;addLog('DEV: Max crafting rank','system');saveGame();updateUI();">Max Craft</button>
+          <button class="btn" onclick="Game.crafting.inventory.enchantments.push('keen_edge','sharp_edge','brilliant_edge','precision','greater_precision','efficiency');addLog('DEV: +enchantments','system');saveGame();updateUI();">+Enchants</button>
+          <button class="btn" onclick="Game.crafting.inventory.jewels.push('ruby','sapphire','emerald','citrine','opal');addLog('DEV: +jewels','system');saveGame();updateUI();">+Jewels</button>
+          <button class="btn" onclick="initWandCraft();awardWandCore('arc_filament');awardWandCore('ember_vein');awardWandCore('rime_shard');awardWandCore('heartwood_thread');awardWandCore('marrow_strand');awardWandCore('glyph_thread');awardWandCore('loom_splinter');awardWandWood('thornwick_oak');awardWandWood('cogwood');awardWandWood('jade_bamboo');awardWandWood('obsidian_branch');awardWandWood('void_ash');awardWandWood('threadwood');_gearDirty=true;updateUI();">+All Wand Parts</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Familiar</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="if(Game.pet){Game.pet.stageIndex=6;Game.pet.xp=6000;for(var mi=0;mi<Game.pet.talentPool.length&&Game.pet.manifested.length<5;mi++){if(Game.pet.manifested.indexOf(Game.pet.talentPool[mi])===-1)Game.pet.manifested.push(Game.pet.talentPool[mi]);}addLog('DEV: Transcendent','system');recalcStats();saveGame();updateUI();}else{addLog('DEV: No familiar','info');updateUI();}">Max Familiar</button>
+          <button class="btn" onclick="var sps=['spark_otter','cinder_toad','crystal_cub','petal_hare','bone_rat','stone_cat'];for(var i=0;i<sps.length;i++){var np=createPet(sps[i]);if(np)Game.petRoster.push(np);}addLog('DEV: +6 familiars','crit');_petDirty=true;saveGame();updateUI();">+6 Familiars</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Activities</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="initFishing();Game.fishing.energy=Game.fishing.maxEnergy;addLog('DEV: Fishing energy refilled','system');saveGame();_fishDirty=true;updateUI();">Fill Fishing</button>
+          <button class="btn" onclick="initFishing();var rks=Object.keys(FISHING_RODS);for(var i=0;i<rks.length;i++)awardRod(rks[i]);saveGame();updateUI();">+All Rods</button>
+          <button class="btn" onclick="Game.furthestWorld=Math.max(Game.furthestWorld,2);initSpire();Game.spire.unlocked=true;addLog('DEV: Spire unlocked','system');saveGame();updateUI();">Unlock Spire</button>
+          <button class="btn" onclick="Game.furthestWorld=Math.max(Game.furthestWorld,1);initDuelingClub();Game.dueling.unlocked=true;addLog('DEV: Dueling unlocked','system');saveGame();updateUI();">Unlock Dueling</button>
+          <button class="btn" onclick="generateEvent();updateUI();">Force Event</button>
+          <button class="btn" onclick="if(Game.assignments){Game.assignments.active=[];generateAssignments();}else{initAssignments();generateAssignments();}updateUI();">Reroll Assignments</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Monstrology & TCs</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};var eKeys=Object.keys(ENEMIES);for(var i=0;i<10;i++){var ek=eKeys[Math.floor(Math.random()*eKeys.length)];Game.monstrology.animus[ek]=(Game.monstrology.animus[ek]||0)+3;}addLog('DEV: +30 random animus','crit');saveGame();updateUI();">+Animus</button>
+          <button class="btn" onclick="if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};if(!Game.monstrology.treasureCards)Game.monstrology.treasureCards=[];['volt_asp','ember_fox','frost_scarab_s','thorn_sprite_s','shadow_wisp_s','fang_bat'].forEach(function(s){var sp=SPELLS[s];if(sp)Game.monstrology.treasureCards.push({id:'tc_'+s+'_'+Date.now()+Math.random(),spellId:s,school:sp.school,name:sp.name+' TC',type:'treasure'});});addLog('DEV: +6 Treasure Cards','crit');saveGame();updateUI();">+6 TCs</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Spiral (Balance)</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="if(Game._spiralWorld){Game.spiralCycle++;Game._spiralWorld=null;enterSpiral();addLog('DEV: Next Spiral cycle','system');}else{addLog('DEV: Not in Spiral','info');}updateUI();">Skip Cycle</button>
+          <button class="btn" onclick="awardSpiralShard();saveGame();updateUI();">+Shard</button>
+          <button class="btn" onclick="for(var i=0;i<5;i++)awardSpiralShard();saveGame();updateUI();">+5 Shards</button>
+          <button class="btn" onclick="Game.spiralCycle=(Game.spiralCycle||1)+10;addLog('DEV: +10 cycles','system');saveGame();updateUI();">+10 Cycles</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Danger Zone</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn" onclick="Game.wizard.hp=1;updateUI();" style="color:var(--fizzle)">Set HP to 1</button>
+          <button class="btn" onclick="Game.wizard.mana=0;updateUI();" style="color:var(--fizzle)">Drain Mana</button>
+          <button class="btn" onclick="Game.wizard.hp=0;handleDeath();updateUI();" style="color:var(--fizzle)">Force Death</button>
+        </div>
+
       </div>
     </details>
 
     <div class="status-box">
-      <h3>About</h3>
       <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
-        <strong style="color:var(--text-bright)">Spiralbound</strong> — A W101-inspired incremental game<br>
-        Version 2.0<br>
-        Built with vanilla HTML/CSS/JS. No frameworks.<br>
-        Save data stored in localStorage.
+        <strong style="color:var(--text-bright)">Spiralbound</strong> v2.0<br>
+        Vanilla HTML/CSS/JS · localStorage saves
       </div>
     </div>
   </div><!-- end options tab -->
@@ -334,11 +509,12 @@
     <div style="max-width:480px;margin:40px auto;padding:30px 24px;background:var(--bg-surface);border:1px solid var(--border-light);border-radius:8px">
       <div style="font-size:18px;color:var(--text-bright);margin-bottom:16px;letter-spacing:1px">Getting Started</div>
       <div id="tutorial-step" style="font-size:12px;color:var(--text);line-height:1.7"></div>
-      <div style="display:flex;justify-content:space-between;margin-top:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
         <button class="btn" id="tutorial-prev" onclick="tutorialNav(-1)" style="font-size:11px;padding:4px 14px" disabled>Back</button>
         <span id="tutorial-dots" style="color:var(--text-dim);font-size:11px"></span>
         <button class="btn primary" id="tutorial-next" onclick="tutorialNav(1)" style="font-size:11px;padding:4px 14px">Next</button>
       </div>
+      <div style="text-align:center;margin-top:12px"><button class="btn" onclick="document.getElementById('tutorial-overlay').style.display='none';localStorage.setItem('spiralbound_tutorial_done','1');" style="font-size:10px;padding:2px 10px;color:var(--text-dim)">Skip Tutorial</button></div>
     </div>
   </div>
 
@@ -347,13 +523,13 @@
   <script>
     var _tutorialStep = 0;
     var _tutorialSteps = [
-      '<strong style="color:var(--cast)">Combat</strong> starts in manual mode — you pick your spells each round. Defeat the first boss to unlock <strong>auto-combat</strong>. Check the <strong>Battle</strong> tab to watch fights and choose spells.<br><br>The <strong style="color:var(--cast)">Quill</strong> on the left logs everything — combat results, rewards, and events.',
+      '<strong style="color:var(--cast)">Combat</strong> starts in manual mode — you pick your spells each round. Clear the Training Grounds to unlock <strong>auto-combat</strong>. Boss fights are always manual.<br><br>You gain <strong>XP</strong> from kills. Level up to learn new spells from your professor. The <strong style="color:var(--cast)">Quill</strong> on the left logs everything.',
       '<strong style="color:var(--cast)">Your Deck</strong> is your strategy. In the <strong>Spellbook</strong> tab, set how many copies of each spell go in your deck. You draw a hand each round — you can only cast what you draw.<br><br>More copies = more likely to draw it. Deck size grows as you rank up.',
-      '<strong style="color:var(--cast)">Priority Rules</strong> control auto-combat. In the Spellbook tab, set IF/THEN rules like "IF pips above 2 → cast Crackling Crows." Rules are checked top-to-bottom against your current hand.',
-      '<strong style="color:var(--cast)">Manual Mode</strong> lets you pick spells yourself during boss fights. You can also <strong>discard</strong> cards you don\'t want and draw replacements, or <strong>reshuffle</strong> your entire deck (costs your turn).',
-      '<strong style="color:var(--cast)">Gear & Gold</strong> — buy gear from the <strong>Shop</strong> tab to boost your stats. The <strong>Bazaar</strong> has reagents, potions, snacks, and seeds at fluctuating prices. Prices shift over time.',
-      '<strong style="color:var(--cast)">Workshop</strong> lets you craft potions, pet snacks, enchantments, and gear from reagents. Reagents drop from enemies (12% chance) and grow in the <strong>Garden</strong>.<br><br><strong>Potions</strong> restore HP/mana during combat — auto-mode uses them when you\'re low.',
-      '<strong style="color:var(--cast)">The Journey</strong> — fight through 8 worlds, defeat bosses, rank up, and graduate. Then enroll in a new school for a fresh run with mastery auras that stack. Graduate all 6 schools to unlock <strong>Balance</strong> and enter <strong>The Spiral</strong> — the infinite endgame.<br><br>Good luck, wizard.',
+      '<strong style="color:var(--cast)">Priority Rules</strong> control auto-combat. In the Spellbook tab, set IF/THEN rules like "IF no blade → cast Blade" or "IF pips above 3 → cast your strongest spell." Rules are checked top-to-bottom.',
+      '<strong style="color:var(--cast)">Gear & Gold</strong> — buy gear from the <strong>Shop</strong> to boost your stats. The <strong>Bazaar</strong> has reagents, potions, snacks, and seeds at fluctuating prices. Equip <strong>wand cores</strong> and <strong>woods</strong> for bonus stats as you find them.',
+      '<strong style="color:var(--cast)">Side Activities</strong> unlock as you progress:<br>- <strong>Familiar</strong> — hatched from boss drops, boost your stats, send on <strong>expeditions</strong><br>- <strong>Garden</strong> — grow reagents and snacks from seeds<br>- <strong>Workshop</strong> — craft potions, enchantments, jewels, and gear<br>- <strong>Fishing</strong> — catch fish for gold with a timing minigame, collect rods',
+      '<strong style="color:var(--cast)">Challenges</strong> — test your skills beyond auto-battle:<br>- <strong>The Spire</strong> — a tower challenge with a restricted deck (unlocks W3)<br>- <strong>Dueling Club</strong> — 1v1 fights vs named NPCs, including your <strong>rival</strong> (unlocks W1)<br>- <strong>Professor\'s Assignments</strong> — rotating goals for bonus rewards<br>- <strong>Bestiary</strong> — track enemies, extract animus, craft treasure cards',
+      '<strong style="color:var(--cast)">The Journey</strong> — fight through 8 worlds, defeat bosses, rank up, and graduate. Then enroll in a new school for a fresh run with mastery auras that stack. Graduate all 6 schools to unlock <strong>Balance</strong> and enter <strong>The Spiral</strong> — the infinite endgame.<br><br>New tabs unlock as you progress. Check the <strong>Wizard</strong> tab for your professor\'s assignments. Good luck, wizard.',
     ];
     function showTutorial() {
       _tutorialStep = 0;
@@ -382,13 +558,15 @@
       var nameInput = document.getElementById('wizard-name-input');
       var wizardName = (nameInput && nameInput.value.trim()) || '';
       if (!wizardName) {
-        nameInput.style.borderColor = '#ef5350';
+        nameInput.style.borderColor = '#f06040';
         nameInput.placeholder = 'Name required!';
         nameInput.focus();
         return;
       }
       document.getElementById('school-select').style.display = 'none';
       initGame(school, wizardName);
+      switchTab('gear');
+      updateUI();
       if (!localStorage.getItem('spiralbound_tutorial_done')) {
         localStorage.setItem('spiralbound_tutorial_done', '1');
         showTutorial();
@@ -410,27 +588,77 @@
             if (Game.wizard.school === 'balance' && !Game._spiralWorld) {
               enterSpiral();
             } else if (Game.state === 'fighting' && !Game.combat) {
+              var savedRound = Game.round;
               startEncounter();
+              Game.round = savedRound;
+              Game._resumedFromSave = true;
             }
           }
           updateUI();
         }
       } catch(e) {
         console.error('Boot error:', e);
-        console.warn('Save corrupted. Resetting...');
         localStorage.removeItem('spiralbound_save');
-        setTimeout(function(){ location.reload(); }, 500);
+        document.getElementById('school-select').style.display = 'block';
       }
     });
 
-    // Keyboard shortcuts for tab switching
-    var tabKeys = ['gear','deck','pet','combat','map','bestiary','shop','craft','garden','options'];
+    // Keyboard shortcuts for tab switching + combat
+    var tabKeys = ['gear','deck','pet','combat','map','bestiary','shop','craft','garden','fishing','options'];
+
     document.addEventListener('keydown', function(e) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
-      var num = parseInt(e.key);
-      if (num >= 1 && num <= 10) {
-        var idx = num === 0 ? 9 : num - 1;
-        if (tabKeys[idx]) { switchTab(tabKeys[idx]); updateUI(); }
+
+      // Combat keys — only when Battle tab is active and in manual mode
+      if (_activeTab === 'combat' && Game.mode === 'manual' && Game.state === 'fighting' && Game.combat && Game.phase === 'waiting_input') {
+        var hand = Game.combat.hand || [];
+
+        // Tab = cycle target
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          var alive = getAliveEnemies();
+          if (alive.length > 1) {
+            var cur = typeof selectedTargetIndex !== 'undefined' ? selectedTargetIndex : 0;
+            var next = (cur + 1) % alive.length;
+            selectTarget(next);
+          }
+          return;
+        }
+
+        // Q = pass
+        if (e.key === 'q' || e.key === 'Q') {
+          manualPass();
+          return;
+        }
+
+        // 1-9 = cast spell from hand
+        var num = parseInt(e.key);
+        if (num >= 1 && num <= 9) {
+          var idx = num - 1;
+          if (idx < hand.length) {
+            var cardId = hand[idx];
+            var sp = SPELLS[cardId] || (typeof getTcSpellId === 'function' && typeof isTcId === 'function' && isTcId(cardId) ? SPELLS[getTcSpellId(cardId)] : null);
+            if (sp && canAffordSpell(sp)) {
+              manualCast(cardId);
+            }
+          }
+          return;
+        }
+
+        // M = toggle auto/manual
+        if (e.key === 'm' || e.key === 'M') {
+          toggleMode();
+          return;
+        }
+      }
+
+      // Tab switching (number keys when not in combat input mode)
+      if (_activeTab !== 'combat' || Game.mode !== 'manual' || Game.phase !== 'waiting_input') {
+        var num2 = parseInt(e.key);
+        if (num2 >= 1 && num2 <= 10) {
+          var tabIdx = num2 === 0 ? 9 : num2 - 1;
+          if (tabKeys[tabIdx]) { switchTab(tabKeys[tabIdx]); updateUI(); }
+        }
       }
     });
   </script>

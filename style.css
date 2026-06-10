@@ -10,22 +10,20 @@
   --text: #e0e0e0;
   --text-dim: #888;
   --text-bright: #fff;
-  --accent: #e94560;
-  --storm: #b39ddb;
-  --fire: #ef5350;
+  --storm: #9c7cf2;
+  --fire: #f06040;
   --ice: #4fc3f7;
   --life: #66bb6a;
-  --death: #78909c;
-  --myth: #ffd54f;
+  --death: #8a8a9a;
+  --myth: #e8b830;
   --balance: #d4b896;
   --gold: #ffd700;
   --crit: #ffd700;
   --fizzle: #ef5350;
   --heal: #66bb6a;
-  --cast: #b39ddb;
+  --cast: #9c7cf2;
   --border: #2a2a4a;
   --border-light: #3a3a5a;
-  --cast: #b39ddb;
   --pip: #e0e0e0;
   --powerpip: #ffd700;
   --hp-bar: #ef5350;
@@ -251,28 +249,71 @@ body {
 .event-banner {
   background: var(--bg-card);
   border: 1px solid var(--gold);
-  border-radius: 4px;
-  padding: 10px 12px;
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  padding: 12px 14px;
   margin-bottom: 8px;
+}
+
+.event-banner .event-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 4px;
 }
 
-.event-banner .event-text {
-  font-size: 12px;
+.event-banner .event-title {
+  font-size: 13px;
+  font-weight: bold;
   color: var(--gold);
 }
 
-.event-banner button {
+.event-banner .event-desc {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.event-banner .event-detail {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.event-banner .event-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.event-banner .event-actions button {
   background: var(--gold);
   color: var(--bg);
   border: none;
-  padding: 4px 12px;
-  border-radius: 3px;
+  padding: 6px 16px;
+  border-radius: 4px;
   font-family: inherit;
   font-size: 11px;
   cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.event-banner .event-actions button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.event-banner .event-actions button.choice-b {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-light);
+}
+
+.event-banner .event-timer {
+  font-size: 10px;
+  color: var(--fizzle);
 }
 
 /* ---- COMBAT LOG ---- */
@@ -345,23 +386,60 @@ body {
 
 .enemy-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
   flex: 1;
-  min-width: 140px;
+  min-width: 160px;
+  max-width: 280px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.enemy-card .enemy-header {
+  padding: 7px 10px 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
 }
 
 .enemy-card .enemy-name {
   font-size: 12px;
   color: var(--text-bright);
-  margin-bottom: 4px;
+  font-weight: bold;
 }
 
-.enemy-card .enemy-school {
-  font-size: 10px;
+.enemy-card .enemy-school-badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.enemy-card .enemy-body {
+  padding: 0 10px 6px;
+}
+
+.enemy-card .enemy-statuses {
+  font-size: 9px;
   color: var(--text-dim);
-  margin-bottom: 4px;
+  padding: 0 10px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.enemy-card .enemy-statuses .status-tag {
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.enemy-card .enemy-hp-section {
+  padding: 4px 10px 8px;
 }
 
 .enemy-card .bar-track {
@@ -373,45 +451,242 @@ body {
 
 .enemy-card .bar-fill {
   height: 100%;
-  background: var(--hp-bar);
   border-radius: 3px;
   transition: width 0.3s;
 }
 
+.enemy-card .enemy-hp-text {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  display: flex;
+  justify-content: space-between;
+}
+
 .enemy-card.targeted {
   border-color: var(--cast);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--cast) 5%, var(--bg-card));
+}
+
+.enemy-card.defeated {
+  opacity: 0.2;
+  transform: scale(0.92);
+  filter: brightness(0.6);
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+.enemy-card.defeated .enemy-header {
+  opacity: 0.6;
+}
+
+.enemy-card.boss-card {
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(135deg, var(--gold), var(--border-light), var(--gold)) 1;
+  border-radius: 0;
+  max-width: 320px;
+}
+
+.enemy-card.boss-card .enemy-header {
+  background: color-mix(in srgb, var(--gold) 8%, var(--bg-card)) !important;
+}
+
+.enemy-card.boss-card .enemy-name {
+  color: var(--gold);
+  font-size: 13px;
 }
 
 /* ---- MANUAL COMBAT HAND ---- */
 .spell-hand {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 8px;
-  padding: 8px;
+  margin-top: 10px;
+  padding: 12px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
+  align-items: flex-end;
 }
 
 .spell-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 11px;
+  background: var(--bg);
+  border: 2px solid var(--border-light);
+  border-radius: 6px;
+  padding: 0;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
-  min-width: 80px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  position: relative;
+  flex: none;
 }
 
-.spell-card:hover { border-color: var(--cast); color: var(--text-bright); }
-.spell-card.disabled { opacity: 0.4; cursor: not-allowed; }
-.spell-card .spell-name { color: var(--text-bright); font-size: 12px; }
-.spell-card .spell-cost { color: var(--text-dim); font-size: 10px; }
-.spell-card .spell-type { color: var(--cast); font-size: 10px; }
+.spell-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.5); }
+.spell-card.disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.spell-card.disabled:hover { transform: none; box-shadow: none; }
+
+.spell-card .spell-pip {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.spell-card .spell-acc {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 8px;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.spell-card .spell-art {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.spell-card .spell-art .spell-type-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.spell-card .spell-name-bar {
+  padding: 4px 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-card);
+}
+
+.spell-card .spell-name {
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1.2;
+  color: var(--text-bright);
+}
+
+.spell-card .spell-effect {
+  padding: 5px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spell-card .spell-tc-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.spell-card .spell-discard {
+  display: block;
+  width: 100%;
+  padding: 3px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.spell-card:hover .spell-discard {
+  opacity: 1;
+  color: var(--fizzle);
+}
+
+.spell-card .spell-discard:hover {
+  background: rgba(239, 83, 80, 0.15);
+}
+
+/* ---- FISHING TIMING BAR ---- */
+@keyframes sweep-bar { 0% { left: 0%; } 50% { left: 96%; } 100% { left: 0%; } }
+.fishing-bar {
+  position: relative;
+  height: 38px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg) 100%);
+  border: 2px solid var(--border-light);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.fishing-bar .catch-zone {
+  position: absolute;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(102,187,106,0.25) 0%, rgba(102,187,106,0.1) 100%);
+  border-left: 2px solid var(--heal);
+  border-right: 2px solid var(--heal);
+}
+.fishing-bar .catch-label {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 9px;
+  color: var(--heal);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  pointer-events: none;
+  font-weight: bold;
+  opacity: 0.8;
+}
+.fishing-bar .sweep-indicator {
+  position: absolute;
+  top: 3px;
+  width: 6px;
+  height: calc(100% - 6px);
+  background: var(--text-bright);
+  border-radius: 3px;
+  box-shadow: 0 0 10px var(--text-bright), 0 0 20px rgba(255,255,255,0.2);
+}
+.bar-track {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.bar-track.thick { height: 8px; border-radius: 4px; }
+.bar-track.thick .bar-fill { border-radius: 4px; }
 
 /* ---- DECK / PRIORITY RULES ---- */
 .rule-list {
@@ -530,19 +805,34 @@ body.spiral-theme {
   --bg-input: #1e1d1a; --border: #3e3a34; --border-light: #4e4a42;
   --text: #ddd8d0; --text-dim: #908880; --text-bright: #f4f0e8;
   --cast: var(--balance);
+  --spiral-grad: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life), var(--ice), var(--death));
 }
 body.spiral-theme .game-title { letter-spacing: 3px; }
 body.spiral-theme .game-title span { color: var(--balance); }
-body.spiral-theme .tab-btn.active { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life), var(--ice), var(--death)) 1; }
-body.spiral-theme .section-head { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life)) 1; }
+body.spiral-theme .game-header { border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, transparent 10%, var(--storm), var(--fire), var(--myth), var(--life), var(--ice), var(--death), transparent 90%) 1; }
+body.spiral-theme .tab-btn.active { border-image: var(--spiral-grad) 1; }
+body.spiral-theme .section-head { border-image: var(--spiral-grad) 1; }
 body.spiral-theme .log-sidebar { border-right-color: transparent; border-image: linear-gradient(180deg, var(--storm), var(--fire), var(--ice), var(--life), var(--death), var(--myth)) 1; border-right-width: 2px; border-right-style: solid; }
-body.spiral-theme .btn.active, body.spiral-theme .btn.primary { background: linear-gradient(90deg, var(--storm), var(--fire), var(--myth)); -webkit-background-clip: text; background-clip: text; color: transparent; border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--myth)) 1; }
-body.spiral-theme .enemy-card.targeted { border-image: linear-gradient(90deg, var(--storm), var(--fire), var(--ice)) 1; box-shadow: 0 0 8px rgba(255,255,255,0.15); }
+body.spiral-theme .btn.active, body.spiral-theme .btn.primary { background: var(--spiral-grad); -webkit-background-clip: text; background-clip: text; color: transparent; border-image: var(--spiral-grad) 1; }
+body.spiral-theme .enemy-card.targeted { border-image: var(--spiral-grad) 1; box-shadow: 0 0 8px rgba(255,255,255,0.15); }
+body.spiral-theme .bar-fill.xp { background: linear-gradient(90deg, var(--storm), var(--fire), var(--myth), var(--life)); }
+body.spiral-theme .bar-fill.hp { background: linear-gradient(90deg, var(--fire), var(--myth), var(--life)); }
+body.spiral-theme .bar-fill.mana { background: linear-gradient(90deg, var(--storm), var(--ice), var(--death)); }
+body.spiral-theme details > summary { border-bottom: 1px solid transparent; border-image: var(--spiral-grad) 1; }
+body.spiral-theme .spell-card:hover { box-shadow: 0 6px 16px rgba(255,255,255,0.15), 0 0 8px rgba(212,184,150,0.2); }
+body.spiral-theme .pip-dot.power { background: linear-gradient(135deg, var(--storm), var(--fire), var(--myth)); }
+body.spiral-theme .achievement-toast { border-image: var(--spiral-grad) 1; border-left: none; }
+body.spiral-theme .bazaar-tab.active { background: var(--spiral-grad) !important; -webkit-background-clip: text !important; background-clip: text !important; color: transparent !important; border-image: var(--spiral-grad) 1 !important; }
+body.spiral-theme .event-banner { border-image: var(--spiral-grad) 1; border-left: none; }
+body.spiral-theme .fishing-bar { border-image: var(--spiral-grad) 1; }
+body.spiral-theme .fishing-bar .catch-zone { border-left-color: var(--balance); border-right-color: var(--balance); background: linear-gradient(180deg, rgba(212,184,150,0.2) 0%, rgba(212,184,150,0.05) 100%); }
+body.spiral-theme .resource-panel { border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, transparent 15%, var(--storm), var(--fire), var(--myth), var(--life), var(--ice), transparent 85%) 1; }
 
 /* ---- SCHOOL THEMES ---- */
 body.school-storm {
-  --bg: #171728; --bg-surface: #1a1e38; --bg-card: #1e2550;
-  --bg-input: #1a1e3a; --border: #2a2e55; --border-light: #3a3e65;
+  --bg: #141428; --bg-surface: #1a1a38; --bg-card: #1e2050;
+  --bg-input: #1a1a3a; --border: #2a2a55; --border-light: #3a3a65;
+  --text: #d8d0f0; --text-dim: #8878b0; --text-bright: #ede8ff;
   --cast: var(--storm);
 }
 body.school-storm .game-title span { color: var(--storm); }
@@ -572,9 +862,9 @@ body.school-life {
 body.school-life .game-title span { color: var(--life); }
 
 body.school-death {
-  --bg: #141416; --bg-surface: #1a1a1e; --bg-card: #222228;
-  --bg-input: #1a1a20; --border: #303038; --border-light: #404048;
-  --text: #c8c8d0; --text-dim: #707080; --text-bright: #e0e0f0;
+  --bg: #121214; --bg-surface: #181818; --bg-card: #1e1e20;
+  --bg-input: #181818; --border: #2a2a2c; --border-light: #3a3a3c;
+  --text: #b8b8bc; --text-dim: #606068; --text-bright: #d8d8e0;
   --cast: var(--death);
 }
 body.school-death .game-title span { color: var(--death); }
@@ -586,8 +876,6 @@ body.school-myth {
   --cast: var(--myth);
 }
 body.school-myth .game-title span { color: var(--myth); }
-
-/* ---- RESPONSIVE ---- */
 
 /* ---- BAZAAR ---- */
 .bazaar-tab { font-size: 11px !important; padding: 4px 12px !important; }
@@ -613,10 +901,116 @@ body.school-myth .game-title span { color: var(--myth); }
 @keyframes damage-flash { 0% { background: var(--fizzle); } 100% { background: var(--bg-card); } }
 @keyframes crit-flash { 0% { box-shadow: 0 0 12px var(--crit); } 100% { box-shadow: none; } }
 @keyframes heal-flash { 0% { background: var(--heal); } 100% { background: var(--bg-card); } }
+@keyframes save-slide { 0% { transform: translateY(20px); opacity: 0; } 15% { transform: translateY(0); opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+.save-toast { position: fixed; bottom: 12px; right: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-size: 10px; color: var(--text-dim); pointer-events: none; opacity: 0; z-index: 50; animation: save-slide 1.5s ease-out; }
+
+/* Achievement toast */
+@keyframes ach-slide { 0% { transform: translateX(100%); opacity: 0; } 10% { transform: translateX(0); opacity: 1; } 85% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(100%); opacity: 0; } }
+.achievement-toast {
+  position: fixed; top: 16px; right: 16px; z-index: 200;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 12%, var(--bg-card)) 0%, var(--bg-card) 100%);
+  border: 1px solid var(--gold); border-left: 3px solid var(--gold);
+  border-radius: 6px; padding: 12px 16px; min-width: 240px; max-width: 320px;
+  pointer-events: none;
+  animation: ach-slide 3.5s ease-in-out forwards;
+}
+.achievement-toast .ach-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--gold); margin-bottom: 4px;
+}
+.achievement-toast .ach-name {
+  font-size: 14px; color: var(--text-bright); font-weight: bold; margin-bottom: 2px;
+}
+.achievement-toast .ach-desc {
+  font-size: 11px; color: var(--text-dim); line-height: 1.4;
+}
 .enemy-card.hit { animation: damage-flash 0.4s ease-out; }
 .enemy-card.crit-hit { animation: crit-flash 0.6s ease-out; border-color: var(--crit) !important; }
 .enemy-card.healed { animation: heal-flash 0.4s ease-out; }
-.enemy-card.defeated { opacity: 0.3; border-color: var(--border) !important; }
+
+/* Floating damage/heal numbers */
+@keyframes float-up { 0% { opacity: 1; transform: translateY(0) scale(1); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px) scale(0.8); } }
+.float-number {
+  position: fixed;
+  font-weight: bold;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 100;
+  animation: float-up 1s ease-out forwards;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  transform: translateX(-50%);
+}
+.float-number.damage { color: var(--fizzle); }
+.float-number.heal { color: var(--heal); }
+.float-number.crit { color: var(--gold); font-size: 18px; text-shadow: 0 0 8px rgba(255,215,0,0.5), 0 1px 4px rgba(0,0,0,0.9); }
+
+/* Level up flash */
+@keyframes levelup-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.7); } 40% { box-shadow: 0 0 30px 6px rgba(255,215,0,0.4); } 100% { box-shadow: none; } }
+.levelup-flash { animation: levelup-pulse 1s ease-out; }
+
+/* Pip gain bounce */
+@keyframes pip-bounce { 0% { transform: scale(1.5); } 50% { transform: scale(0.9); } 100% { transform: scale(1); } }
+.pip-new { animation: pip-bounce 0.3s ease-out; }
+
+/* Screen shake for big hits */
+@keyframes screen-shake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-3px) translateY(1px); }
+  30% { transform: translateX(3px) translateY(-1px); }
+  50% { transform: translateX(-2px); }
+  70% { transform: translateX(2px) translateY(1px); }
+  90% { transform: translateX(-1px); }
+}
+.shaking { animation: screen-shake 0.35s ease-out; }
+
+/* Enemy death animation */
+@keyframes enemy-die {
+  0% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  30% { opacity: 0.8; transform: scale(1.02); filter: brightness(1.5); }
+  100% { opacity: 0.2; transform: scale(0.92); filter: brightness(0.6); }
+}
+.enemy-card.dying { animation: enemy-die 0.6s ease-out forwards; pointer-events: none; }
+
+/* Crit screen flash */
+@keyframes crit-screen-flash {
+  0% { opacity: 0.3; } 100% { opacity: 0; }
+}
+.crit-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, rgba(255,215,0,0.15) 0%, transparent 70%);
+  pointer-events: none; z-index: 90;
+  animation: crit-screen-flash 0.4s ease-out forwards;
+}
+
+/* Gold gain flash */
+@keyframes gold-flash { 0% { color: var(--gold); text-shadow: 0 0 6px rgba(255,215,0,0.6); } 100% { color: inherit; text-shadow: none; } }
+.gold-flash { animation: gold-flash 0.8s ease-out; }
+
+/* Tab unlock slide */
+@keyframes tab-slide-in { 0% { transform: translateX(20px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+.tab-new { animation: tab-slide-in 0.4s ease-out; }
+
+/* Assignment complete */
+@keyframes assignment-complete { 0% { box-shadow: 0 0 0 0 rgba(255,215,0,0.6); } 50% { box-shadow: 0 0 12px 2px rgba(255,215,0,0.3); } 100% { box-shadow: none; } }
+
+/* Card play animation */
+@keyframes card-play { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-20px); opacity: 0; } }
+.spell-card.casting { animation: card-play 0.3s ease-out forwards; pointer-events: none; }
+
+/* Card draw animation */
+@keyframes card-draw { 0% { transform: translateX(-15px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+.spell-card.drawn { animation: card-draw 0.25s ease-out; }
+
+/* Ghost HP bar */
+.bar-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.15);
+  transition: width 0.8s ease-out;
+}
 
 /* ---- QUILL LOG STYLING ---- */
 .log-sidebar .log-entry { padding: 2px 4px; border-radius: 2px; }
