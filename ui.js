@@ -2668,7 +2668,7 @@ function renderPet() {
 function renderMap() {
   var mapEl = document.getElementById('world-map');
   var h = '';
-  var worldColors = ['var(--cast)','#e6c34d','#cd7f32','var(--storm)','var(--fire)','#26a69a','var(--death)','var(--balance)'];
+  var worldColors = ['#a89070','#e6c34d','#cd7f32','#5aab6a','#e05838','#3090b8','#9070b0','var(--gold)'];
   var worldDescs = [
     'A wizard academy built into a living library.',
     'Ancient desert tombs where sand remembers everything.',
@@ -3234,7 +3234,7 @@ function renderGrimoire() {
   h += '<details style="margin-bottom:8px">';
   h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Worlds</summary>';
   h += '<div style="padding-top:6px">';
-  var worldColors2 = ['var(--cast)','#e6c34d','#cd7f32','var(--storm)','var(--fire)','#26a69a','var(--death)','var(--balance)'];
+  var worldColors2 = ['#a89070','#e6c34d','#cd7f32','#5aab6a','#e05838','#3090b8','#9070b0','var(--gold)'];
   for (var wi = 0; wi < g.worlds.length; wi++) {
     var wl = g.worlds[wi];
     var visited = wi <= (Game.furthestWorld || 0);
