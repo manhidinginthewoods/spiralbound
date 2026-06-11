@@ -385,7 +385,12 @@ function updateUI() {
   var hLoc = document.getElementById('header-location');
   if (hLoc) {
     var w = getCurrentWorld(); var z = getCurrentZone();
-    hLoc.textContent = (w ? w.name : '') + (z ? ' · ' + z.name : '');
+    var isMobile = window.innerWidth <= 600;
+    if (isMobile) {
+      hLoc.innerHTML = (w ? w.name : '') + (z ? '<br><span style="font-size:10px;opacity:0.7">' + z.name + '</span>' : '');
+    } else {
+      hLoc.textContent = (w ? w.name : '') + (z ? ' · ' + z.name : '');
+    }
   }
   // Tab notification dots
   updateTabDots();

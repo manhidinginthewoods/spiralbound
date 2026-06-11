@@ -3663,11 +3663,11 @@ function gearScore(stats, gs) {
 function skipRest() {
   if (Game.state !== 'resting') return;
   var cost = Math.floor(Game.wizard.maxHp * 0.05);
-  if (Game.gold < cost) { addLog('Not enough Gold to skip rest (' + cost + 'g).', 'info'); return; }
+  if (Game.gold < cost) { addLog('Not enough Gold to skip rest (' + cost + ' Gold).', 'info'); return; }
   Game.gold -= cost;
   Game.wizard.hp = Game.wizard.maxHp;
   Game.wizard.mana = Game.wizard.maxMana;
-  addLog('Paid ' + cost + 'g to skip rest. Fully recovered.', 'system');
+  addLog('Paid ' + cost + ' Gold to skip rest. Fully recovered.', 'system');
   Game.state = 'fighting';
   startEncounter();
 }
@@ -5029,20 +5029,20 @@ function combatTick() {
     case 'enemy_pause': Game.phase = 'round_end'; break;
     case 'round_end':
       if (getAliveEnemies().length===0) { advanceEncounter(); return; }
-      // Rest if mana too low to cast any damage spell in deck
-      var minCastCost = 999;
-      var deckKeys = Game.deckBuild ? Object.keys(Game.deckBuild) : Game.deck;
-      for (var dci = 0; dci < deckKeys.length; dci++) {
-        var dcs = SPELLS[deckKeys[dci]];
-        if (dcs && typeof dcs.pips === 'number' && dcs.pips > 0 && dcs.mana < minCastCost) minCastCost = dcs.mana;
+      // Try auto-potions if low
+      if (Game.mode === 'auto') {
+        if (Game.wizard.hp < Game.wizard.maxHp * 0.3 || Game.wizard.mana < Game.wizard.maxMana * 0.3) autoPotions();
       }
-      if (Game.wizard.mana < minCastCost) {
-        // Try auto-potion before resting
-        if (Game.mode === 'auto') autoPotions();
-        if (Game.wizard.mana >= minCastCost) { Game.phase = 'round_start'; break; }
+      // Spire/Dueling: out of mana = run over
+      var _minMana = 999;
+      var _dk = Game.deckBuild ? Object.keys(Game.deckBuild) : Game.deck;
+      for (var dci = 0; dci < _dk.length; dci++) {
+        var dcs = SPELLS[_dk[dci]];
+        if (dcs && typeof dcs.pips === 'number' && dcs.pips > 0 && dcs.mana < _minMana) _minMana = dcs.mana;
+      }
+      if (Game.wizard.mana < _minMana) {
         if (Game.spire && Game.spire.active) { addLog('Out of mana in The Spire!','fizzle'); leaveSpire(true); return; }
         if (Game.dueling && Game.dueling.active) { addLog('Out of mana in the duel!','fizzle'); duelLost(); return; }
-        Game.state='resting'; Game.phase='none'; addLog('Low mana. Resting...','system'); return;
       }
       Game.phase = 'round_start';
       break;
@@ -5083,6 +5083,11 @@ function advanceEncounter() {
   Game.stats.encountersCleared = (Game.stats.encountersCleared||0) + 1;
   trackAssignment('encountersCleared', null, 1);
   addLog('✓ Encounter cleared! (' + encInfo + ')', 'kill');
+  // Small recovery between encounters
+  var encounterHeal = Math.floor(Game.wizard.maxHp * 0.05);
+  var encounterMana = Math.floor(Game.wizard.maxMana * 0.03);
+  Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + encounterHeal);
+  Game.wizard.mana = Math.min(Game.wizard.maxMana, Game.wizard.mana + encounterMana);
   Game.currentEncounter++;
   const zone = getCurrentZone();
   const world = getCurrentWorld();
@@ -5213,7 +5218,13 @@ function advanceEncounter() {
     if (Game.farming) {
       Game.currentEncounter = 0;
       addLog('Zone restarted (farming).', 'info');
-      if (Game.wizard.mana<=0) { Game.state='resting'; Game.phase='none'; addLog('Out of mana. Resting...','system'); return; }
+      if (Game.mode === 'auto') autoPotions();
+      var _fMinCast = 999;
+      var _fdk = Game.deckBuild ? Object.keys(Game.deckBuild) : Game.deck;
+      for (var _fi = 0; _fi < _fdk.length; _fi++) { var _fs = SPELLS[_fdk[_fi]]; if (_fs && typeof _fs.pips === 'number' && _fs.pips > 0 && _fs.mana < _fMinCast) _fMinCast = _fs.mana; }
+      var farmLowMana = Game.wizard.mana < _fMinCast;
+      var farmLowHp = Game.mode === 'auto' && Game.wizard.hp < Game.wizard.maxHp * 0.3;
+      if (farmLowMana || farmLowHp) { Game.state='resting'; Game.phase='none'; addLog('Resting before next run...','system'); return; }
       startEncounter();
       return;
     }
@@ -5348,7 +5359,20 @@ function advanceEncounter() {
     }
     Game.currentEncounter = 0;
   }
-  if (Game.wizard.mana<=0) { Game.state='resting'; Game.phase='none'; addLog('Out of mana. Resting...','system'); return; }
+  // Rest between encounters if HP or mana is critically low
+  if (Game.mode === 'auto') autoPotions();
+  var _minCast = 999;
+  var _dKeys = Game.deckBuild ? Object.keys(Game.deckBuild) : Game.deck;
+  for (var _dci = 0; _dci < _dKeys.length; _dci++) {
+    var _dcs = SPELLS[_dKeys[_dci]];
+    if (_dcs && typeof _dcs.pips === 'number' && _dcs.pips > 0 && _dcs.mana < _minCast) _minCast = _dcs.mana;
+  }
+  var lowMana = Game.wizard.mana < _minCast;
+  var lowHp = Game.mode === 'auto' && Game.wizard.hp < Game.wizard.maxHp * 0.3;
+  if (lowMana || lowHp) {
+    var _br = lowHp && lowMana ? 'Low HP and mana' : lowHp ? 'Low HP' : 'Low mana';
+    Game.state='resting'; Game.phase='none'; addLog(_br + '. Resting before next encounter...','system'); return;
+  }
   startEncounter();
 }
 

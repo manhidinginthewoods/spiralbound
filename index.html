@@ -390,39 +390,212 @@
     <details class="status-box" style="margin-bottom:8px">
       <summary><span class="tri"></span> Game Guide</summary>
       <div style="padding-top:8px;font-size:11px;color:var(--text-dim);line-height:1.7">
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Combat</strong><br>
-          Combat starts in manual mode — pick a spell from your hand each round. Clear the Training Grounds (W1) to unlock auto-combat. Boss fights are always manual. XP comes from kills; level up to learn new spells.
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Combat Basics</strong><br>
+          Combat is turn-based. Each round you draw spells into your hand, gain a Sigil, and pick a spell to cast. Enemies attack after you.<br><br>
+          <span style="color:var(--text)">Manual mode</span> — you pick every spell. Required for boss fights, The Spire, and Dueling Club.<br>
+          <span style="color:var(--text)">Auto mode</span> — the game casts for you based on your Priority Rules. Unlocks after clearing the Training Grounds (W1 zone 2).<br><br>
+          If you run out of mana mid-zone, your wizard rests automatically until full. You can pay Gold to skip rest. Potions are limited per zone: 3 in W1-W3, 4 in W4-W5, 5 in W6+. Health and mana potions track separately.<br><br>
+          <span style="color:var(--text)">Death</span> — when HP hits 0, you lose some Gold and restart the current zone. Your level and gear are kept.
         </div>
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Your Deck</strong><br>
-          In the Spellbook tab, set how many copies of each spell go in your deck. You draw a hand each round and can only cast what you draw. More copies = more likely to draw it. Deck size grows as you rank up.
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Sigils & Spell Costs</strong><br>
+          You gain 1 Sigil per round. Regular Sigils are worth 1, Power Sigils are worth 2. Power Sigil chance increases as you rank up.<br><br>
+          Each spell costs a certain number of Sigils to cast. School-matching spells can use Power Sigils at full value. Off-school spells treat Power Sigils as regular (value 1).<br><br>
+          "X Sigil" spells (like Maelstrom) consume all your current Sigils and scale their effect based on how many you spent.
         </div>
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Priority Rules</strong><br>
-          Priority rules control auto-combat. Set IF/THEN rules like "IF no blade → cast Blade" or "IF sigils above 3 → cast your strongest spell." Rules are checked top-to-bottom each round.
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Accuracy & Miscasting</strong><br>
+          Every spell has an accuracy rating. If the roll fails, the spell miscasts — your Sigils are still spent but nothing happens. Each school has a base accuracy: Storm 70%, Fire 75%, Ice/Myth 80%, Death 85%, Life 90%, Balance 85%.<br><br>
+          Accuracy charms, gear bonuses, and enchantments can raise your accuracy above the base. Utility spells (blades, shields, traps, heals) never miscast.
         </div>
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Gear & Gold</strong><br>
-          Buy gear from the Shop to boost stats. The Bazaar has reagents, potions, snacks, and seeds at fluctuating prices. Equip wand cores and woods for bonus stats as you find them.
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Spell Types</strong><br>
+          <span style="color:var(--text)">Damage</span> — direct hit to one enemy. Modified by blades, traps, and damage %.<br>
+          <span style="color:var(--text)">Drain</span> — deals damage and heals you for a portion of the damage dealt.<br>
+          <span style="color:var(--text)">DoT</span> — damage over time. Deals damage each round for several rounds. Stacks with other DoTs.<br>
+          <span style="color:var(--text)">Heal</span> — restores your HP. Affected by incoming healing bonuses.<br>
+          <span style="color:var(--text)">Blade</span> — buffs your next attack by a percentage. Consumed on your next damage spell.<br>
+          <span style="color:var(--text)">Trap</span> — placed on an enemy. Boosts the next damage they receive, then consumed.<br>
+          <span style="color:var(--text)">Shield</span> — reduces the next incoming hit by a percentage. Consumed after one hit.<br>
+          <span style="color:var(--text)">Charm</span> — temporary accuracy boost that lasts several rounds.<br>
+          <span style="color:var(--text)">Global</span> — aura that affects all combatants for the rest of the fight.<br>
+          <span style="color:var(--text)">Prism</span> — converts your spell's school to the enemy's weakness school.<br>
+          <span style="color:var(--text)">Absorb</span> — creates a damage shield that absorbs a flat amount of incoming damage.<br>
+          <span style="color:var(--text)">Summon</span> — conjures a minion that attacks each round (Myth specialty).
         </div>
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Side Activities</strong><br>
-          <span style="color:var(--text)">Familiar</span> — hatched from boss drops, boosts your stats, can be sent on expeditions<br>
-          <span style="color:var(--text)">Garden</span> — grow reagents and snacks from seeds (unlocks W2)<br>
-          <span style="color:var(--text)">Workshop</span> — craft potions, enchantments, jewels, and gear<br>
-          <span style="color:var(--text)">Fishing</span> — catch fish for gold, complete the Fish Tome
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Your Deck</strong><br>
+          In the Spellbook tab, set how many copies of each spell go in your deck (0 to 6). You draw a hand each round and can only cast what you draw. More copies of a spell means you're more likely to draw it.<br><br>
+          Deck size starts at 20 cards and grows with each rank up (max 60 at Archmage). Hand size starts at 5 and grows to 8. If your draw pile runs out, your discard pile reshuffles into it automatically.<br><br>
+          You can save multiple deck builds and switch between them. Use the Clear Deck button to start fresh, and rename saved decks to organize by strategy.
         </div>
-        <div style="margin-bottom:12px">
-          <strong style="color:var(--text-bright)">Challenges</strong><br>
-          <span style="color:var(--text)">The Spire</span> — tower challenge with a restricted deck (unlocks W3)<br>
-          <span style="color:var(--text)">Dueling Club</span> — 1v1 fights vs named NPCs including your rival (unlocks W1)<br>
-          <span style="color:var(--text)">Professor's Assignments</span> — rotating goals for bonus rewards<br>
-          <span style="color:var(--text)">Bestiary</span> — track enemies, extract animus, craft treasure cards
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Priority Rules (Auto-Combat)</strong><br>
+          Priority Rules are IF/THEN instructions that control what auto-combat does each round. They evaluate top-to-bottom — the first rule whose condition is true fires that round.<br><br>
+          Example rules:<br>
+          &nbsp;&nbsp;IF no blade → cast Storm Blade<br>
+          &nbsp;&nbsp;IF enemy HP below 25% → cast Volt Asp<br>
+          &nbsp;&nbsp;IF Sigils above 4 → cast Charybdis<br>
+          &nbsp;&nbsp;IF always → cast Crackling Crows<br><br>
+          If no rules match, auto-combat falls back to: any affordable damage spell in hand, then any affordable spell, then pass. You can load preset rule sets (Balanced, Aggressive, Defensive) as a starting point.<br><br>
+          Rules only apply in auto mode. Boss fights, Spire, and Dueling are always manual.
         </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">School Mechanics</strong><br>
+          Each school has a unique passive mechanic:<br><br>
+          <span style="color:var(--storm)">Storm</span> — Surge: consecutive hits without miscasting build a stacking damage bonus. Resets on miscast.<br>
+          <span style="color:var(--fire)">Fire</span> — Burndown: damage bonus scales with the number of active DoTs on all enemies.<br>
+          <span style="color:var(--ice)">Ice</span> — Glacial Momentum: damage ramps while you have an active shield or absorb. Resets when unshielded.<br>
+          <span style="color:var(--life)">Life</span> — Regeneration: passive HP recovery each round based on your max HP.<br>
+          <span style="color:var(--death)">Death</span> — Siphon: all damage spells drain a small percentage of damage dealt as HP.<br>
+          <span style="color:var(--myth)">Myth</span> — Living Story: damage and accuracy bonus that stacks while your minion is alive. Resets when it dies.<br>
+          <span style="color:var(--balance)">Balance</span> — all mastery auras active simultaneously. Access to every school's spells.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Ranks & Leveling</strong><br>
+          You gain XP from defeating enemies. Leveling up teaches you new spells from your professor and improves your stats.<br><br>
+          Ranks are separate from levels — you rank up by defeating world bosses. Each rank increases base HP, mana, deck size, hand size, and Power Sigil chance.<br><br>
+          Ranks: Novice → Apprentice → Initiate → Journeyman → Adept → Master → Grandmaster → Archmage.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Training Points & Off-School Spells</strong><br>
+          You earn Training Points by clearing zones. Spend them in the Spellbook tab to learn spells from other schools. Off-school spells cost more Sigils and can't benefit from Power Sigils, but they add versatility to your deck.<br><br>
+          Training Point spells have prerequisites — you may need to learn lower-tier spells from that school first.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Gear & Stats</strong><br>
+          Gear drops from enemies and bosses, and can be bought from the Shop or Bazaar. Each piece boosts stats like HP, Mana, Damage %, Resist %, Accuracy %, Critical %, Pierce %, and Power Sigil %.<br><br>
+          Gear stats are scaled by your school — Storm gets bonus damage from gear but less HP, Ice gets bonus HP and resist but less damage.<br><br>
+          Use Equip Best to automatically equip the strongest item for each slot. Lock gear you want to keep from being sold.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Wand Crafting</strong><br>
+          Wand Cores and Wand Woods drop from bosses and world-clear rewards. Each core is school-themed and adds offensive stats. Each wood adds defensive stats.<br><br>
+          Equip a core and wood in the Equipped Gear section to customize your wand's bonuses. Different combinations favor different playstyles.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Enchantments</strong><br>
+          Craft enchantments in the Workshop and apply them to damage spells in the Spellbook tab. Enchantments permanently boost a spell's damage, pierce, or critical chance.<br><br>
+          Higher-tier enchantments require rarer reagents. You can enchant any spell you have access to, regardless of school. Each spell can hold one enchantment.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Familiars</strong><br>
+          Your first familiar hatches from a boss drop egg. Familiars provide passive stat bonuses that grow as they level up through feeding snacks.<br><br>
+          <span style="color:var(--text)">Stages</span> — Baby → Teen → Adult → Ancient → Epic → Legendary → Transcendent. Each stage unlocks a random talent from the familiar's talent pool, granting stat bonuses.<br>
+          <span style="color:var(--text)">Jewel Sockets</span> — at Transcendent stage, familiars can socket jewels for additional stats. Craft jewels in the Workshop.<br>
+          <span style="color:var(--text)">Expeditions</span> — send familiars from your roster on timed expeditions for Gold, reagents, and snacks.<br>
+          <span style="color:var(--text)">Hatchery</span> — combine two familiars to hatch a new one with a mixed talent pool. Costs Gold per parent stage.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Garden</strong><br>
+          Unlocks after reaching World 2. Plant seeds in garden plots to grow reagents and snacks over time. Plants progress through stages: Seedling → Young → Mature → Elder.<br><br>
+          Mature plants can be harvested for their normal yield. Elder plants give bonus rewards but take longer. Plants can wilt if neglected — tend them (costs 3 Gold) to keep them growing. Auto-Harvest can be enabled in Options.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Workshop (Crafting)</strong><br>
+          Craft potions, snacks, enchantments, jewels, and gear from reagents. Crafting XP levels up your crafting rank, unlocking new recipes.<br><br>
+          Reagents drop from enemies and vary by world. Higher-tier reagents come from later worlds. You can transmute 10 of one reagent into 1 of the next tier at the Workshop.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Fishing</strong><br>
+          Cast your line and wait for a bite. When a fish bites, hit Strike during the timing window to catch it. Fish sell for Gold, and rare catches are worth significantly more.<br><br>
+          Fishing costs energy that regenerates over time (and while offline). Better rods improve your catch rate, speed, and Gold value. Equip rods in the Fishing tab. Complete the Fish Tome by catching every species.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">The Bazaar</strong><br>
+          A marketplace with fluctuating prices. Stock and prices refresh every 30 minutes. Buy reagents, potions, snacks, and seeds. Sell gear you don't need.<br><br>
+          Items from worlds you haven't reached yet are visible but can't be purchased — giving you something to work toward. Gear can be quick-sold for 30% value or listed for 50% (an NPC may buy it over time).
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">The Spire</strong><br>
+          A multi-floor tower challenge that unlocks at World 3. Manual combat only. You climb floors fighting increasingly tough enemies with a restricted deck.<br><br>
+          Every 2 floors you earn a rune buff that lasts the run. Every 5 floors drops boss-tier gear. Dying or running out of mana ends the run. Your main progression is saved and restored when you leave.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Dueling Club</strong><br>
+          Unlocks after clearing World 1. Manual 1v1 fights against named NPC wizards, including your rival (a randomly generated wizard who shadows your progression).<br><br>
+          Win streaks multiply Gold rewards (+25% per consecutive win). Your rival appears periodically with scaling stats. Dueling does not affect your main progression.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Professor's Assignments</strong><br>
+          Rotating objectives from your professor — kill X enemies, earn Gold, catch fish, clear Spire floors, etc. Completing assignments rewards Gold, XP, and reagents. Assignments refresh periodically, or you can reroll them (losing current progress).
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Bestiary & Faunology</strong><br>
+          The Bestiary tracks every enemy you've defeated. Faunology lets you extract animus from defeated enemies and use it to craft Treasure Cards — one-time-use copies of spells that burn after casting.<br><br>
+          Slot Treasure Cards into your deck for extra firepower. They're especially useful for boss fights and the Spire.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Events</strong><br>
+          Random events appear in The Quill every 10-15 minutes. Some are instant (free Gold, reagents, familiar gifts), others offer choices with risk/reward tradeoffs. Timed events expire if not claimed. Some events cost Gold but offer rare rewards like wand cores or seeds.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Worlds & Progression</strong><br>
+          The game has 8 worlds, each with multiple zones. Clear all zones in a world to fight the world boss. Defeat the boss to rank up and advance to the next world.<br><br>
+          You can travel back to earlier worlds to farm enemies for XP, Gold, and reagent drops. Use the Atlas tab to navigate. Farming mode loops the zone endlessly until you return to your progress point.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">The Grand Practicum (W8)</strong><br>
+          The final exam for each school. Tougher enemies, unique zone-clear narration from Headmaster Duskhollow, and exclusive rewards including the Culmination Shard wand core and Gauntlet Heartwood.<br><br>
+          Defeating The Culmination (final boss) earns a personalized farewell from your professor and triggers graduation.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Graduation & Enrollment</strong><br>
+          After completing the Grand Practicum, you graduate and can enroll in a new school. Each graduation awards a permanent Mastery Aura that carries over to all future runs.<br><br>
+          <span style="color:var(--text)">What carries over:</span> mastery auras, familiars, familiar roster, crafting rank, achievements, and lifetime stats.<br>
+          <span style="color:var(--text)">What resets:</span> level, spells, gear, Gold, reagents, deck builds, and world progression.<br><br>
+          Each subsequent run scales enemy stats slightly to keep things challenging.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Balance & The Spiral (Endgame)</strong><br>
+          Graduate all 6 starter schools to unlock Balance — the 7th and final school. Balance wizards have access to every spell from every school, all mastery auras active, and a universal toolkit.<br><br>
+          Balance enters The Spiral: an infinite cycling endgame that remixes all 7 worlds with escalating difficulty. Spiral Cycles add modifiers (draining, shielded enemies, reduced accuracy) and scale enemy count from 1-2 (early cycles) up to 1-4 (cycle 30+).<br><br>
+          Spiral enemies drop Shards — permanent stat boosts (+2% damage, +2% resist, etc.) that accumulate across cycles. Aspect Cycles (every 7th) feature themed challenges with bonus rewards.
+        </div>
+
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text-bright);font-size:12px">Offline Progression</strong><br>
+          When you close the game for 5+ minutes, you earn offline rewards based on simulated encounters: Gold, reagents, familiar snacks, and potions. Garden plants continue growing, and crafting queues complete.<br><br>
+          Offline progression does not grant XP or advance your zone — leveling and progression only happen while actively playing.
+        </div>
+
         <div>
-          <strong style="color:var(--text-bright)">The Journey</strong><br>
-          Fight through 8 worlds, defeat bosses, rank up, and graduate. Enroll in a new school for a fresh run — mastery auras from each graduation stack permanently. Graduate all 6 schools to unlock Balance and enter The Spiral, the infinite endgame.
+          <strong style="color:var(--text-bright);font-size:12px">School Matchups</strong><br>
+          Each school is strong against one school and weak against another. Matching your attacks to the enemy's weakness (boosted school) deals more damage, while hitting their resistance (same school) deals less.<br><br>
+          <span style="color:var(--storm)">Storm</span> strong vs <span style="color:var(--myth)">Myth</span>, weak to <span style="color:var(--ice)">Ice</span><br>
+          <span style="color:var(--fire)">Fire</span> strong vs <span style="color:var(--ice)">Ice</span>, weak to <span style="color:var(--storm)">Storm</span><br>
+          <span style="color:var(--ice)">Ice</span> strong vs <span style="color:var(--fire)">Fire</span>, weak to <span style="color:var(--fire)">Fire</span><br>
+          <span style="color:var(--life)">Life</span> strong vs <span style="color:var(--death)">Death</span>, weak to <span style="color:var(--death)">Death</span><br>
+          <span style="color:var(--death)">Death</span> strong vs <span style="color:var(--life)">Life</span>, weak to <span style="color:var(--life)">Life</span><br>
+          <span style="color:var(--myth)">Myth</span> strong vs <span style="color:var(--storm)">Storm</span>, weak to <span style="color:var(--storm)">Storm</span><br><br>
+          Use Prism spells to convert your school's damage to the enemy's weakness when facing same-school enemies.
         </div>
       </div>
     </details>
@@ -718,6 +891,42 @@
         }
       }
     });
+
+    // Mobile tap-to-show tooltips for elements with title attributes
+    (function() {
+      var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (!isTouchDevice) return;
+      var tip = null;
+      function removeTip() { if (tip && tip.parentNode) tip.parentNode.removeChild(tip); tip = null; }
+      document.addEventListener('touchstart', function(e) {
+        var el = e.target.closest('[title]');
+        if (!el || !el.getAttribute('title')) { removeTip(); return; }
+        // Don't intercept buttons, selects, inputs
+        var tag = e.target.tagName;
+        if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'OPTION') return;
+        // Don't intercept if element has an onclick
+        if (el.onclick || el.getAttribute('onclick')) return;
+        var text = el.getAttribute('title');
+        if (!text) return;
+        e.preventDefault();
+        removeTip();
+        tip = document.createElement('div');
+        tip.className = 'mobile-tooltip';
+        tip.textContent = text;
+        document.body.appendChild(tip);
+        var rect = el.getBoundingClientRect();
+        var tipW = Math.min(280, window.innerWidth - 20);
+        tip.style.width = tipW + 'px';
+        var left = Math.max(10, Math.min(rect.left, window.innerWidth - tipW - 10));
+        var top = rect.bottom + 8;
+        if (top + tip.offsetHeight > window.innerHeight) top = rect.top - tip.offsetHeight - 8;
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }, {passive: false});
+      document.addEventListener('touchstart', function(e) {
+        if (tip && !tip.contains(e.target) && !e.target.closest('[title]')) removeTip();
+      });
+    })();
   </script>
 
 </body>
