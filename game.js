@@ -90,7 +90,7 @@ const PROFESSOR_QUOTES = [
 ];
 
 const SCHOOL_PROFESSOR_QUOTES = {
-  storm: ['"Louder. Faster. Again."','"Lightning doesn\'t apologize."','"If it fizzles, cast it again. If it lands, nothing else matters."'],
+  storm: ['"Louder. Faster. Again."','"Lightning doesn\'t apologize."','"If it miscasts, cast it again. If it lands, nothing else matters."'],
   fire: ['"Let it burn slow. Patience is a kind of heat."','"The ember remembers the forest it came from."','"Control the flame or become fuel. Your choice."'],
   ice: ['"Slow is not the same as weak. Remember that."','"The glacier moves. Everything else gets out of the way."','"Endure first. Win second."'],
   life: ['"Healing is not passive. It is the most aggressive thing you can do."','"The garden grows whether you watch or not. So does your skill."','"Fix what is broken. Including yourself."'],
@@ -479,10 +479,10 @@ const SPELLS = {
   // Initiate
   charybdis:{id:'charybdis',name:'Charybdis',school:'storm',pips:4,type:'damage',accuracy:70,mana:4,effect:{damage:[490,550]},desc:'490-550 Storm damage'},
   galecrest:{id:'galecrest',name:'Galecrest',school:'storm',pips:2,type:'global',accuracy:100,mana:2,effect:{globalBonus:{stormDmgBonus:10}},desc:'+10% Storm damage (global, lasts combat)'},
-  overcharge:{id:'overcharge',name:'Overcharge',school:'storm',pips:'X',type:'blade',accuracy:100,mana:0,effect:{bladePerPip:15},desc:'+15% blade per pip spent'},
+  overcharge:{id:'overcharge',name:'Overcharge',school:'storm',pips:'X',type:'blade',accuracy:100,mana:0,effect:{bladePerPip:15},desc:'+15% blade per sigil spent'},
   // Journeyman
   thundermaw:{id:'thundermaw',name:'Thundermaw',school:'storm',pips:5,type:'damage',accuracy:70,mana:5,effect:{damage:[625,685]},desc:'625-685 Storm damage'},
-  maelstrom:{id:'maelstrom',name:'Maelstrom',school:'storm',pips:'X',type:'damage',accuracy:70,mana:0,effect:{damagePerPip:[95,105],aoe:true,dynamicMana:true},desc:'95-105 dmg per pip to ALL enemies (AoE)'},
+  maelstrom:{id:'maelstrom',name:'Maelstrom',school:'storm',pips:'X',type:'damage',accuracy:70,mana:0,effect:{damagePerPip:[95,105],aoe:true,dynamicMana:true},desc:'95-105 dmg per sigil to ALL enemies (AoE)'},
   reckless_bolt:{id:'reckless_bolt',name:'Reckless Bolt',school:'storm',pips:2,type:'damage',accuracy:70,mana:2,effect:{damage:[100,500]},desc:'100-500 Storm damage (wild)'},
   // Adept
   nereid:{id:'nereid',name:'Nereid',school:'storm',pips:6,type:'damage',accuracy:70,mana:6,effect:{damage:[760,830]},desc:'760-830 Storm damage'},
@@ -532,7 +532,7 @@ const SPELLS = {
   ice_ward:{id:'ice_ward',name:'Ice Ward',school:'ice',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:70,blocksSchools:['fire','myth']},desc:'-70% Fire/Myth shield'},
   // Apprentice
   hailbrute:{id:'hailbrute',name:'Hailbrute',school:'ice',pips:3,type:'damage',accuracy:80,mana:3,effect:{damage:[240,290]},desc:'240-290 Ice damage'},
-  frost_armor:{id:'frost_armor',name:'Frost Armor',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:100},desc:'Absorb 100 damage per pip spent'},
+  frost_armor:{id:'frost_armor',name:'Frost Armor',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:100},desc:'Absorb 100 damage per sigil spent'},
   frostblade:{id:'frostblade',name:'Frostblade',school:'ice',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:30},desc:'+30% Ice blade'},
   frost_snare:{id:'frost_snare',name:'Frost Snare',school:'ice',pips:0,type:'trap',accuracy:100,mana:0,effect:{trapPercent:35},desc:'+35% Ice trap'},
   frost_prism:{id:'frost_prism',name:'Frost Prism',school:'ice',pips:0,type:'prism',accuracy:100,mana:0,effect:{convertTo:'fire'},desc:'Converts Ice → Fire damage'},
@@ -542,14 +542,14 @@ const SPELLS = {
   avalanche:{id:'avalanche',name:'Avalanche',school:'ice',pips:4,type:'damage',accuracy:80,mana:4,effect:{damage:[210,260],aoe:true},desc:'210-260 AoE Ice damage'},
   // Journeyman
   glacier_bear:{id:'glacier_bear',name:'Glacier Bear',school:'ice',pips:5,type:'damage',accuracy:80,mana:5,effect:{damage:[420,480]},desc:'420-480 Ice damage'},
-  legion_ward:{id:'legion_ward',name:'Legion Ward',school:'ice',pips:1,type:'shield',accuracy:100,mana:1,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield (costs 1 pip)'},
+  legion_ward:{id:'legion_ward',name:'Legion Ward',school:'ice',pips:1,type:'shield',accuracy:100,mana:1,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield (costs 1 sigil)'},
   // Adept
   titan:{id:'titan',name:'Titan',school:'ice',pips:6,type:'damage',accuracy:80,mana:6,effect:{damage:[510,580]},desc:'510-580 Ice damage'},
   boreal_giant:{id:'boreal_giant',name:'Boreal Giant',school:'ice',pips:7,type:'damage',accuracy:80,mana:7,effect:{damage:[370,430],aoe:true,stun:1},desc:'370-430 AoE + 1 round stun'},
   // Master
   pale_seraph:{id:'pale_seraph',name:'Pale Seraph',school:'ice',pips:8,type:'damage',accuracy:80,mana:8,effect:{damage:[280,340],aoe:true,dot:{dmg:100,rounds:3}},desc:'280-340 AoE + 100 DoT/rd'},
   behemoth:{id:'behemoth',name:'Behemoth',school:'ice',pips:9,type:'damage',accuracy:80,mana:9,effect:{damage:[650,730],stun:2},desc:'650-730 dmg + 2 round stun'},
-  permafrost:{id:'permafrost',name:'Permafrost',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:150},desc:'Absorb 150 damage per pip spent (upgraded)'},
+  permafrost:{id:'permafrost',name:'Permafrost',school:'ice',pips:'X',type:'absorb',accuracy:100,mana:0,effect:{absorbPerPip:150},desc:'Absorb 150 damage per sigil spent (upgraded)'},
   // Grandmaster
   winter_sovereign:{id:'winter_sovereign',name:'Winter Sovereign',school:'ice',pips:10,type:'damage',accuracy:80,mana:10,effect:{damage:[750,850]},desc:'750-850 Ice damage'},
   // Archmage
@@ -670,7 +670,7 @@ const SPELLS = {
   tri_edge:{id:'tri_edge',name:'Tri-Edge',school:'balance',pips:0,type:'blade',accuracy:100,mana:0,effect:{bladePercent:35},desc:'+35% universal blade'},
   // Master
   sovereign:{id:'sovereign',name:'Sovereign',school:'balance',pips:10,type:'damage',accuracy:85,mana:10,effect:{damage:[780,880],weakness:30},desc:'780-880 dmg + -30% weakness'},
-  adjudication:{id:'adjudication',name:'Adjudication',school:'balance',pips:'X',type:'damage',accuracy:85,mana:0,effect:{damagePerPip:[130,130],dynamicMana:true},desc:'130 damage per pip to target (THE nuke)'},
+  adjudication:{id:'adjudication',name:'Adjudication',school:'balance',pips:'X',type:'damage',accuracy:85,mana:0,effect:{damagePerPip:[130,130],dynamicMana:true},desc:'130 damage per sigil to target (THE nuke)'},
   // Grandmaster
   balance_ward:{id:'balance_ward',name:'Balance Ward',school:'balance',pips:0,type:'shield',accuracy:100,mana:0,effect:{shieldPercent:50,blocksSchools:null},desc:'-50% universal shield'},
   // Archmage
@@ -920,8 +920,8 @@ const SPIRAL_MODIFIERS = {
   bulky:{name:'Bulky',desc:'Enemies have +40% HP',apply:function(e){e.hp=Math.floor(e.hp*1.4);e.maxHp=e.hp;}},
   draining:{name:'Draining',desc:'Your spells cost +1 mana',apply:function(){}},
   chaotic:{name:'Chaotic',desc:'Enemy schools randomize each encounter',apply:function(){}},
-  volatile:{name:'Volatile',desc:'Crits deal +50% but fizzles hurt you',apply:function(){}},
-  entropic:{name:'Entropic',desc:'Pips decay — lose 1 pip per 3 rounds',apply:function(){}},
+  volatile:{name:'Volatile',desc:'Crits deal +50% but miscasts hurt you',apply:function(){}},
+  entropic:{name:'Entropic',desc:'Sigils decay — lose 1 sigil per 3 rounds',apply:function(){}},
 };
 const SPIRAL_MOD_KEYS = Object.keys(SPIRAL_MODIFIERS);
 
@@ -970,14 +970,14 @@ const SPIRAL_GEAR = {
   sp_robe_1:{id:'sp_robe_1',name:'Entropy Vestment',slot:'robe',world:7,cost:0,stats:{hp:900,damage:72,resist:32,pierce:6,crit:10},desc:'+900 HP, +72% Dmg, +32% Res, +6% Pierce, +10% Crit',dropOnly:true},
   sp_wand_1:{id:'sp_wand_1',name:'Loom-Touched Staff',slot:'wand',world:7,cost:0,stats:{damage:75,mana:35,pierce:24},desc:'+75% Dmg, +35 Mana, +24% Pierce',dropOnly:true},
   sp_ring_1:{id:'sp_ring_1',name:'Convergence Band',slot:'ring',world:7,cost:0,stats:{damage:45,crit:18,pierce:22,accuracy:10},desc:'+45% Dmg, +18% Crit, +22% Pierce, +10% Acc',dropOnly:true},
-  sp_boots_1:{id:'sp_boots_1',name:'Voidstep Treads',slot:'boots',world:7,cost:0,stats:{hp:550,resist:28,powerPip:16,critBlock:14,crit:10},desc:'+550 HP, +28% Res, +16% PP, +14% CB, +10% Crit',dropOnly:true},
-  sp_amulet_1:{id:'sp_amulet_1',name:'Thread of Eternity',slot:'amulet',world:7,cost:0,stats:{hp:450,mana:30,powerPip:40,crit:16,resist:8},desc:'+450 HP, +30 Mana, +40% PP, +16% Crit, +8% Res',dropOnly:true},
+  sp_boots_1:{id:'sp_boots_1',name:'Voidstep Treads',slot:'boots',world:7,cost:0,stats:{hp:550,resist:28,powerPip:16,critBlock:14,crit:10},desc:'+550 HP, +28% Res, +16% PS, +14% CB, +10% Crit',dropOnly:true},
+  sp_amulet_1:{id:'sp_amulet_1',name:'Thread of Eternity',slot:'amulet',world:7,cost:0,stats:{hp:450,mana:30,powerPip:40,crit:16,resist:8},desc:'+450 HP, +30 Mana, +40% PS, +16% Crit, +8% Res',dropOnly:true},
   // Spiral shop — solid baseline, ~160% dmg, ~60% res, ~35% pierce
   sp_shop_hat:{id:'sp_shop_hat',name:'Woven Circlet',slot:'hat',world:7,cost:2000,stats:{hp:450,accuracy:12,damage:30,crit:16},desc:'+450 HP, +12% Acc, +30% Dmg, +16% Crit'},
   sp_shop_robe:{id:'sp_shop_robe',name:'Spiralweave Coat',slot:'robe',world:7,cost:2500,stats:{hp:700,damage:58,resist:25},desc:'+700 HP, +58% Dmg, +25% Res'},
-  sp_shop_boots:{id:'sp_shop_boots',name:'Threadwalker Boots',slot:'boots',world:7,cost:1800,stats:{hp:420,resist:22,powerPip:14,critBlock:10},desc:'+420 HP, +22% Res, +14% PP, +10% CB'},
+  sp_shop_boots:{id:'sp_shop_boots',name:'Threadwalker Boots',slot:'boots',world:7,cost:1800,stats:{hp:420,resist:22,powerPip:14,critBlock:10},desc:'+420 HP, +22% Res, +14% PS, +10% CB'},
   sp_shop_wand:{id:'sp_shop_wand',name:'Frayed Conduit',slot:'wand',world:7,cost:2200,stats:{damage:62,mana:30,pierce:18},desc:'+62% Dmg, +30 Mana, +18% Pierce'},
-  sp_shop_amulet:{id:'sp_shop_amulet',name:'Spiral Pendant',slot:'amulet',world:7,cost:1600,stats:{hp:350,mana:26,powerPip:35,crit:12},desc:'+350 HP, +26 Mana, +35% PP, +12% Crit'},
+  sp_shop_amulet:{id:'sp_shop_amulet',name:'Spiral Pendant',slot:'amulet',world:7,cost:1600,stats:{hp:350,mana:26,powerPip:35,crit:12},desc:'+350 HP, +26 Mana, +35% PS, +12% Crit'},
   sp_shop_ring:{id:'sp_shop_ring',name:'Entropy Signet',slot:'ring',world:7,cost:1900,stats:{damage:36,accuracy:8,pierce:16,crit:12},desc:'+36% Dmg, +8% Acc, +16% Pierce, +12% Crit'},
 };
 
@@ -994,7 +994,7 @@ const SPIRAL_SHARDS = {
   shard_hp:{name:'Shard of Vitality',stat:'hp',value:50,desc:'+50 HP permanently'},
   shard_accuracy:{name:'Shard of Focus',stat:'accuracy',value:1,desc:'+1% accuracy permanently'},
   shard_crit:{name:'Shard of Fortune',stat:'crit',value:2,desc:'+2% crit permanently'},
-  shard_pip:{name:'Shard of Flow',stat:'powerPip',value:1,desc:'+1% power pip permanently'},
+  shard_pip:{name:'Shard of Flow',stat:'powerPip',value:1,desc:'+1% power sigil permanently'},
 };
 
 function generateSpiralCycle(cycleNum) {
@@ -1417,7 +1417,7 @@ function processMasteryAuras() {
 // ===== ACHIEVEMENTS =====
 const ACHIEVEMENTS = {
   first_blood:{name:'First Blood',desc:'Defeat your first enemy',check:function(){return Game.stats.enemiesDefeated>=1;}},
-  fizzle_king:{name:'Fizzle King',desc:'Fizzle 10 times',check:function(){return Game.stats.fizzles>=10;}},
+  fizzle_king:{name:'Miscast King',desc:'Miscast 10 times',check:function(){return Game.stats.fizzles>=10;}},
   century:{name:'Century',desc:'Clear 100 encounters',check:function(){return Game.stats.encountersCleared>=100;}},
   thousand:{name:'Thousand',desc:'Clear 1000 encounters',check:function(){return Game.stats.encountersCleared>=1000;}},
   crit_master:{name:'Critical Master',desc:'Land 50 critical hits',check:function(){return Game.stats.crits>=50;}},
@@ -1475,15 +1475,15 @@ const CONDITIONS = {
   no_shield:{label:'No shield active',check:()=>!Game.wizard.shield},
   no_accuracy_charm:{label:'No accuracy charm',check:()=>!Game.wizard.accuracyCharm},
   no_global:{label:'No global buff',check:()=>!Game.combat||!Game.combat.global||!Game.combat.global.stormDmgBonus},
-  pips_above_1:{label:'Pips ≥ 1',check:()=>getPipValue()>=1},
-  pips_above_2:{label:'Pips ≥ 2',check:()=>getPipValue()>=2},
-  pips_above_3:{label:'Pips ≥ 3',check:()=>getPipValue()>=3},
-  pips_above_4:{label:'Pips ≥ 4',check:()=>getPipValue()>=4},
-  pips_above_5:{label:'Pips ≥ 5',check:()=>getPipValue()>=5},
-  pips_above_6:{label:'Pips ≥ 6',check:()=>getPipValue()>=6},
-  pips_above_7:{label:'Pips ≥ 7',check:()=>getPipValue()>=7},
-  pips_above_8:{label:'Pips ≥ 8',check:()=>getPipValue()>=8},
-  pips_above_10:{label:'Pips ≥ 10',check:()=>getPipValue()>=10},
+  pips_above_1:{label:'Sigils ≥ 1',check:()=>getPipValue()>=1},
+  pips_above_2:{label:'Sigils ≥ 2',check:()=>getPipValue()>=2},
+  pips_above_3:{label:'Sigils ≥ 3',check:()=>getPipValue()>=3},
+  pips_above_4:{label:'Sigils ≥ 4',check:()=>getPipValue()>=4},
+  pips_above_5:{label:'Sigils ≥ 5',check:()=>getPipValue()>=5},
+  pips_above_6:{label:'Sigils ≥ 6',check:()=>getPipValue()>=6},
+  pips_above_7:{label:'Sigils ≥ 7',check:()=>getPipValue()>=7},
+  pips_above_8:{label:'Sigils ≥ 8',check:()=>getPipValue()>=8},
+  pips_above_10:{label:'Sigils ≥ 10',check:()=>getPipValue()>=10},
   enemy_count_above_1:{label:'Enemies > 1',check:()=>getAliveEnemies().length>1},
   enemy_count_above_2:{label:'Enemies > 2',check:()=>getAliveEnemies().length>2},
   enemy_boss:{label:'Enemy is boss',check:()=>{const e=getAliveEnemies()[0];return e&&!!e.boss;}},
@@ -1652,52 +1652,52 @@ const GEAR = {
   sw_amulet:{id:'sw_amulet',name:'Novice Pendant',slot:'amulet',world:0,cost:35,stats:{hp:20,mana:3},desc:'+20 HP, +3 Mana'},
   sw_ring:{id:'sw_ring',name:'Novice Band',slot:'ring',world:0,cost:30,stats:{damage:3,accuracy:1},desc:'+3% Dmg, +1% Acc'},
   sw_boss_robe:{id:'sw_boss_robe',name:"Grimsworth's Mantle",slot:'robe',world:0,cost:0,stats:{hp:65,damage:7,accuracy:3},desc:'+65 HP, +7% Dmg, +3% Acc',dropOnly:true},
-  // W2 Solara — Total set: ~25% dmg, ~7% res, ~250 HP, ~6% acc, ~8% PP
+  // W2 Solara — Total set: ~25% dmg, ~7% res, ~250 HP, ~6% acc, ~8% PS
   sol_hat:{id:'sol_hat',name:'Sandstone Hood',slot:'hat',world:1,cost:65,stats:{hp:60,accuracy:3,damage:3},desc:'+60 HP, +3% Acc, +3% Dmg'},
   sol_robe:{id:'sol_robe',name:'Desert Wrappings',slot:'robe',world:1,cost:85,stats:{hp:80,damage:8,resist:3},desc:'+80 HP, +8% Dmg, +3% Res'},
-  sol_boots:{id:'sol_boots',name:'Sand Treaders',slot:'boots',world:1,cost:55,stats:{hp:45,resist:4,powerPip:3},desc:'+45 HP, +4% Res, +3% PP'},
+  sol_boots:{id:'sol_boots',name:'Sand Treaders',slot:'boots',world:1,cost:55,stats:{hp:45,resist:4,powerPip:3},desc:'+45 HP, +4% Res, +3% PS'},
   sol_wand:{id:'sol_wand',name:'Solara Scepter',slot:'wand',world:1,cost:90,stats:{damage:10,mana:5,accuracy:2},desc:'+10% Dmg, +5 Mana, +2% Acc'},
-  sol_amulet:{id:'sol_amulet',name:'Scarab Pendant',slot:'amulet',world:1,cost:70,stats:{hp:35,mana:4,powerPip:5},desc:'+35 HP, +4 Mana, +5% PP'},
+  sol_amulet:{id:'sol_amulet',name:'Scarab Pendant',slot:'amulet',world:1,cost:70,stats:{hp:35,mana:4,powerPip:5},desc:'+35 HP, +4 Mana, +5% PS'},
   sol_ring:{id:'sol_ring',name:'Tomb Band',slot:'ring',world:1,cost:60,stats:{damage:5,accuracy:2,resist:1},desc:'+5% Dmg, +2% Acc, +1% Res'},
   sol_boss_hat:{id:'sol_boss_hat',name:"Khet-Amun's Crown",slot:'hat',world:1,cost:0,stats:{hp:90,accuracy:5,damage:6,mana:4},desc:'+90 HP, +5% Acc, +6% Dmg, +4 Mana',dropOnly:true},
-  // W3 Pendleton — Total set: ~50% dmg, ~14% res, ~500 HP, ~10% acc, ~15% PP, ~3% pierce
+  // W3 Pendleton — Total set: ~50% dmg, ~14% res, ~500 HP, ~10% acc, ~15% PS, ~3% pierce
   pen_hat:{id:'pen_hat',name:'Clockwork Helm',slot:'hat',world:2,cost:110,stats:{hp:100,accuracy:4,damage:6,pierce:2},desc:'+100 HP, +4% Acc, +6% Dmg, +2% Pierce'},
   pen_robe:{id:'pen_robe',name:'Gearweave Coat',slot:'robe',world:2,cost:150,stats:{hp:140,damage:14,resist:6},desc:'+140 HP, +14% Dmg, +6% Res'},
-  pen_boots:{id:'pen_boots',name:'Piston Boots',slot:'boots',world:2,cost:100,stats:{hp:80,resist:7,powerPip:5},desc:'+80 HP, +7% Res, +5% PP'},
+  pen_boots:{id:'pen_boots',name:'Piston Boots',slot:'boots',world:2,cost:100,stats:{hp:80,resist:7,powerPip:5},desc:'+80 HP, +7% Res, +5% PS'},
   pen_wand:{id:'pen_wand',name:'Pendleton Rod',slot:'wand',world:2,cost:170,stats:{damage:18,mana:8,accuracy:3},desc:'+18% Dmg, +8 Mana, +3% Acc'},
-  pen_amulet:{id:'pen_amulet',name:'Cog Pendant',slot:'amulet',world:2,cost:130,stats:{hp:65,mana:7,powerPip:10},desc:'+65 HP, +7 Mana, +10% PP'},
+  pen_amulet:{id:'pen_amulet',name:'Cog Pendant',slot:'amulet',world:2,cost:130,stats:{hp:65,mana:7,powerPip:10},desc:'+65 HP, +7 Mana, +10% PS'},
   pen_ring:{id:'pen_ring',name:'Steamband',slot:'ring',world:2,cost:110,stats:{damage:8,accuracy:3,pierce:2},desc:'+8% Dmg, +3% Acc, +2% Pierce'},
   pen_boss_wand:{id:'pen_boss_wand',name:"Magnus Core Wand",slot:'wand',world:2,cost:0,stats:{damage:24,mana:12,accuracy:5,pierce:3},desc:'+24% Dmg, +12 Mana, +5% Acc, +3% Pierce',dropOnly:true},
-  // W4 Mistral — Total set: ~80% dmg, ~22% res, ~800 HP, ~14% acc, ~25% PP, ~8% pierce, ~5% crit
+  // W4 Mistral — Total set: ~80% dmg, ~22% res, ~800 HP, ~14% acc, ~25% PS, ~8% pierce, ~5% crit
   mis_hat:{id:'mis_hat',name:'Jade Circlet',slot:'hat',world:3,cost:200,stats:{hp:150,accuracy:5,damage:10,crit:6},desc:'+150 HP, +5% Acc, +10% Dmg, +6% Crit'},
   mis_robe:{id:'mis_robe',name:'Silk Storm Robe',slot:'robe',world:3,cost:270,stats:{hp:220,damage:22,resist:10},desc:'+220 HP, +22% Dmg, +10% Res'},
-  mis_boots:{id:'mis_boots',name:'Mountain Steps',slot:'boots',world:3,cost:185,stats:{hp:130,resist:10,powerPip:8,crit:3},desc:'+130 HP, +10% Res, +8% PP, +3% Crit'},
+  mis_boots:{id:'mis_boots',name:'Mountain Steps',slot:'boots',world:3,cost:185,stats:{hp:130,resist:10,powerPip:8,crit:3},desc:'+130 HP, +10% Res, +8% PS, +3% Crit'},
   mis_wand:{id:'mis_wand',name:'Bamboo Wand',slot:'wand',world:3,cost:290,stats:{damage:28,mana:12,pierce:5,crit:3},desc:'+28% Dmg, +12 Mana, +5% Pierce, +3% Crit'},
-  mis_amulet:{id:'mis_amulet',name:'Wind Charm',slot:'amulet',world:3,cost:230,stats:{hp:100,mana:10,powerPip:15,crit:5},desc:'+100 HP, +10 Mana, +15% PP, +5% Crit'},
+  mis_amulet:{id:'mis_amulet',name:'Wind Charm',slot:'amulet',world:3,cost:230,stats:{hp:100,mana:10,powerPip:15,crit:5},desc:'+100 HP, +10 Mana, +15% PS, +5% Crit'},
   mis_ring:{id:'mis_ring',name:'Monk\'s Band',slot:'ring',world:3,cost:200,stats:{damage:14,accuracy:4,pierce:4},desc:'+14% Dmg, +4% Acc, +4% Pierce'},
-  mis_boss_boots:{id:'mis_boss_boots',name:"Kaelith's Discipline",slot:'boots',world:3,cost:0,stats:{hp:180,resist:14,powerPip:10,critBlock:5},desc:'+180 HP, +14% Res, +10% PP, +5% CB',dropOnly:true},
-  // W5 Pyralis — Total set: ~110% dmg, ~32% res, ~1200 HP, ~18% acc, ~35% PP, ~15% pierce, ~10% crit
+  mis_boss_boots:{id:'mis_boss_boots',name:"Kaelith's Discipline",slot:'boots',world:3,cost:0,stats:{hp:180,resist:14,powerPip:10,critBlock:5},desc:'+180 HP, +14% Res, +10% PS, +5% CB',dropOnly:true},
+  // W5 Pyralis — Total set: ~110% dmg, ~32% res, ~1200 HP, ~18% acc, ~35% PS, ~15% pierce, ~10% crit
   pyr_hat:{id:'pyr_hat',name:'Ashen Visor',slot:'hat',world:4,cost:340,stats:{hp:220,accuracy:6,damage:15,crit:10},desc:'+220 HP, +6% Acc, +15% Dmg, +10% Crit'},
   pyr_robe:{id:'pyr_robe',name:'Forge Plate',slot:'robe',world:4,cost:450,stats:{hp:340,damage:32,resist:14,crit:4},desc:'+340 HP, +32% Dmg, +14% Res, +4% Crit'},
-  pyr_boots:{id:'pyr_boots',name:'Cinder Greaves',slot:'boots',world:4,cost:310,stats:{hp:200,resist:14,powerPip:10,critBlock:4,crit:5},desc:'+200 HP, +14% Res, +10% PP, +4% CB, +5% Crit'},
+  pyr_boots:{id:'pyr_boots',name:'Cinder Greaves',slot:'boots',world:4,cost:310,stats:{hp:200,resist:14,powerPip:10,critBlock:4,crit:5},desc:'+200 HP, +14% Res, +10% PS, +4% CB, +5% Crit'},
   pyr_wand:{id:'pyr_wand',name:'Obsidian Staff',slot:'wand',world:4,cost:480,stats:{damage:38,mana:16,pierce:8,crit:5},desc:'+38% Dmg, +16 Mana, +8% Pierce, +5% Crit'},
-  pyr_amulet:{id:'pyr_amulet',name:'Molten Charm',slot:'amulet',world:4,cost:380,stats:{hp:150,mana:14,powerPip:20,crit:8},desc:'+150 HP, +14 Mana, +20% PP, +8% Crit'},
+  pyr_amulet:{id:'pyr_amulet',name:'Molten Charm',slot:'amulet',world:4,cost:380,stats:{hp:150,mana:14,powerPip:20,crit:8},desc:'+150 HP, +14 Mana, +20% PS, +8% Crit'},
   pyr_ring:{id:'pyr_ring',name:'Slag Ring',slot:'ring',world:4,cost:340,stats:{damage:20,accuracy:6,pierce:8},desc:'+20% Dmg, +6% Acc, +8% Pierce'},
   pyr_boss_ring:{id:'pyr_boss_ring',name:"Pyrrhus's Signet",slot:'ring',world:4,cost:0,stats:{damage:28,accuracy:8,pierce:12,crit:4},desc:'+28% Dmg, +8% Acc, +12% Pierce, +4% Crit',dropOnly:true},
-  // W6 Abyssia — Total set: ~145% dmg, ~45% res, ~1800 HP, ~22% acc, ~50% PP, ~25% pierce, ~15% crit, ~8% CB
+  // W6 Abyssia — Total set: ~145% dmg, ~45% res, ~1800 HP, ~22% acc, ~50% PS, ~25% pierce, ~15% crit, ~8% CB
   aby_hat:{id:'aby_hat',name:'Abyssal Crown',slot:'hat',world:5,cost:560,stats:{hp:300,accuracy:8,damage:20,crit:14},desc:'+300 HP, +8% Acc, +20% Dmg, +14% Crit'},
   aby_robe:{id:'aby_robe',name:'Pressure Suit',slot:'robe',world:5,cost:750,stats:{hp:480,damage:42,resist:20,crit:5},desc:'+480 HP, +42% Dmg, +20% Res, +5% Crit'},
-  aby_boots:{id:'aby_boots',name:'Coral Treads',slot:'boots',world:5,cost:520,stats:{hp:300,resist:18,powerPip:12,critBlock:5,crit:6},desc:'+300 HP, +18% Res, +12% PP, +5% CB, +6% Crit'},
+  aby_boots:{id:'aby_boots',name:'Coral Treads',slot:'boots',world:5,cost:520,stats:{hp:300,resist:18,powerPip:12,critBlock:5,crit:6},desc:'+300 HP, +18% Res, +12% PS, +5% CB, +6% Crit'},
   aby_wand:{id:'aby_wand',name:'Trident Rod',slot:'wand',world:5,cost:800,stats:{damage:50,mana:22,pierce:14,crit:6},desc:'+50% Dmg, +22 Mana, +14% Pierce, +6% Crit'},
-  aby_amulet:{id:'aby_amulet',name:'Pearl Amulet',slot:'amulet',world:5,cost:640,stats:{hp:220,mana:18,powerPip:28,crit:10},desc:'+220 HP, +18 Mana, +28% PP, +10% Crit'},
+  aby_amulet:{id:'aby_amulet',name:'Pearl Amulet',slot:'amulet',world:5,cost:640,stats:{hp:220,mana:18,powerPip:28,crit:10},desc:'+220 HP, +18 Mana, +28% PS, +10% Crit'},
   aby_ring:{id:'aby_ring',name:'Depth Band',slot:'ring',world:5,cost:560,stats:{damage:28,accuracy:7,pierce:12,crit:8},desc:'+28% Dmg, +7% Acc, +12% Pierce, +8% Crit'},
-  aby_boss_amulet:{id:'aby_boss_amulet',name:"Chorus Talisman",slot:'amulet',world:5,cost:0,stats:{hp:300,mana:25,powerPip:35,crit:14,resist:5},desc:'+300 HP, +25 Mana, +35% PP, +14% Crit, +5% Res',dropOnly:true},
-  // W7 Penumbra — Total set: ~175% dmg, ~60% res, ~2600 HP, ~28% acc, ~60% PP, ~38% pierce, ~22% crit, ~14% CB
+  aby_boss_amulet:{id:'aby_boss_amulet',name:"Chorus Talisman",slot:'amulet',world:5,cost:0,stats:{hp:300,mana:25,powerPip:35,crit:14,resist:5},desc:'+300 HP, +25 Mana, +35% PS, +14% Crit, +5% Res',dropOnly:true},
+  // W7 Penumbra — Total set: ~175% dmg, ~60% res, ~2600 HP, ~28% acc, ~60% PS, ~38% pierce, ~22% crit, ~14% CB
   pnb_hat:{id:'pnb_hat',name:'Rift Helm',slot:'hat',world:6,cost:900,stats:{hp:420,accuracy:10,damage:28,crit:18},desc:'+420 HP, +10% Acc, +28% Dmg, +18% Crit'},
   pnb_robe:{id:'pnb_robe',name:'Void Mantle',slot:'robe',world:6,cost:1200,stats:{hp:680,damage:55,resist:26,crit:6},desc:'+680 HP, +55% Dmg, +26% Res, +6% Crit'},
-  pnb_boots:{id:'pnb_boots',name:'Fracture Steps',slot:'boots',world:6,cost:850,stats:{hp:440,resist:24,powerPip:14,critBlock:8,crit:8},desc:'+440 HP, +24% Res, +14% PP, +8% CB, +8% Crit'},
+  pnb_boots:{id:'pnb_boots',name:'Fracture Steps',slot:'boots',world:6,cost:850,stats:{hp:440,resist:24,powerPip:14,critBlock:8,crit:8},desc:'+440 HP, +24% Res, +14% PS, +8% CB, +8% Crit'},
   pnb_wand:{id:'pnb_wand',name:'Echo Staff',slot:'wand',world:6,cost:1300,stats:{damage:60,mana:28,pierce:20,crit:8},desc:'+60% Dmg, +28 Mana, +20% Pierce, +8% Crit'},
-  pnb_amulet:{id:'pnb_amulet',name:'Memory Charm',slot:'amulet',world:6,cost:1050,stats:{hp:320,mana:24,powerPip:35,crit:14},desc:'+320 HP, +24 Mana, +35% PP, +14% Crit'},
+  pnb_amulet:{id:'pnb_amulet',name:'Memory Charm',slot:'amulet',world:6,cost:1050,stats:{hp:320,mana:24,powerPip:35,crit:14},desc:'+320 HP, +24 Mana, +35% PS, +14% Crit'},
   pnb_ring:{id:'pnb_ring',name:'Shadow Band',slot:'ring',world:6,cost:900,stats:{damage:35,accuracy:9,pierce:18,crit:10},desc:'+35% Dmg, +9% Acc, +18% Pierce, +10% Crit'},
   pnb_boss_hat:{id:'pnb_boss_hat',name:"Echo's Reflection",slot:'hat',world:6,cost:0,stats:{hp:550,accuracy:14,damage:35,crit:22,critBlock:6},desc:'+550 HP, +14% Acc, +35% Dmg, +22% Crit, +6% CB',dropOnly:true},
   // W8 Grand Practicum (boss drop only)
@@ -1707,29 +1707,29 @@ const GEAR = {
   c_robe_e:{id:'c_robe_e',name:'Threaded Vestment',slot:'robe',world:0,cost:0,stats:{hp:60,damage:7,resist:3},desc:'+60 HP, +7% Dmg, +3% Res',crafted:true},
   c_boots_e:{id:'c_boots_e',name:'Stitched Treads',slot:'boots',world:0,cost:0,stats:{hp:35,resist:3,accuracy:2},desc:'+35 HP, +3% Res, +2% Acc',crafted:true},
   c_wand_e:{id:'c_wand_e',name:'Apprentice Focus',slot:'wand',world:0,cost:0,stats:{damage:8,mana:5,accuracy:2},desc:'+8% Dmg, +5 Mana, +2% Acc',crafted:true},
-  c_amulet_e:{id:'c_amulet_e',name:'Woven Charm',slot:'amulet',world:0,cost:0,stats:{hp:30,mana:4,powerPip:5},desc:'+30 HP, +4 Mana, +5% PP',crafted:true},
+  c_amulet_e:{id:'c_amulet_e',name:'Woven Charm',slot:'amulet',world:0,cost:0,stats:{hp:30,mana:4,powerPip:5},desc:'+30 HP, +4 Mana, +5% PS',crafted:true},
   c_ring_e:{id:'c_ring_e',name:'Threadspun Band',slot:'ring',world:0,cost:0,stats:{damage:5,accuracy:2,resist:2},desc:'+5% Dmg, +2% Acc, +2% Res',crafted:true},
   // T2 Crafted Gear — Mid (W3-4)
   c_hat_m:{id:'c_hat_m',name:'Gearforged Helm',slot:'hat',world:2,cost:0,stats:{hp:130,accuracy:5,damage:10,crit:2},desc:'+130 HP, +5% Acc, +10% Dmg, +2% Crit',crafted:true},
   c_robe_m:{id:'c_robe_m',name:'Steamweave Coat',slot:'robe',world:2,cost:0,stats:{hp:180,damage:18,resist:8},desc:'+180 HP, +18% Dmg, +8% Res',crafted:true},
-  c_boots_m:{id:'c_boots_m',name:'Iron Stride Boots',slot:'boots',world:2,cost:0,stats:{hp:100,resist:8,powerPip:8},desc:'+100 HP, +8% Res, +8% PP',crafted:true},
+  c_boots_m:{id:'c_boots_m',name:'Iron Stride Boots',slot:'boots',world:2,cost:0,stats:{hp:100,resist:8,powerPip:8},desc:'+100 HP, +8% Res, +8% PS',crafted:true},
   c_wand_m:{id:'c_wand_m',name:'Jade-Wound Rod',slot:'wand',world:2,cost:0,stats:{damage:24,mana:10,accuracy:4,pierce:3},desc:'+24% Dmg, +10 Mana, +4% Acc, +3% Pierce',crafted:true},
-  c_amulet_m:{id:'c_amulet_m',name:'Monastery Charm',slot:'amulet',world:2,cost:0,stats:{hp:80,mana:9,powerPip:14,crit:2},desc:'+80 HP, +9 Mana, +14% PP, +2% Crit',crafted:true},
+  c_amulet_m:{id:'c_amulet_m',name:'Monastery Charm',slot:'amulet',world:2,cost:0,stats:{hp:80,mana:9,powerPip:14,crit:2},desc:'+80 HP, +9 Mana, +14% PS, +2% Crit',crafted:true},
   c_ring_m:{id:'c_ring_m',name:'Cogspring Band',slot:'ring',world:2,cost:0,stats:{damage:12,accuracy:4,pierce:4,resist:3},desc:'+12% Dmg, +4% Acc, +4% Pierce, +3% Res',crafted:true},
   // T2 Crafted Gear — Late (W5-6)
   c_hat_l:{id:'c_hat_l',name:'Forgeborn Visor',slot:'hat',world:4,cost:0,stats:{hp:270,accuracy:7,damage:18,crit:6},desc:'+270 HP, +7% Acc, +18% Dmg, +6% Crit',crafted:true},
   c_robe_l:{id:'c_robe_l',name:'Abyssal Plate',slot:'robe',world:4,cost:0,stats:{hp:400,damage:36,resist:16},desc:'+400 HP, +36% Dmg, +16% Res',crafted:true},
-  c_boots_l:{id:'c_boots_l',name:'Molten Greaves',slot:'boots',world:4,cost:0,stats:{hp:240,resist:16,powerPip:12,critBlock:5},desc:'+240 HP, +16% Res, +12% PP, +5% CB',crafted:true},
+  c_boots_l:{id:'c_boots_l',name:'Molten Greaves',slot:'boots',world:4,cost:0,stats:{hp:240,resist:16,powerPip:12,critBlock:5},desc:'+240 HP, +16% Res, +12% PS, +5% CB',crafted:true},
   c_wand_l:{id:'c_wand_l',name:'Coral Spire Rod',slot:'wand',world:4,cost:0,stats:{damage:45,mana:20,accuracy:6,pierce:10},desc:'+45% Dmg, +20 Mana, +6% Acc, +10% Pierce',crafted:true},
-  c_amulet_l:{id:'c_amulet_l',name:'Tidecaller Charm',slot:'amulet',world:4,cost:0,stats:{hp:200,mana:16,powerPip:25,crit:5},desc:'+200 HP, +16 Mana, +25% PP, +5% Crit',crafted:true},
+  c_amulet_l:{id:'c_amulet_l',name:'Tidecaller Charm',slot:'amulet',world:4,cost:0,stats:{hp:200,mana:16,powerPip:25,crit:5},desc:'+200 HP, +16 Mana, +25% PS, +5% Crit',crafted:true},
   c_ring_l:{id:'c_ring_l',name:'Depthstone Band',slot:'ring',world:4,cost:0,stats:{damage:24,accuracy:7,pierce:10,resist:5},desc:'+24% Dmg, +7% Acc, +10% Pierce, +5% Res',crafted:true},
   // T2 Crafted Gear — Endgame (W7-8) — Defensive/utility focus, complements DPS drops
   c_hat_x:{id:'c_hat_x',name:'Voidtouched Crown',slot:'hat',world:6,cost:0,stats:{hp:500,accuracy:12,resist:14,crit:14},desc:'+500 HP, +12% Acc, +14% Res, +14% Crit',crafted:true},
   c_robe_x:{id:'c_robe_x',name:'Fracture Mantle',slot:'robe',world:6,cost:0,stats:{hp:650,resist:28,accuracy:10,mana:15},desc:'+650 HP, +28% Res, +10% Acc, +15 Mana',crafted:true},
-  c_boots_x:{id:'c_boots_x',name:'Entropy Walkers',slot:'boots',world:6,cost:0,stats:{hp:400,resist:22,powerPip:15,critBlock:10},desc:'+400 HP, +22% Res, +15% PP, +10% CB',crafted:true},
-  c_wand_x:{id:'c_wand_x',name:'Rift-Forged Staff',slot:'wand',world:6,cost:0,stats:{damage:45,mana:30,accuracy:12,powerPip:10},desc:'+45% Dmg, +30 Mana, +12% Acc, +10% PP',crafted:true},
+  c_boots_x:{id:'c_boots_x',name:'Entropy Walkers',slot:'boots',world:6,cost:0,stats:{hp:400,resist:22,powerPip:15,critBlock:10},desc:'+400 HP, +22% Res, +15% PS, +10% CB',crafted:true},
+  c_wand_x:{id:'c_wand_x',name:'Rift-Forged Staff',slot:'wand',world:6,cost:0,stats:{damage:45,mana:30,accuracy:12,powerPip:10},desc:'+45% Dmg, +30 Mana, +12% Acc, +10% PS',crafted:true},
   c_ring_x:{id:'c_ring_x',name:'Void Signet',slot:'ring',world:6,cost:0,stats:{resist:12,accuracy:10,pierce:15,critBlock:6,hp:150},desc:'+12% Res, +10% Acc, +15% Pierce, +6% CB, +150 HP',crafted:true},
-  c_amulet_x:{id:'c_amulet_x',name:'Convergence Pendant',slot:'amulet',world:6,cost:0,stats:{hp:350,mana:26,powerPip:30,resist:10,crit:10},desc:'+350 HP, +26 Mana, +30% PP, +10% Res, +10% Crit',crafted:true},
+  c_amulet_x:{id:'c_amulet_x',name:'Convergence Pendant',slot:'amulet',world:6,cost:0,stats:{hp:350,mana:26,powerPip:30,resist:10,crit:10},desc:'+350 HP, +26 Mana, +30% PS, +10% Res, +10% Crit',crafted:true},
 };
 
 // Add Spiral gear to GEAR catalog
@@ -2173,7 +2173,7 @@ const PET_JEWELS = {
   ruby:{name:'Ruby',stats:{damage:12},desc:'+12% damage'},
   sapphire:{name:'Sapphire',stats:{resist:12},desc:'+12% resist'},
   emerald:{name:'Emerald',stats:{accuracy:8},desc:'+8% accuracy'},
-  citrine:{name:'Citrine',stats:{powerPip:12},desc:'+12% power pip'},
+  citrine:{name:'Citrine',stats:{powerPip:12},desc:'+12% power sigil'},
   opal:{name:'Opal',stats:{hp:350},desc:'+350 HP'},
 };
 
@@ -3122,7 +3122,7 @@ const PET_TALENTS = {
   pain_giver:{id:'pain_giver',name:'Hexfang',type:'stat',effect:{damage:8},desc:'+8% universal damage'},
   spell_proof:{id:'spell_proof',name:'Wardweave',type:'stat',effect:{resist:8},desc:'+8% universal resist'},
   sharp_eye:{id:'sharp_eye',name:'Truemark',type:'stat',effect:{accuracy:5},desc:'+5% accuracy'},
-  pip_savant:{id:'pip_savant',name:'Pip Surge',type:'stat',effect:{powerPip:8},desc:'+8% power pip chance'},
+  pip_savant:{id:'pip_savant',name:'Sigil Surge',type:'stat',effect:{powerPip:8},desc:'+8% power sigil chance'},
   spritely:{id:'spritely',name:'Mending Pulse',type:'maycast',effect:{healPercent:10,procChance:15},desc:'May cast: heal 10% HP'},
   armor_breaker:{id:'armor_breaker',name:'Shieldrender',type:'stat',effect:{pierce:6},desc:'+6% pierce'},
   mighty_strike:{id:'mighty_strike',name:'Runeforce',type:'stat',effect:{damage:12},desc:'+12% universal damage'},
@@ -3136,7 +3136,7 @@ const PET_TALENTS = {
   sharp_blade:{id:'sharp_blade',name:'Razorclaw',type:'stat',effect:{pierce:8},desc:'+8% pierce'},
   keen_eye:{id:'keen_eye',name:'Eagle Eye',type:'stat',effect:{crit:10},desc:'+10% crit rating'},
   critical_striker:{id:'critical_striker',name:'Lethal Focus',type:'stat',effect:{crit:6,damage:4},desc:'+6% crit, +4% damage'},
-  steady_hand:{id:'steady_hand',name:'Steady Hand',type:'stat',effect:{accuracy:4,powerPip:4},desc:'+4% accuracy, +4% power pip'},
+  steady_hand:{id:'steady_hand',name:'Steady Hand',type:'stat',effect:{accuracy:4,powerPip:4},desc:'+4% accuracy, +4% power sigil'},
   maycast_blade:{id:'maycast_blade',name:'Sudden Fury',type:'maycast',effect:{bladePercent:15,procChance:12},desc:'May cast: +15% damage blade'},
 };
 
@@ -3404,7 +3404,7 @@ function rankUp() {
   addLog('', 'info');
   addLog('═══ RANK UP: ' + getWizardTitle() + ' ═══', 'system');
   addHubLog('Rank up: ' + getWizardTitle() + '!', 'crit');
-  if (rank.powerPipBase > 0) addLog('  Power Pip chance: ' + rank.powerPipBase + '%', 'system');
+  if (rank.powerPipBase > 0) addLog('  Power Sigil chance: ' + rank.powerPipBase + '%', 'system');
 }
 
 function recalcStats() {
@@ -3611,7 +3611,7 @@ function generatePip() {
   if (Game.wizard.pips.length >= Game.wizard.maxPips) return;
   const isPower = Math.random() * 100 < Game.wizard.powerPipChance;
   Game.wizard.pips.push(isPower ? 'power' : 'regular');
-  addLog('  + ' + (isPower ? 'Power Pip' : 'Pip') + ' (' + getPipValue() + ' total)', 'info');
+  addLog('  + ' + (isPower ? 'Power Sigil' : 'Sigil') + ' (' + getPipValue() + ' total)', 'info');
 }
 
 // ===== COMBAT HELPERS =====
@@ -3648,7 +3648,7 @@ function castSpell(spell, targetIndex) {
     var fizzMana = spell.mana || 0;
     if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) fizzMana += 1;
     Game.wizard.mana = Math.max(0, Game.wizard.mana - fizzMana);
-    addLog('R' + Game.round + ': ' + spell.name + ' → FIZZLE ✗', 'fizzle');
+    addLog('R' + Game.round + ': ' + spell.name + ' → MISCAST ✗', 'fizzle');
     if (typeof SFX !== 'undefined') SFX.fizzle();
     if (Game.wizard.school === 'storm' && Game.wizard._voltage > 0) {
       addLog('  Voltage reset!', 'info');
@@ -3657,7 +3657,7 @@ function castSpell(spell, targetIndex) {
     if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('volatile') !== -1) {
       var volDmg = Math.floor(Game.wizard.maxHp * 0.05);
       Game.wizard.hp = Math.max(1, Game.wizard.hp - volDmg);
-      addLog('  Volatile: fizzle feedback -' + volDmg + ' HP!', 'fizzle');
+      addLog('  Volatile: miscast feedback -' + volDmg + ' HP!', 'fizzle');
     }
     if (!Game.stats) Game.stats = {}; Game.stats.fizzles = (Game.stats.fizzles||0) + 1;
     if (Game.wizard.accuracyCharm) Game.wizard.accuracyCharm = null;
@@ -3982,7 +3982,7 @@ function castSpell(spell, targetIndex) {
       if (spell.pips === 'X') {
         var bladePct = (spell.effect.bladePerPip||15) * xPipVal;
         Game.wizard.blade = {percent:bladePct};
-        addLog('R' + Game.round + ': ' + spell.name + ' → +' + bladePct + '% blade (' + xPipVal + ' pips)', 'cast');
+        addLog('R' + Game.round + ': ' + spell.name + ' → +' + bladePct + '% blade (' + xPipVal + ' sigils)', 'cast');
       } else if (spell.effect.tripleStack) {
         if (!Game.wizard.bladeStack) Game.wizard.bladeStack = [];
         for (var bs = 0; bs < 3; bs++) Game.wizard.bladeStack.push({percent:spell.effect.bladePercent});
@@ -4358,7 +4358,7 @@ const GRIMOIRE = {
     {name:'Mote',school:'balance',role:'The Headmaster\'s Fox',desc:'A small fox that lives in Duskhollow\'s coat pocket. Does not look at new students. Follows Balance wizards into The Spiral. Glows faintly at high cycle counts. No one knows what Mote actually is. Duskhollow won\'t say.'},
   ],
   schools: [
-    {school:'storm',title:'Stormcaller',prof:'Professor Galesworth',desc:'The school of raw power. Highest damage, lowest accuracy, lowest HP. Storm wizards accept that half their spells will fizzle. The other half end fights. Voltage builds with each successful cast — consecutive hits stack +5% damage, but a single fizzle resets it to zero.',philosophy:'"If it fizzles, cast it again. If it lands, nothing else matters."'},
+    {school:'storm',title:'Stormcaller',prof:'Professor Galesworth',desc:'The school of raw power. Highest damage, lowest accuracy, lowest HP. Storm wizards accept that half their spells will miscast. The other half end fights. Voltage builds with each successful cast — consecutive hits stack +5% damage, but a single miscast resets it to zero.',philosophy:'"If it miscasts, cast it again. If it lands, nothing else matters."'},
     {school:'fire',title:'Pyromancer',prof:'Professor Ashveil',desc:'The school of sustained damage. Fire spells burn over time — applying DoTs that tick round after round. The Burndown mechanic rewards patience: each active DoT on any enemy adds +1% damage to your spells. The longer things burn, the harder you hit.',philosophy:'"Let it burn slow. Patience is a kind of heat."'},
     {school:'ice',title:'Frostbinder',prof:'Professor Rimward',desc:'The school of endurance. Highest HP and resist. Ice wizards outlast their enemies through sheer stubbornness. Glacial Momentum builds +3% damage per round while you maintain a shield or absorb — but drops the moment you\'re unprotected.',philosophy:'"Endure first. Win second."'},
     {school:'life',title:'Verdancer',prof:'Professor Fernsby',desc:'The school of restoration. Highest accuracy, powerful healing. When a Verdancer heals more than they need, the Overheal excess converts into a damage buff on their next attack. Healing is not passive — it\'s stored aggression.',philosophy:'"Healing is not passive. It is the most aggressive thing you can do."'},
@@ -4368,7 +4368,7 @@ const GRIMOIRE = {
   ],
   duelists: [
     {id:'duel_penna',name:'Penna Inksworth',school:'myth',desc:'The librarian\'s apprentice. Read every book in Spindlewood and decided knowledge was a weapon. Fights with recited passages and smug corrections.'},
-    {id:'duel_crix',name:'Crix Galeheart',school:'storm',desc:'Loud, fast, and convinced he\'s the best thing to happen to Spindlewood since indoor plumbing. Fizzles more than he admits.'},
+    {id:'duel_crix',name:'Crix Galeheart',school:'storm',desc:'Loud, fast, and convinced he\'s the best thing to happen to Spindlewood since indoor plumbing. Miscasts more than he admits.'},
     {id:'duel_nyla',name:'Nyla Sandweaver',school:'fire',desc:'Transferred from a desert school that no longer exists. She doesn\'t talk about why. Her fire burns slower and hotter than anything the professors can explain.'},
     {id:'duel_korr',name:'Korr Frostjaw',school:'ice',desc:'Wants you to hit him. Genuinely. He thinks taking damage is a valid strategy. He is not wrong.'},
     {id:'duel_vice',name:'Vice Thornscribe Jr.',school:'myth',desc:'The professor\'s son. Fights students in the Dueling Club against his father\'s wishes. Has something to prove and no idea what it is.'},
@@ -4439,7 +4439,7 @@ function processSpiralModifiers() {
   if (mods.indexOf('entropic') !== -1 && Game.round % 3 === 0) {
     if (Game.wizard.pips.length > 0) {
       Game.wizard.pips.pop();
-      addLog('  Entropic decay — lost a pip!', 'fizzle');
+      addLog('  Entropic decay — lost a sigil!', 'fizzle');
     }
   }
 
@@ -4594,7 +4594,7 @@ function getTotalDoTDamage(enemy) {
   return total;
 }
 
-function passTurn() { addLog('R' + Game.round + ': Pass (saving pips)', 'info'); }
+function passTurn() { addLog('R' + Game.round + ': Pass (saving sigils)', 'info'); }
 
 // ===== ENEMY TURN =====
 function enemyTurn() {
@@ -5463,10 +5463,32 @@ function resetGame() {
   localStorage.removeItem('spiralbound_save');
   localStorage.removeItem('spiralbound_tutorial_done');
   if (Game.tickInterval) { clearInterval(Game.tickInterval); Game.tickInterval = null; }
-  Game.state = 'idle'; Game.combat = null; Game._spiralWorld = null;
+  Game.wizard = null; Game.combat = null;
+  Game.currentWorld = 0; Game.currentZone = 0; Game.currentEncounter = 0;
+  Game.deck = []; Game.deckBuild = {}; Game.rules = [];
+  Game.log = []; Game.hubLog = [];
+  Game.gold = 0; Game.tick = 0; Game.round = 0;
+  Game.mode = 'manual'; Game.state = 'idle'; Game.phase = 'none';
+  Game.garden = null; Game.snacks = 0; Game.potions = null; Game.reagents = {};
+  Game.autoUnlocked = false;
+  Game.pet = null; Game.petRoster = [];
+  Game.farming = false; Game.homeWorld = undefined; Game.homeZone = undefined; Game.homeEncounter = undefined;
+  Game.furthestWorld = 0; Game.furthestZone = 0;
+  Game.crafting = {rank:0, xp:0, queue:null, inventory:{enchantments:[],jewels:[]}};
+  Game.events = {active:[], lastEventTick:0};
+  Game.savedDecks = []; Game.bazaar = null;
+  Game.logMode = 'verbose';
   Game.graduatedSchools = []; Game.masteryAuras = {}; Game.enrollmentCount = 0;
+  Game.achievements = {};
+  Game.stats = {encountersCleared:0, enemiesDefeated:0, bossesDefeated:0, spellsCast:0, fizzles:0, crits:0, goldEarned:0, deathCount:0};
+  Game.bestiary = {};
   Game.fishing = null; Game.monstrology = {animus:{},summonCards:[],treasureCards:[]};
-  Game.spire = null; Game.assignments = null; Game.tcSlots = []; Game.dueling = null; Game.expeditions = null; Game.wandCraft = null; Game.rival = null;
+  Game.spire = null; Game.assignments = null; Game.tcSlots = [];
+  Game.dueling = null; Game.expeditions = null; Game.wandCraft = null; Game.rival = null;
+  Game.spiralCycle = 1; Game._spiralWorld = null;
+  Game.autoPotions = true; Game.autoReshuffle = true; Game.autoHarvest = false;
+  Game.autoSellFish = false; Game.autoSkipRest = false;
+  Game.lockedGear = []; Game._customRules = false;
   applySchoolTheme('');
 }
 
@@ -6500,7 +6522,7 @@ const SPIRE_RUNE_KEYS = Object.keys(SPIRE_REWARDS);
 const SPIRE_LOOT = {
   spire_hat:{id:'spire_hat',name:'Spire-Tested Hood',slot:'hat',world:5,cost:0,stats:{hp:400,accuracy:12,damage:28,crit:18,pierce:6},desc:'+400 HP, +12% Acc, +28% Dmg, +18% Crit, +6% Pierce',dropOnly:true},
   spire_robe:{id:'spire_robe',name:'Spire-Forged Coat',slot:'robe',world:5,cost:0,stats:{hp:650,damage:55,resist:22,crit:12},desc:'+650 HP, +55% Dmg, +22% Res, +12% Crit',dropOnly:true},
-  spire_boots:{id:'spire_boots',name:'Spire-Climber Treads',slot:'boots',world:5,cost:0,stats:{hp:350,resist:18,powerPip:12,critBlock:10,crit:8},desc:'+350 HP, +18% Res, +12% PP, +10% CB, +8% Crit',dropOnly:true},
+  spire_boots:{id:'spire_boots',name:'Spire-Climber Treads',slot:'boots',world:5,cost:0,stats:{hp:350,resist:18,powerPip:12,critBlock:10,crit:8},desc:'+350 HP, +18% Res, +12% PS, +10% CB, +8% Crit',dropOnly:true},
   spire_wand:{id:'spire_wand',name:'Spire Needle',slot:'wand',world:5,cost:0,stats:{damage:50,mana:25,pierce:16,crit:10},desc:'+50% Dmg, +25 Mana, +16% Pierce, +10% Crit',dropOnly:true},
 };
 for (var slk in SPIRE_LOOT) GEAR[slk] = SPIRE_LOOT[slk];

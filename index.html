@@ -27,7 +27,7 @@
       <div class="bar-track thick"><div class="bar-fill mana" id="mana-fill" style="width:100%"></div></div>
     </div>
     <div class="pip-display" id="pip-container">
-      <span class="pip-label">Pips:</span>
+      <span class="pip-label">Sigils:</span>
     </div>
   </div>
 
@@ -91,9 +91,9 @@
 
       <div class="ss-divider-sm"></div>
       <div class="ss-balance-note">Balance unlocks after graduating all six schools.</div>
-      <div class="ss-card-balance" onclick="selectSchool('balance')">
-        <div style="font-size:16px;color:#e8c840;margin-bottom:4px;font-family:Georgia,serif">★ Balance</div>
-        <div style="font-size:11px;color:#888;line-height:1.5">The Spiral. Every spell. Every aura. The endgame.</div>
+      <div id="ss-balance-card" class="ss-card-balance" style="opacity:0.3;cursor:not-allowed;pointer-events:none">
+        <div style="font-size:16px;color:#888;margin-bottom:4px;font-family:Georgia,serif">★ Balance</div>
+        <div style="font-size:11px;color:#555;line-height:1.5">The Spiral. Every spell. Every aura. The endgame.</div>
       </div>
 
       <div class="ss-version">Spiralbound v2.0</div>
@@ -124,7 +124,7 @@
     <button class="tab-btn" data-tab="pet" onclick="switchTab('pet')" title="Your familiar, roster, hatchery, and expeditions">Familiar</button>
     <button class="tab-btn" data-tab="combat" onclick="switchTab('combat')" title="Active combat, spell hand, The Spire, and Dueling Club">Battle</button>
     <button class="tab-btn" data-tab="map" onclick="switchTab('map')" title="World map — travel between worlds and zones">Atlas</button>
-    <button class="tab-btn" data-tab="bestiary" onclick="switchTab('bestiary')" title="Enemy encyclopedia, monstrology, and treasure card crafting">Bestiary</button>
+    <button class="tab-btn" data-tab="bestiary" onclick="switchTab('bestiary')" title="Enemy encyclopedia, faunology, and treasure card crafting">Bestiary</button>
     <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')" title="World vendor gear and the Bazaar marketplace">Shop</button>
     <button class="tab-btn" data-tab="craft" onclick="switchTab('craft')" title="Craft potions, snacks, enchantments, jewels, and gear from reagents">Workshop</button>
     <button class="tab-btn" data-tab="garden" onclick="switchTab('garden')" title="Plant seeds, grow reagents and snacks, harvest elder rewards">Garden</button>
@@ -387,7 +387,7 @@
         </div>
 
         <div style="border-top:1px solid var(--border);padding-top:8px">
-          <button class="btn" onclick="if(confirm('Reset ALL progress? This cannot be undone. Your wizard, gear, pets, and all progression will be permanently deleted.')) { resetGame(); document.getElementById('school-select').style.display='block'; }" style="color:var(--fizzle);font-size:10px">Reset Game</button>
+          <button class="btn" onclick="if(confirm('Reset ALL progress? This cannot be undone. Your wizard, gear, pets, and all progression will be permanently deleted.')) { resetGame(); document.getElementById('school-select').style.display='block'; checkBalanceUnlock(); }" style="color:var(--fizzle);font-size:10px">Reset Game</button>
           <span style="font-size:9px;color:var(--text-dim);margin-left:8px">Permanently deletes all progress</span>
         </div>
       </div>
@@ -419,7 +419,7 @@
       </div>
     </details>
 
-    <details class="status-box" style="margin-bottom:8px">
+    <details id="dev-menu" class="status-box" style="margin-bottom:8px;display:none">
       <summary><span class="tri"></span> Dev Menu</summary>
       <div style="padding-top:8px">
 
@@ -433,16 +433,19 @@
           <button class="btn" onclick="migratePotions();for(var pk of POTION_IDS)Game.potions[pk]=(Game.potions[pk]||0)+10;saveGame();updateUI();">+Potions</button>
           <button class="btn" onclick="devAddSeeds()">+Seeds</button>
           <button class="btn" onclick="Game.wizard.trainingPoints=(Game.wizard.trainingPoints||0)+10;saveGame();updateUI();">+10 TP</button>
+          <button class="btn" onclick="Game.wizard.trainingPoints=(Game.wizard.trainingPoints||0)+50;saveGame();updateUI();">+50 TP</button>
         </div>
 
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Wizard</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn" onclick="Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;updateUI();">Full Heal</button>
           <button class="btn" onclick="Game.wizard.xp=(Game.wizard.xp||0)+500;checkLevelUp();saveGame();updateUI();">+500 XP</button>
+          <button class="btn" onclick="Game.wizard.xp=(Game.wizard.xp||0)+5000;checkLevelUp();saveGame();updateUI();">+5k XP</button>
           <button class="btn" onclick="Game.wizard.rankIndex=RANKS.length-2;rankUp();Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;saveGame();updateUI();">Max Rank</button>
           <button class="btn" onclick="Game.wizard.level=40;Game.wizard.xp=28000;var ssl=SCHOOL_SPELL_LEVELS[Game.wizard.school];if(ssl){for(var l in ssl){for(var si=0;si<ssl[l].length;si++){if(Game.wizard.learnedSpells.indexOf(ssl[l][si])===-1)Game.wizard.learnedSpells.push(ssl[l][si]);}}}addLog('DEV: Max level + all spells','crit');saveGame();_deckDirty=true;updateUI();">Max Level</button>
           <button class="btn" onclick="Game.autoUnlocked=true;addLog('DEV: Auto unlocked','system');saveGame();updateUI();">Unlock Auto</button>
           <button class="btn" onclick="equipBest();_gearDirty=true;updateUI();">Equip Best</button>
+          <button class="btn" onclick="var gs=Object.keys(GEAR);for(var i=0;i<gs.length;i++){if(Game.wizard.inventory.indexOf(gs[i])===-1)Game.wizard.inventory.push(gs[i]);}addLog('DEV: All gear added','crit');_gearDirty=true;saveGame();updateUI();">+All Gear</button>
         </div>
 
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Progression</div>
@@ -453,6 +456,7 @@
           <button class="btn" onclick="Game.furthestWorld=WORLDS.length-1;Game.furthestZone=10;addLog('DEV: Worlds unlocked','system');saveGame();updateUI();">Unlock Worlds</button>
           <button class="btn" onclick="graduate();saveGame();updateUI();">Graduate</button>
           <button class="btn" onclick="['storm','fire','ice','life','death','myth'].forEach(function(s){if(Game.graduatedSchools.indexOf(s)===-1){Game.graduatedSchools.push(s);Game.masteryAuras[s]=true;}});Game.enrollmentCount=6;addLog('DEV: All graduated','crit');saveGame();updateUI();">Graduate All</button>
+          <button class="btn" onclick="['storm','fire','ice','life','death','myth'].forEach(function(s){if(Game.graduatedSchools.indexOf(s)===-1){Game.graduatedSchools.push(s);Game.masteryAuras[s]=true;}});Game.enrollmentCount=6;saveGame();document.getElementById('school-select').style.display='block';checkBalanceUnlock();addLog('DEV: Balance unlocked — select from school screen','crit');updateUI();" style="color:var(--gold)">Unlock Balance</button>
           <button class="btn" onclick="devUnlockAll()">Unlock All</button>
         </div>
 
@@ -468,6 +472,7 @@
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn" onclick="if(Game.pet){Game.pet.stageIndex=6;Game.pet.xp=6000;for(var mi=0;mi<Game.pet.talentPool.length&&Game.pet.manifested.length<5;mi++){if(Game.pet.manifested.indexOf(Game.pet.talentPool[mi])===-1)Game.pet.manifested.push(Game.pet.talentPool[mi]);}addLog('DEV: Transcendent','system');recalcStats();saveGame();updateUI();}else{addLog('DEV: No familiar','info');updateUI();}">Max Familiar</button>
           <button class="btn" onclick="var sps=['spark_otter','cinder_toad','crystal_cub','petal_hare','bone_rat','stone_cat'];for(var i=0;i<sps.length;i++){var np=createPet(sps[i]);if(np)Game.petRoster.push(np);}addLog('DEV: +6 familiars','crit');_petDirty=true;saveGame();updateUI();">+6 Familiars</button>
+          <button class="btn" onclick="if(Game.pet){Game.pet.xp=(Game.pet.xp||0)+500;addLog('DEV: +500 familiar XP','crit');saveGame();_petDirty=true;updateUI();}">+500 Fam XP</button>
         </div>
 
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Activities</div>
@@ -478,9 +483,18 @@
           <button class="btn" onclick="Game.furthestWorld=Math.max(Game.furthestWorld,1);initDuelingClub();Game.dueling.unlocked=true;addLog('DEV: Dueling unlocked','system');saveGame();updateUI();">Unlock Dueling</button>
           <button class="btn" onclick="generateEvent();updateUI();">Force Event</button>
           <button class="btn" onclick="if(Game.assignments){Game.assignments.active=[];generateAssignments();}else{initAssignments();generateAssignments();}updateUI();">Reroll Assignments</button>
+          <button class="btn" onclick="expandGarden();expandGarden();expandGarden();addLog('DEV: Garden expanded','system');saveGame();updateUI();">Expand Garden</button>
         </div>
 
-        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Monstrology & TCs</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Collection</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="var ek=Object.keys(ENEMIES);for(var i=0;i<ek.length;i++){if(!Game.bestiary)Game.bestiary={};Game.bestiary[ek[i]]=(Game.bestiary[ek[i]]||0)+1;}addLog('DEV: Full bestiary','crit');saveGame();updateUI();">Fill Bestiary</button>
+          <button class="btn" onclick="initFishing();var fk=Object.keys(FISH);if(!Game.fishing.tome)Game.fishing.tome={};for(var i=0;i<fk.length;i++){Game.fishing.tome[fk[i]]=(Game.fishing.tome[fk[i]]||0)+1;if(!Game.fishing.bucket)Game.fishing.bucket={};Game.fishing.bucket[fk[i]]=(Game.fishing.bucket[fk[i]]||0)+1;}addLog('DEV: Full fish tome','crit');saveGame();_fishDirty=true;updateUI();">Fill Fish Tome</button>
+          <button class="btn" onclick="var ak=Object.keys(ACHIEVEMENTS);for(var i=0;i<ak.length;i++)Game.achievements[ak[i]]=true;addLog('DEV: All achievements','crit');saveGame();updateUI();">All Achievements</button>
+          <button class="btn" onclick="if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};var eKeys=Object.keys(ENEMIES);for(var i=0;i<eKeys.length;i++){Game.monstrology.animus[eKeys[i]]=(Game.monstrology.animus[eKeys[i]]||0)+5;}addLog('DEV: +animus for all','crit');saveGame();updateUI();">Fill Animus</button>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Faunology & TCs</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn" onclick="if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};var eKeys=Object.keys(ENEMIES);for(var i=0;i<10;i++){var ek=eKeys[Math.floor(Math.random()*eKeys.length)];Game.monstrology.animus[ek]=(Game.monstrology.animus[ek]||0)+3;}addLog('DEV: +30 random animus','crit');saveGame();updateUI();">+Animus</button>
           <button class="btn" onclick="if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};if(!Game.monstrology.treasureCards)Game.monstrology.treasureCards=[];['volt_asp','ember_fox','frost_scarab_s','thorn_sprite_s','shadow_wisp_s','fang_bat'].forEach(function(s){var sp=SPELLS[s];if(sp)Game.monstrology.treasureCards.push({id:'tc_'+s+'_'+Date.now()+Math.random(),spellId:s,school:sp.school,name:sp.name+' TC',type:'treasure'});});addLog('DEV: +6 Treasure Cards','crit');saveGame();updateUI();">+6 TCs</button>
@@ -494,11 +508,19 @@
           <button class="btn" onclick="Game.spiralCycle=(Game.spiralCycle||1)+10;addLog('DEV: +10 cycles','system');saveGame();updateUI();">+10 Cycles</button>
         </div>
 
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Utility</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" onclick="Game.log=[];Game.hubLog=[];updateUI();">Clear Quill</button>
+          <button class="btn" onclick="var e=Game.events.active.length;Game.events.active=[];addLog('DEV: Cleared '+e+' events','system');updateUI();">Clear Events</button>
+          <button class="btn" onclick="Game.stats={encountersCleared:0,enemiesDefeated:0,bossesDefeated:0,spellsCast:0,fizzles:0,crits:0,goldEarned:0,deathCount:0};addLog('DEV: Stats reset','system');saveGame();updateUI();" style="color:var(--fizzle)">Reset Stats</button>
+        </div>
+
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Danger Zone</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap">
           <button class="btn" onclick="Game.wizard.hp=1;updateUI();" style="color:var(--fizzle)">Set HP to 1</button>
           <button class="btn" onclick="Game.wizard.mana=0;updateUI();" style="color:var(--fizzle)">Drain Mana</button>
           <button class="btn" onclick="Game.wizard.hp=0;handleDeath();updateUI();" style="color:var(--fizzle)">Force Death</button>
+          <button class="btn" onclick="Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;Game.wizard.xp=28000;Game.wizard.level=40;Game.wizard.rankIndex=RANKS.length-1;Game.gold+=100000;Game.autoUnlocked=true;var ssl2=SCHOOL_SPELL_LEVELS[Game.wizard.school];if(ssl2){for(var l2 in ssl2){for(var s2=0;s2<ssl2[l2].length;s2++){if(Game.wizard.learnedSpells.indexOf(ssl2[l2][s2])===-1)Game.wizard.learnedSpells.push(ssl2[l2][s2]);}}}Game.crafting.rank=CRAFTING_RANKS.length-1;Game.furthestWorld=WORLDS.length-1;Game.furthestZone=10;recalcStats();addLog('DEV: GOD MODE','crit');_deckDirty=true;_gearDirty=true;saveGame();updateUI();" style="color:var(--gold);font-weight:bold">GOD MODE</button>
         </div>
 
       </div>
@@ -536,7 +558,7 @@
     var _tutorialSteps = [
       '<strong style="color:var(--cast)">Combat</strong> starts in manual mode — you pick your spells each round. Clear the Training Grounds to unlock <strong>auto-combat</strong>. Boss fights are always manual.<br><br>You gain <strong>XP</strong> from kills. Level up to learn new spells from your professor. The <strong style="color:var(--cast)">Quill</strong> on the left logs everything.',
       '<strong style="color:var(--cast)">Your Deck</strong> is your strategy. In the <strong>Spellbook</strong> tab, set how many copies of each spell go in your deck. You draw a hand each round — you can only cast what you draw.<br><br>More copies = more likely to draw it. Deck size grows as you rank up.',
-      '<strong style="color:var(--cast)">Priority Rules</strong> control auto-combat. In the Spellbook tab, set IF/THEN rules like "IF no blade → cast Blade" or "IF pips above 3 → cast your strongest spell." Rules are checked top-to-bottom.',
+      '<strong style="color:var(--cast)">Priority Rules</strong> control auto-combat. In the Spellbook tab, set IF/THEN rules like "IF no blade → cast Blade" or "IF sigils above 3 → cast your strongest spell." Rules are checked top-to-bottom.',
       '<strong style="color:var(--cast)">Gear & Gold</strong> — buy gear from the <strong>Shop</strong> to boost your stats. The <strong>Bazaar</strong> has reagents, potions, snacks, and seeds at fluctuating prices. Equip <strong>wand cores</strong> and <strong>woods</strong> for bonus stats as you find them.',
       '<strong style="color:var(--cast)">Side Activities</strong> unlock as you progress:<br>- <strong>Familiar</strong> — hatched from boss drops, boost your stats, send on <strong>expeditions</strong><br>- <strong>Garden</strong> — grow reagents and snacks from seeds<br>- <strong>Workshop</strong> — craft potions, enchantments, jewels, and gear<br>- <strong>Fishing</strong> — catch fish for gold with a timing minigame, collect rods',
       '<strong style="color:var(--cast)">Challenges</strong> — test your skills beyond auto-battle:<br>- <strong>The Spire</strong> — a tower challenge with a restricted deck (unlocks W3)<br>- <strong>Dueling Club</strong> — 1v1 fights vs named NPCs, including your <strong>rival</strong> (unlocks W1)<br>- <strong>Professor\'s Assignments</strong> — rotating goals for bonus rewards<br>- <strong>Bestiary</strong> — track enemies, extract animus, craft treasure cards',
@@ -590,6 +612,7 @@
         if (!loadGame()) {
           // New game — show school selection
           document.getElementById('school-select').style.display = 'block';
+          checkBalanceUnlock();
         } else {
           processOfflineProgress();
           addLog('Save loaded. Resuming...', 'system');
@@ -613,6 +636,31 @@
         document.getElementById('school-select').style.display = 'block';
       }
     });
+
+    function checkBalanceUnlock() {
+      var bc = document.getElementById('ss-balance-card');
+      if (!bc) return;
+      var gs = Game.graduatedSchools || [];
+      if (gs.length >= 6) {
+        bc.style.opacity = '1';
+        bc.style.cursor = 'pointer';
+        bc.style.pointerEvents = 'auto';
+        bc.onclick = function() { selectSchool('balance'); };
+        bc.querySelector('div').style.color = '#e8c840';
+        bc.querySelectorAll('div')[1].style.color = '#888';
+      } else {
+        bc.style.opacity = '0.3';
+        bc.style.cursor = 'not-allowed';
+        bc.style.pointerEvents = 'none';
+        bc.onclick = null;
+      }
+    }
+
+    window.duskhollow47 = function() {
+      var dm = document.getElementById('dev-menu');
+      if (dm) { dm.style.display = dm.style.display === 'none' ? '' : 'none'; }
+      return dm && dm.style.display !== 'none' ? 'The headmaster nods.' : 'The door closes.';
+    };
 
     // Keyboard shortcuts for tab switching + combat
     var tabKeys = ['gear','deck','pet','combat','map','bestiary','shop','craft','garden','fishing','options'];

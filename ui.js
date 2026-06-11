@@ -417,7 +417,7 @@ function updateUI() {
 function renderPips() {
   var c = document.getElementById('pip-container');
   var newCount = Game.wizard.pips.length;
-  var h = '<span class="pip-label" title="Pips power your spells. Regular pips (grey) = 1 pip. Power pips (gold) = 2 pips. You gain 1 pip per round.">Pips:</span>';
+  var h = '<span class="pip-label" title="Sigils power your spells. Regular sigils (grey) = 1. Power sigils (gold) = 2. You gain 1 per round.">Sigils:</span>';
   for (var i = 0; i < Game.wizard.maxPips; i++) {
     var isNew = i === newCount - 1 && newCount > _lastPipCount;
     if (i < Game.wizard.pips.length) h += '<span class="pip-dot ' + Game.wizard.pips[i] + (isNew ? ' pip-new' : '') + '"></span>';
@@ -665,9 +665,9 @@ function renderCombat() {
         else if (sp.effect.bladePercent) effectText = '+' + sp.effect.bladePercent + '%';
         else if (sp.effect.trapPercent) effectText = '+' + sp.effect.trapPercent + '%';
         else if (sp.effect.shieldPercent) effectText = '-' + sp.effect.shieldPercent + '%';
-        else if (sp.effect.absorbPerPip) effectText = sp.effect.absorbPerPip + '/pip';
-        else if (sp.effect.damagePerPip) effectText = sp.effect.damagePerPip[0] + '/pip';
-        else if (sp.effect.bladePerPip) effectText = sp.effect.bladePerPip + '%/pip';
+        else if (sp.effect.absorbPerPip) effectText = sp.effect.absorbPerPip + '/sigil';
+        else if (sp.effect.damagePerPip) effectText = sp.effect.damagePerPip[0] + '/sigil';
+        else if (sp.effect.bladePerPip) effectText = sp.effect.bladePerPip + '%/sigil';
         else if (sp.effect.accuracyBuff) effectText = '+' + sp.effect.accuracyBuff + '%';
         else if (sp.effect.weakness) effectText = '-' + sp.effect.weakness + '%';
         else if (sp.effect.antiHeal) effectText = '-' + sp.effect.antiHeal + '%';
@@ -848,7 +848,7 @@ function _deckSpellRow(spellId, totalCards, maxDeck) {
   if (!dsp) return '';
   var w = Game.wizard;
   var count = (Game.deckBuild && Game.deckBuild[spellId]) || 0;
-  var dpip = dsp.pips === 'X' ? 'Xp' : dsp.pips + 'p';
+  var dpip = dsp.pips === 'X' ? 'Xs' : dsp.pips + 's';
   var dtags = dsp.type + (dsp.effect && dsp.effect.aoe ? ' AoE' : '');
   var dcolor = 'var(--' + dsp.school + ', var(--cast))';
   var encs = (w.enchantments && w.enchantments[dsp.id]) || [];
@@ -981,7 +981,7 @@ function renderDeck() {
       }
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:3px;background:var(--bg);border:1px solid '+(spLearned?schColor:'var(--border)')+';border-radius:3px;font-size:11px;'+(spLearned||spHasPrereq?'':'opacity:0.5')+'"><span>';
       h += '<span style="color:'+schColor+'">' + spTp.name + '</span>';
-      h += ' <span style="color:var(--text-dim)">' + spTp.pips + 'p ' + spTp.type + ' — ' + spTp.desc + '</span>';
+      h += ' <span style="color:var(--text-dim)">' + spTp.pips + 's ' + spTp.type + ' — ' + spTp.desc + '</span>';
       if (spTp.prereq.length > 0 && !spHasPrereq) h += ' <span style="color:var(--fizzle)">[Req: ' + spTp.prereq.map(function(pid){return TP_SPELLS[pid]?TP_SPELLS[pid].name:pid;}).join(', ') + ']</span>';
       h += '</span>';
       if (spLearned) h += '<span style="color:'+schColor+';font-size:10px">Learned</span>';
@@ -1064,7 +1064,7 @@ function renderDeck() {
         {label:'General',keys:['always','round_1','round_below_3']},
         {label:'Buffs',keys:['no_blade','has_blade','no_trap','has_trap','no_shield','no_accuracy_charm','no_global','blade_and_trap','ward_blocks_enemy']},
         {label:'HP / Mana',keys:['hp_below_25','hp_below_50','hp_below_75','mana_above_50','mana_below_25']},
-        {label:'Pips',keys:['pips_above_1','pips_above_2','pips_above_3','pips_above_4','pips_above_5','pips_above_6','pips_above_7','pips_above_8','pips_above_10']},
+        {label:'Sigils',keys:['pips_above_1','pips_above_2','pips_above_3','pips_above_4','pips_above_5','pips_above_6','pips_above_7','pips_above_8','pips_above_10']},
         {label:'Enemy',keys:['enemy_hp_above_50','enemy_hp_above_75','enemy_hp_below_25','enemy_count_above_1','enemy_count_above_2','enemy_boss','enemy_has_dot','enemy_no_dot','enemy_boosts_me','enemy_same_school','enemy_is_storm','enemy_is_fire','enemy_is_ice','enemy_is_life','enemy_is_death','enemy_is_myth','enemy_is_balance']},
         {label:'Minion',keys:['has_minion','no_minion']},
       ];
@@ -1092,7 +1092,7 @@ function renderDeck() {
         h += '<optgroup label="'+stOrder[sto]+'">';
         for (var sts = 0; sts < spellsByType[stOrder[sto]].length; sts++) {
           var ss2 = spellsByType[stOrder[sto]][sts];
-          h += '<option value="'+ss2.id+'" '+(r.spellId===ss2.id?'selected':'')+'>'+ss2.name+' ('+(ss2.pips==='X'?'X':ss2.pips)+'p)</option>';
+          h += '<option value="'+ss2.id+'" '+(r.spellId===ss2.id?'selected':'')+'>'+ss2.name+' ('+(ss2.pips==='X'?'X':ss2.pips)+'s)</option>';
         }
         h += '</optgroup>';
       }
@@ -1418,7 +1418,7 @@ function renderGear() {
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Damage</div><div style="color:#ff6d00;font-size:14px">+'+w.damage+'%</div></div>';
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Resist</div><div style="color:#26a69a;font-size:14px">'+w.resist+'%</div></div>';
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Accuracy</div><div style="color:var(--text-bright);font-size:14px">'+w.accuracy+'%</div></div>';
-    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Power Pip</div><div style="color:#c8a84e;font-size:14px">'+w.powerPipChance+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Power Sigil</div><div style="color:#c8a84e;font-size:14px">'+w.powerPipChance+'%</div></div>';
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Critical</div><div style="color:#ffab00;font-size:14px">'+(w.crit||5)+'%</div></div>';
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Pierce</div><div style="color:#ab47bc;font-size:14px">'+(w.pierce||0)+'%</div></div>';
     ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Crit Block</div><div style="color:#78909c;font-size:14px">'+(w.critBlock||0)+'%</div></div>';
@@ -1484,7 +1484,7 @@ function renderGear() {
     ph += '<div><span style="color:var(--text-bright)">Accuracy ' + w.accuracy + '%:</span> ' + _accParts.join(' | ') + '</div>';
     ph += '<div><span style="color:#ffab00">Critical ' + (w.crit||5) + '%:</span> ' + _critParts.join(' | ') + '</div>';
     ph += '<div><span style="color:#ab47bc">Pierce ' + (w.pierce||0) + '%:</span> ' + (_pierceParts.length ? _pierceParts.join(' | ') : '—') + '</div>';
-    ph += '<div><span style="color:#c8a84e">Power Pip ' + w.powerPipChance + '%:</span> ' + (_ppParts.length ? _ppParts.join(' | ') : '—') + '</div>';
+    ph += '<div><span style="color:#c8a84e">Power Sigil ' + w.powerPipChance + '%:</span> ' + (_ppParts.length ? _ppParts.join(' | ') : '—') + '</div>';
     ph += '<div><span style="color:#4090c0">Mana ' + w.maxMana + ':</span> ' + _manaParts.join(' | ') + '</div>';
     ph += '</div></details>';
 
@@ -1505,7 +1505,7 @@ function renderGear() {
       var _hi = Math.floor(_psp.effect.damage[1] * _dmgMult);
       var _clo = Math.floor(_lo * _critMult);
       var _chi = Math.floor(_hi * _critMult);
-      ph += '<div><span style="color:var(--' + _psp.school + ')">' + _psp.name + '</span> <span style="color:var(--text-dim)">(' + _psp.pips + ' pips):</span> ' + _lo + '-' + _hi + ' | <span style="color:var(--gold)">Crit: ' + _clo + '-' + _chi + '</span></div>';
+      ph += '<div><span style="color:var(--' + _psp.school + ')">' + _psp.name + '</span> <span style="color:var(--text-dim)">(' + _psp.pips + ' sigils):</span> ' + _lo + '-' + _hi + ' | <span style="color:var(--gold)">Crit: ' + _clo + '-' + _chi + '</span></div>';
     }
     if (_previewSpells.length === 0) ph += '<div style="color:var(--text-dim)">No damage spells in deck.</div>';
     ph += '<div style="color:var(--text-dim);margin-top:4px">Multiplier: x' + _dmgMult.toFixed(2) + ' | Crit: x' + _critMult + '</div>';
@@ -1538,7 +1538,7 @@ function renderGear() {
     ph += '<div>Bosses Defeated: <span style="color:var(--text-bright)">' + ((_s.bossesDefeated||0).toLocaleString()) + '</span></div>';
     ph += '<div>Spells Cast: <span style="color:var(--text-bright)">' + ((_s.spellsCast||0).toLocaleString()) + '</span></div>';
     ph += '<div>Critical Hits: <span style="color:var(--gold)">' + ((_s.crits||0).toLocaleString()) + '</span></div>';
-    ph += '<div>Fizzles: <span style="color:var(--fizzle)">' + ((_s.fizzles||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Miscasts: <span style="color:var(--fizzle)">' + ((_s.fizzles||0).toLocaleString()) + '</span></div>';
     ph += '<div>Deaths: <span style="color:var(--fizzle)">' + ((_s.deathCount||0).toLocaleString()) + '</span></div>';
     ph += '<div>Accuracy Rate: <span style="color:var(--text-bright)">' + _accRate + '</span></div>';
     ph += '</div>';
@@ -1868,13 +1868,13 @@ function renderGear() {
       ih += '</div></details>';
     }
 
-    // Monstrology Cards
+    // Faunology Cards
     var monInv = Game.monstrology || {animus:{},summonCards:[],treasureCards:[]};
     var tcInv = monInv.treasureCards || [];
     var scInv = monInv.summonCards || [];
     var tcSlots = Game.tcSlots || [];
     if (tcInv.length + scInv.length + tcSlots.length > 0) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Monstrology Cards (' + (tcInv.length + tcSlots.length) + ' TC, ' + scInv.length + ' summon)</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Faunology Cards (' + (tcInv.length + tcSlots.length) + ' TC, ' + scInv.length + ' summon)</summary><div style="padding-top:6px">';
       if (tcSlots.length > 0) {
         for (var tsi = 0; tsi < tcSlots.length; tsi++) {
           ih += '<div style="font-size:11px;padding:2px 0;color:var(--' + tcSlots[tsi].school + ')">* ' + tcSlots[tsi].name + ' <span style="color:var(--text-dim)">(slotted)</span></div>';
@@ -3039,7 +3039,7 @@ function renderBestiary() {
   var bestiary = Game.bestiary || {};
   var mon = Game.monstrology || {animus:{},summonCards:[]};
   var discovered = Object.keys(bestiary).length;
-  var h = '<div class="section-head">Bestiary & Monstrology</div>';
+  var h = '<div class="section-head">Bestiary & Faunology</div>';
   h += '<div style="font-style:italic;font-size:11px;color:var(--text-dim);margin-bottom:10px">"Every creature has a story. Most of them end with \'and then a wizard showed up.\'" — ' + getProfessorName() + '</div>';
   h += '<div style="font-size:12px;color:var(--text-bright);margin-bottom:12px">Discovered: ' + discovered + ' species</div>';
 
@@ -3122,7 +3122,7 @@ function renderBestiary() {
           if (benemy.name === 'Aldric Grimsworth') dropParts.push('Familiar Egg, Auto-Combat');
         }
         if (dropParts.length > 0) h += '<div style="color:var(--text-dim);font-size:10px;margin-top:2px">Drops: ' + dropParts.join(' · ') + '</div>';
-        // Monstrology — animus + craft
+        // Faunology — animus + craft
         var animusCount = mon.animus[beid] || 0;
         var animusCost = benemy && benemy.boss ? 5 : 3;
         h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">';
@@ -3170,7 +3170,7 @@ function renderBestiary() {
   }
   h += '</div></details>';
 
-  // Monstrology stats
+  // Faunology stats
   var totalAnimus = 0;
   var animKeys = Object.keys(mon.animus);
   for (var ak = 0; ak < animKeys.length; ak++) totalAnimus += mon.animus[animKeys[ak]];
