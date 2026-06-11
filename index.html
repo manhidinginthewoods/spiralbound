@@ -388,10 +388,49 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
+      <summary><span class="tri"></span> Game Guide</summary>
+      <div style="padding-top:8px;font-size:11px;color:var(--text-dim);line-height:1.7">
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Combat</strong><br>
+          Combat starts in manual mode — pick a spell from your hand each round. Clear the Training Grounds (W1) to unlock auto-combat. Boss fights are always manual. XP comes from kills; level up to learn new spells.
+        </div>
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Your Deck</strong><br>
+          In the Spellbook tab, set how many copies of each spell go in your deck. You draw a hand each round and can only cast what you draw. More copies = more likely to draw it. Deck size grows as you rank up.
+        </div>
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Priority Rules</strong><br>
+          Priority rules control auto-combat. Set IF/THEN rules like "IF no blade → cast Blade" or "IF sigils above 3 → cast your strongest spell." Rules are checked top-to-bottom each round.
+        </div>
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Gear & Gold</strong><br>
+          Buy gear from the Shop to boost stats. The Bazaar has reagents, potions, snacks, and seeds at fluctuating prices. Equip wand cores and woods for bonus stats as you find them.
+        </div>
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Side Activities</strong><br>
+          <span style="color:var(--text)">Familiar</span> — hatched from boss drops, boosts your stats, can be sent on expeditions<br>
+          <span style="color:var(--text)">Garden</span> — grow reagents and snacks from seeds (unlocks W2)<br>
+          <span style="color:var(--text)">Workshop</span> — craft potions, enchantments, jewels, and gear<br>
+          <span style="color:var(--text)">Fishing</span> — catch fish for gold, complete the Fish Tome
+        </div>
+        <div style="margin-bottom:12px">
+          <strong style="color:var(--text-bright)">Challenges</strong><br>
+          <span style="color:var(--text)">The Spire</span> — tower challenge with a restricted deck (unlocks W3)<br>
+          <span style="color:var(--text)">Dueling Club</span> — 1v1 fights vs named NPCs including your rival (unlocks W1)<br>
+          <span style="color:var(--text)">Professor's Assignments</span> — rotating goals for bonus rewards<br>
+          <span style="color:var(--text)">Bestiary</span> — track enemies, extract animus, craft treasure cards
+        </div>
+        <div>
+          <strong style="color:var(--text-bright)">The Journey</strong><br>
+          Fight through 8 worlds, defeat bosses, rank up, and graduate. Enroll in a new school for a fresh run — mastery auras from each graduation stack permanently. Graduate all 6 schools to unlock Balance and enter The Spiral, the infinite endgame.
+        </div>
+      </div>
+    </details>
+
+    <details class="status-box" style="margin-bottom:8px">
       <summary><span class="tri"></span> Help & Info</summary>
       <div style="padding-top:8px">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <button class="btn" onclick="localStorage.removeItem('spiralbound_tutorial_done');showTutorial();">Replay Tutorial</button>
           <button class="btn" onclick="Game.log=[];Game.hubLog=[];renderHub();addLog('Quill cleared.','system');">Clear Quill Log</button>
         </div>
         <div style="font-size:10px;color:var(--text-dim);line-height:1.8">
@@ -531,56 +570,9 @@
     </div><!-- end game-main -->
   </div><!-- end game-layout -->
 
-  <!-- TUTORIAL OVERLAY -->
-  <div id="tutorial-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:99;overflow-y:auto">
-    <div style="max-width:480px;margin:40px auto;padding:30px 24px;background:var(--bg-surface);border:1px solid var(--border-light);border-radius:8px">
-      <div style="font-size:18px;color:var(--text-bright);margin-bottom:16px;letter-spacing:1px">Getting Started</div>
-      <div id="tutorial-step" style="font-size:12px;color:var(--text);line-height:1.7"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
-        <button class="btn" id="tutorial-prev" onclick="tutorialNav(-1)" style="font-size:11px;padding:4px 14px" disabled>Back</button>
-        <span id="tutorial-dots" style="color:var(--text-dim);font-size:11px"></span>
-        <button class="btn primary" id="tutorial-next" onclick="tutorialNav(1)" style="font-size:11px;padding:4px 14px">Next</button>
-      </div>
-      <div style="text-align:center;margin-top:12px"><button class="btn" onclick="document.getElementById('tutorial-overlay').style.display='none';localStorage.setItem('spiralbound_tutorial_done','1');" style="font-size:10px;padding:2px 10px;color:var(--text-dim)">Skip Tutorial</button></div>
-    </div>
-  </div>
-
   <script src="game.js"></script>
   <script src="ui.js"></script>
   <script>
-    var _tutorialStep = 0;
-    var _tutorialSteps = [
-      '<strong style="color:var(--cast)">Combat</strong> starts in manual mode — you pick your spells each round. Clear the Training Grounds to unlock <strong>auto-combat</strong>. Boss fights are always manual.<br><br>You gain <strong>XP</strong> from kills. Level up to learn new spells from your professor. The <strong style="color:var(--cast)">Quill</strong> on the left logs everything.',
-      '<strong style="color:var(--cast)">Your Deck</strong> is your strategy. In the <strong>Spellbook</strong> tab, set how many copies of each spell go in your deck. You draw a hand each round — you can only cast what you draw.<br><br>More copies = more likely to draw it. Deck size grows as you rank up.',
-      '<strong style="color:var(--cast)">Priority Rules</strong> control auto-combat. In the Spellbook tab, set IF/THEN rules like "IF no blade → cast Blade" or "IF sigils above 3 → cast your strongest spell." Rules are checked top-to-bottom.',
-      '<strong style="color:var(--cast)">Gear & Gold</strong> — buy gear from the <strong>Shop</strong> to boost your stats. The <strong>Bazaar</strong> has reagents, potions, snacks, and seeds at fluctuating prices. Equip <strong>wand cores</strong> and <strong>woods</strong> for bonus stats as you find them.',
-      '<strong style="color:var(--cast)">Side Activities</strong> unlock as you progress:<br>- <strong>Familiar</strong> — hatched from boss drops, boost your stats, send on <strong>expeditions</strong><br>- <strong>Garden</strong> — grow reagents and snacks from seeds<br>- <strong>Workshop</strong> — craft potions, enchantments, jewels, and gear<br>- <strong>Fishing</strong> — catch fish for gold with a timing minigame, collect rods',
-      '<strong style="color:var(--cast)">Challenges</strong> — test your skills beyond auto-battle:<br>- <strong>The Spire</strong> — a tower challenge with a restricted deck (unlocks W3)<br>- <strong>Dueling Club</strong> — 1v1 fights vs named NPCs, including your <strong>rival</strong> (unlocks W1)<br>- <strong>Professor\'s Assignments</strong> — rotating goals for bonus rewards<br>- <strong>Bestiary</strong> — track enemies, extract animus, craft treasure cards',
-      '<strong style="color:var(--cast)">The Journey</strong> — fight through 8 worlds, defeat bosses, rank up, and graduate. Then enroll in a new school for a fresh run with mastery auras that stack. Graduate all 6 schools to unlock <strong>Balance</strong> and enter <strong>The Spiral</strong> — the infinite endgame.<br><br>New tabs unlock as you progress. Check the <strong>Wizard</strong> tab for your professor\'s assignments. Good luck, wizard.',
-    ];
-    function showTutorial() {
-      _tutorialStep = 0;
-      document.getElementById('tutorial-overlay').style.display = 'block';
-      renderTutorialStep();
-    }
-    function renderTutorialStep() {
-      document.getElementById('tutorial-step').innerHTML = _tutorialSteps[_tutorialStep];
-      document.getElementById('tutorial-prev').disabled = _tutorialStep === 0;
-      document.getElementById('tutorial-next').textContent = _tutorialStep === _tutorialSteps.length - 1 ? 'Begin' : 'Next';
-      var dots = '';
-      for (var i = 0; i < _tutorialSteps.length; i++) dots += (i === _tutorialStep ? '●' : '○') + ' ';
-      document.getElementById('tutorial-dots').textContent = dots;
-    }
-    function tutorialNav(dir) {
-      _tutorialStep += dir;
-      if (_tutorialStep >= _tutorialSteps.length) {
-        document.getElementById('tutorial-overlay').style.display = 'none';
-        return;
-      }
-      if (_tutorialStep < 0) _tutorialStep = 0;
-      renderTutorialStep();
-    }
-
     function selectSchool(school) {
       var nameInput = document.getElementById('wizard-name-input');
       var wizardName = (nameInput && nameInput.value.trim()) || '';
@@ -594,10 +586,6 @@
       initGame(school, wizardName);
       switchTab('gear');
       updateUI();
-      if (!localStorage.getItem('spiralbound_tutorial_done')) {
-        localStorage.setItem('spiralbound_tutorial_done', '1');
-        showTutorial();
-      }
     }
 
     function syncOptionsUI() {

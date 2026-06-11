@@ -18,6 +18,7 @@ const Game = {
   savedDecks: [],
   hubLog: [],
   logMode: 'verbose',
+  tips: {},
   graduatedSchools: [],
   masteryAuras: {},
   enrollmentCount: 0,
@@ -246,6 +247,7 @@ function checkLevelUp() {
             Game.deckBuild[sid] = copies;
             addLog('  ★ ' + getProfessorName() + ' teaches: ' + (sp?sp.name:sid) + '!', 'crit');
             addLog('  ' + getProfessorQuote() + ' — ' + getProfessorName(), 'info');
+            if (sp && sp.type === 'blade') showTip('first_blade', 'Blades boost your next attack. Adjust how many copies go in your deck in the Spellbook tab.');
           }
         }
       }
@@ -2679,6 +2681,7 @@ function generateEvent() {
   var newEvt = Object.assign({}, evt, {startTick: Game.tick, ticksLeft: evt.duration||0, expireTicks: 120, _expireAt: Date.now() + 120 * Game.TICK_MS, claimed: false});
   Game.events.active.push(newEvt);
   if (!evt.instant) addHubLog('Event: ' + evt.name, 'crit');
+  showTip('first_event', 'Events appear periodically with timed rewards or choices. Watch The Quill for opportunities.');
 }
 
 function respondToEvent(eventIndex) {
@@ -3471,6 +3474,7 @@ function rankUp() {
   addLog('═══ RANK UP: ' + getWizardTitle() + ' ═══', 'system');
   addHubLog('Rank up: ' + getWizardTitle() + '!', 'crit');
   if (rank.powerPipBase > 0) addLog('  Power Sigil chance: ' + rank.powerPipBase + '%', 'system');
+  showTip('first_rank', 'Ranking up increases your deck size and hand size. Rebuild your deck in the Spellbook tab.');
 }
 
 function recalcStats() {
@@ -3696,6 +3700,12 @@ function addLog(text, type='info') {
   if(Game.log.length>Game.MAX_LOG) Game.log.shift();
 }
 function addHubLog(text, type='info') { if (!Game.hubLog) Game.hubLog=[]; Game.hubLog.push({text,type,ts:Date.now()}); if(Game.hubLog.length>100) Game.hubLog.shift(); }
+function showTip(key, text) {
+  if (!Game.tips) Game.tips = {};
+  if (Game.tips[key]) return;
+  Game.tips[key] = true;
+  addLog(text, 'system');
+}
 
 // ===== CAST SPELL =====
 function castSpell(spell, targetIndex) {
@@ -4234,7 +4244,7 @@ function handleBossDrop(target) {
     var pet = createPet(petId);
     Game.petRoster.push(pet); Game.pet = pet;
     addLog('  ★ FAMILIAR EGG: ' + pet.name + ' hatched!', 'crit');
-    addLog('  Visit the Familiar tab to feed and train your companion.', 'system');
+    showTip('first_pet', 'Your familiar boosts your stats as it grows. Feed it snacks and send it on expeditions from the Familiar tab.');
     recalcStats();
   }
   // Pet egg drops from later bosses (rare species)
@@ -4858,6 +4868,7 @@ function startEncounter() {
     addLog('', 'info');
     addLog('★ BOSS AHEAD: ' + bossName, 'crit');
     addLog('Prepare your deck. Press "Begin Fight" when ready.', 'system');
+    showTip('first_boss', 'Boss fights are always manual. Check your deck and potions before you begin.');
     return;
   }
 
@@ -4874,6 +4885,7 @@ function startEncounter() {
   };
   if (!reuseCards) drawCards();
   Game.round = 0; Game.state = 'fighting'; Game.phase = 'round_start';
+  showTip('first_combat', 'Pick a spell from your hand each round. Accuracy determines whether it lands. Switch to the Battle tab to fight.');
   // Reset per-encounter school mechanics
   Game.wizard._voltage = 0;
   Game.wizard._convergenceSchools = [];
@@ -5177,7 +5189,7 @@ function advanceEncounter() {
       Game.autoUnlocked = true;
       addLog('', 'info');
       addLog('★ AUTO COMBAT UNLOCKED!', 'crit');
-      addLog('Set priority rules in the Spellbook tab to automate fights.', 'system');
+      addLog('Set priority rules in the Spellbook tab — IF/THEN rules control what auto-combat casts each round.', 'system');
     }
 
     // Farming mode: loop back to start of current zone
@@ -5278,7 +5290,7 @@ function advanceEncounter() {
           Game.garden.unlocked = true;
           addLog('', 'info');
           addLog('★ Gardening unlocked! Visit the Garden tab.', 'crit');
-          addLog('"The soil here is rich with old magic." — Barlow Rootwise', 'info');
+          showTip('garden_unlock', 'Plant seeds to grow reagents and snacks. Seeds drop from enemies and the Bazaar.');
         }
         expandGarden();
 
@@ -5404,6 +5416,7 @@ function saveGame() {
     autoHarvest:Game.autoHarvest, autoSellFish:Game.autoSellFish, autoSkipRest:Game.autoSkipRest,
     lockedGear:Game.lockedGear||[],
     phase:Game.phase,
+    tips:Game.tips||{},
     lastSaveTime:Date.now(),
   }));
   var el = document.getElementById('save-toast');
@@ -5530,6 +5543,7 @@ function loadGame() {
     Game.autoSkipRest = d.autoSkipRest || false;
     Game.lockedGear = d.lockedGear || [];
     Game._customRules = d.customRules || false;
+    Game.tips = d.tips || {};
     Game.stats = d.stats||{encountersCleared:0,enemiesDefeated:0,bossesDefeated:0,spellsCast:0,fizzles:0,crits:0,goldEarned:0,deathCount:0};
     if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
     if (!Game.wizard.enchantments) Game.wizard.enchantments = {};
@@ -5542,7 +5556,6 @@ function loadGame() {
 }
 function resetGame() {
   localStorage.removeItem('spiralbound_save');
-  localStorage.removeItem('spiralbound_tutorial_done');
   if (Game.tickInterval) { clearInterval(Game.tickInterval); Game.tickInterval = null; }
   Game.wizard = null; Game.combat = null;
   Game.currentWorld = 0; Game.currentZone = 0; Game.currentEncounter = 0;
@@ -5570,6 +5583,7 @@ function resetGame() {
   Game.autoPotions = true; Game.autoReshuffle = true; Game.autoHarvest = false;
   Game.autoSellFish = false; Game.autoSkipRest = false;
   Game.lockedGear = []; Game._customRules = false;
+  Game.tips = {};
   applySchoolTheme('');
 }
 
@@ -5788,7 +5802,7 @@ function initGame(school, wizardName) {
   Game.expeditions = null;
   Game.wandCraft = null;
   Game.rival = null;
-  // Balance requires all 6 schools graduated — auto-grant for direct selection
+  Game.tips = {};
   if (school === 'balance') {
     // Auto-fill bestiary — Balance has beaten everything
     var allEnemyKeys = Object.keys(ENEMIES);
