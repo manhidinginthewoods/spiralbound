@@ -5009,7 +5009,9 @@ function combatTick() {
       break;
     case 'player_turn': {
       const spell = evaluateRules();
-      if (spell) { useCardFromHand(spell.id); castSpell(spell); } else passTurn();
+      try {
+        if (spell) { useCardFromHand(spell.id); castSpell(spell); } else passTurn();
+      } catch(e) { console.error('Auto-cast error:', e); }
       Game.phase = getAliveEnemies().length===0 ? 'round_end' : 'player_pause';
       break;
     }
@@ -5083,6 +5085,7 @@ function advanceEncounter() {
   Game.stats.encountersCleared = (Game.stats.encountersCleared||0) + 1;
   trackAssignment('encountersCleared', null, 1);
   addLog('✓ Encounter cleared! (' + encInfo + ')', 'kill');
+  saveGame();
   // Small recovery between encounters
   var encounterHeal = Math.floor(Game.wizard.maxHp * 0.05);
   var encounterMana = Math.floor(Game.wizard.maxMana * 0.03);
