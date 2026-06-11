@@ -612,7 +612,11 @@ function renderCombat() {
       migratePotions();
       var hasAnyPotion = false;
       var pb = '<div style="display:flex;gap:4px;flex-wrap:wrap;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;font-size:11px">';
-      pb += '<span style="color:var(--text-dim);padding:2px 4px">Potions:</span>';
+      var _pLim = typeof getZonePotionLimit === 'function' ? getZonePotionLimit() : 3;
+      var _pUsed = Game._zonePotionsUsed || {};
+      var hpLeft = _pLim - (_pUsed.hp || 0);
+      var manaLeft = _pLim - (_pUsed.mana || 0);
+      pb += '<span style="color:var(--text-dim);padding:2px 4px">Potions (HP:' + hpLeft + ' Mana:' + manaLeft + '):</span>';
       for (var pbi = 0; pbi < POTION_IDS.length; pbi++) {
         var pbId = POTION_IDS[pbi];
         var pbCount = Game.potions[pbId] || 0;
@@ -1462,7 +1466,7 @@ function renderGear() {
     ph += '<div style="padding-top:6px;font-size:11px;font-family:Courier New,monospace;line-height:1.8">';
     var _schoolAcc = (SCHOOL_STATS[w.school]||SCHOOL_STATS.storm).baseAccuracy;
     var _rank = RANKS[w.rankIndex]||RANKS[0];
-    var _hpParts = ['Base: ' + _rank.baseHp]; var _manaParts = ['Base: ' + _rank.baseMana]; var _dmgParts = []; var _resParts = []; var _accParts = ['School: ' + _schoolAcc + '%']; var _ppParts = []; var _critParts = ['Base: 5%']; var _pierceParts = []; var _cbParts = [];
+    var _hpParts = ['Base: ' + Math.floor(_rank.baseHp * ((SCHOOL_STATS[w.school]||SCHOOL_STATS.storm).hpScale||1))]; var _manaParts = ['Base: ' + _rank.baseMana]; var _dmgParts = []; var _resParts = []; var _accParts = ['School: ' + _schoolAcc + '%']; var _ppParts = []; var _critParts = ['Base: 5%']; var _pierceParts = []; var _cbParts = [];
     if (gearB.hp) _hpParts.push('Gear: +' + gearB.hp);
     if (gearB.mana) _manaParts.push('Gear: +' + gearB.mana);
     if (gearB.damage) _dmgParts.push('Gear: +' + gearB.damage + '%');
@@ -1739,9 +1743,12 @@ function renderGear() {
     ih += '</div></details>';
 
     // Consumables (potions + snacks)
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Consumables</summary><div style="padding-top:6px">';
+    migratePotions(); migrateSnacks();
+    var totalConsumables = 0;
+    for (var pti = 0; pti < POTION_IDS.length; pti++) totalConsumables += (Game.potions[POTION_IDS[pti]] || 0);
+    for (var sni = 0; sni < SNACK_IDS.length; sni++) totalConsumables += (Game.snacks[SNACK_IDS[sni]] || 0);
+    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Consumables (' + totalConsumables + ')</summary><div style="padding-top:6px">';
     ih += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">';
-    migratePotions();
     var hasConsumable = false;
     for (var pti = 0; pti < POTION_IDS.length; pti++) {
       var ptId = POTION_IDS[pti];
@@ -1752,7 +1759,6 @@ function renderGear() {
         ih += '<div title="' + pot.desc + '" style="background:var(--bg-card);padding:5px 8px;border-radius:3px;font-size:11px;cursor:help"><span style="color:'+pot.color+'">' + pot.name + '</span><div style="color:var(--text-bright);font-size:13px">' + ptCount + '</div></div>';
       }
     }
-    migrateSnacks();
     for (var sni = 0; sni < SNACK_IDS.length; sni++) {
       var snId = SNACK_IDS[sni];
       var snCount = Game.snacks[snId] || 0;
@@ -1766,7 +1772,9 @@ function renderGear() {
     ih += '</div></div></details>';
 
     // Reagents
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Reagents</summary><div style="padding-top:6px">';
+    var totalReagents = 0;
+    for (var rgi = 0; rgi < REAGENT_IDS.length; rgi++) totalReagents += (Game.reagents[REAGENT_IDS[rgi]]||0);
+    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Reagents (' + totalReagents + ')</summary><div style="padding-top:6px">';
     ih += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
     var hasReagent = false;
     for (var rgi = 0; rgi < REAGENT_IDS.length; rgi++) {
@@ -1786,7 +1794,9 @@ function renderGear() {
     var hasSeed = false;
     for (var si = 0; si < seedKeys.length; si++) { if ((Game.garden.seeds[seedKeys[si]]||0) > 0) hasSeed = true; }
     if (hasSeed) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Seeds</summary><div style="padding-top:6px">';
+      var totalSeeds = 0;
+      for (var si3 = 0; si3 < seedKeys.length; si3++) totalSeeds += (Game.garden.seeds[seedKeys[si3]]||0);
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Seeds (' + totalSeeds + ')</summary><div style="padding-top:6px">';
       ih += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
       for (var si2 = 0; si2 < seedKeys.length; si2++) {
         var sCount = Game.garden.seeds[seedKeys[si2]];
@@ -1902,11 +1912,6 @@ function renderGear() {
       ih += '<div style="font-size:9px;color:var(--text-dim);margin-top:4px">Manage in Bestiary tab</div>';
       ih += '</div></details>';
     }
-
-    // Training Points
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Training Points (' + (w.trainingPoints||0) + ')</summary><div style="padding-top:6px">';
-    ih += '<div style="font-size:11px;color:var(--text-dim)">' + (w.trainingPoints||0) + ' TP available — spend in the Spellbook tab</div>';
-    ih += '</div></details>';
 
     // Achievements
     ih += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Achievements (' + Object.keys(Game.achievements||{}).length + '/' + Object.keys(ACHIEVEMENTS).length + ')</summary><div style="padding-top:6px">';

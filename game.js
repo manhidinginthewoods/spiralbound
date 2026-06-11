@@ -681,108 +681,108 @@ const SPELLS = {
 
 // ===== ENEMIES =====
 const ENEMIES = {
-  // W1 Spindlewood — players have ~10% dmg, ~400-500 HP
-  inkling_smear:{name:'Inkling Smear',school:'storm',hp:200,damage:[12,20],accuracy:75},
-  inkling_blot:{name:'Inkling Blot',school:'fire',hp:260,damage:[15,24],accuracy:75},
-  bindling_page:{name:'Loose Page',school:'myth',hp:300,damage:[16,26],accuracy:78},
-  bindling_tome:{name:'Rogue Tome',school:'ice',hp:400,damage:[18,30],accuracy:78},
-  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:360,damage:[15,25],accuracy:80},
-  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:480,damage:[20,32],accuracy:80},
-  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:320,damage:[12,20],accuracy:85},
-  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:500,damage:[22,35],accuracy:82},
-  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:580,damage:[25,42],accuracy:80},
-  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:180,damage:[15,28],accuracy:70},
-  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:280,damage:[20,35],accuracy:72},
-  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:2200,damage:[30,48],accuracy:85,boss:true},
-  // W2 Solara — players have ~25% dmg, ~800 HP
-  mander_digger:{name:'Mander Digger',school:'fire',hp:650,damage:[30,45],accuracy:78},
-  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:850,damage:[28,42],accuracy:80},
-  mander_keeper:{name:'Mander Keeper',school:'life',hp:750,damage:[25,38],accuracy:82},
-  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:720,damage:[35,50],accuracy:76},
-  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:1000,damage:[38,55],accuracy:78},
-  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:580,damage:[38,52],accuracy:75},
-  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:820,damage:[35,50],accuracy:80},
-  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:650,damage:[42,60],accuracy:72},
-  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:900,damage:[40,58],accuracy:78},
-  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:580,damage:[44,62],accuracy:74},
-  jackal_raider:{name:'Jackal Raider',school:'fire',hp:780,damage:[42,60],accuracy:76},
-  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:5000,damage:[48,68],accuracy:85,boss:true,cheats:['self_heal_3']},
-  // W3 Pendleton — players have ~50% dmg, ~1500 HP
-  cogs_worker:{name:'Cogsworth Worker',school:'myth',hp:1400,damage:[45,65],accuracy:78},
-  cogs_foreman:{name:'Cogsworth Foreman',school:'ice',hp:1800,damage:[52,75],accuracy:80},
-  brass_patrol:{name:'Brasshound Patrol',school:'fire',hp:1550,damage:[48,70],accuracy:79},
-  brass_alpha:{name:'Brasshound Alpha',school:'storm',hp:1900,damage:[58,85],accuracy:77},
-  piston_guard:{name:'Pistonier Guard',school:'ice',hp:2000,damage:[50,72],accuracy:82},
-  piston_captain:{name:'Pistonier Captain',school:'myth',hp:2300,damage:[60,88],accuracy:80},
-  steam_spinner:{name:'Steamweaver Spinner',school:'fire',hp:1600,damage:[55,78],accuracy:78},
-  steam_queen:{name:'Steamweaver Queen',school:'death',hp:2100,damage:[62,90],accuracy:80},
-  chimney_wisp:{name:'Chimney Wisp',school:'storm',hp:1300,damage:[52,75],accuracy:75},
-  chimney_blaze:{name:'Chimney Blaze',school:'fire',hp:1700,damage:[58,85],accuracy:76},
-  magnus_prime:{name:'Magnus Prime',school:'myth',hp:12000,damage:[68,98],accuracy:85,boss:true,cheats:['spawn_minion','shield_at_3']},
-  // W4 Mistral — players have ~80% dmg, ~2500 HP
-  jade_monk:{name:'Jade Monk',school:'life',hp:2400,damage:[65,95],accuracy:82},
-  jade_elder:{name:'Jade Elder',school:'myth',hp:3000,damage:[75,108],accuracy:84},
-  paper_sentinel:{name:'Paper Sentinel',school:'storm',hp:2200,damage:[72,105],accuracy:78},
-  paper_master:{name:'Paper Master',school:'ice',hp:2800,damage:[68,98],accuracy:82},
-  cloud_serpent:{name:'Cloud Serpent',school:'storm',hp:2700,damage:[80,115],accuracy:76},
-  cloud_wyrm:{name:'Cloud Wyrm',school:'ice',hp:3400,damage:[75,110],accuracy:80},
-  stonewarden:{name:'Stonewarden',school:'life',hp:3200,damage:[62,92],accuracy:85},
-  stonewarden_elder:{name:'Stonewarden Elder',school:'death',hp:3800,damage:[80,115],accuracy:82},
-  bamboo_stalker:{name:'Bamboo Stalker',school:'myth',hp:2600,damage:[75,108],accuracy:80},
-  bamboo_ronin:{name:'Bamboo Ronin',school:'fire',hp:3200,damage:[82,120],accuracy:78},
-  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:18000,damage:[85,125],accuracy:88,boss:true,cheats:['stacking_dot']},
-  // W5 Pyralis — players have ~110% dmg, ~3500 HP
-  ash_knight:{name:'Ash Knight',school:'fire',hp:3800,damage:[90,130],accuracy:80},
-  ash_champion:{name:'Ash Champion',school:'death',hp:4800,damage:[100,145],accuracy:82},
-  glassborn:{name:'Glassborn',school:'fire',hp:4200,damage:[95,138],accuracy:78},
-  glassborn_shaper:{name:'Glassborn Shaper',school:'storm',hp:4500,damage:[105,150],accuracy:76},
-  cinder_wolf:{name:'Cinder Wolf',school:'fire',hp:3600,damage:[98,140],accuracy:79},
-  cinder_alpha:{name:'Cinder Alpha',school:'death',hp:5200,damage:[108,155],accuracy:80},
-  forge_wraith:{name:'Forge Wraith',school:'death',hp:4600,damage:[100,145],accuracy:82},
-  forge_specter:{name:'Forge Specter',school:'ice',hp:5500,damage:[92,132],accuracy:84},
-  obsidian_golem:{name:'Obsidian Golem',school:'ice',hp:6200,damage:[85,125],accuracy:85},
-  obsidian_titan:{name:'Obsidian Titan',school:'myth',hp:7000,damage:[110,160],accuracy:82},
-  slag_crawler:{name:'Slag Crawler',school:'fire',hp:4100,damage:[105,150],accuracy:75},
-  slag_horror:{name:'Slag Horror',school:'storm',hp:5200,damage:[115,165],accuracy:74},
-  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:28000,damage:[120,170],accuracy:88,boss:true,cheats:['blade_shatter']},
-  // W6 Abyssia — players have ~145% dmg, ~5000 HP
-  coral_warden:{name:'Coral Warden',school:'ice',hp:5800,damage:[115,165],accuracy:82},
-  coral_sentinel:{name:'Coral Sentinel',school:'life',hp:6800,damage:[110,158],accuracy:84},
-  tide_crawler:{name:'Tide Crawler',school:'storm',hp:5600,damage:[125,178],accuracy:78},
-  tide_ravager:{name:'Tide Ravager',school:'fire',hp:7200,damage:[130,188],accuracy:80},
-  kelp_horror:{name:'Kelp Horror',school:'death',hp:6400,damage:[120,172],accuracy:80},
-  kelp_leviathan:{name:'Kelp Leviathan',school:'myth',hp:8000,damage:[128,185],accuracy:82},
-  pressure_drone:{name:'Pressure Drone',school:'storm',hp:6000,damage:[128,182],accuracy:76},
-  pressure_engine:{name:'Pressure Engine',school:'ice',hp:7800,damage:[118,168],accuracy:84},
-  pearl_shaper:{name:'Pearl Shaper',school:'life',hp:6800,damage:[115,165],accuracy:85},
-  pearl_oracle:{name:'Pearl Oracle',school:'myth',hp:7400,damage:[125,180],accuracy:83},
-  lantern_angler:{name:'Lantern Angler',school:'death',hp:6200,damage:[130,188],accuracy:79},
-  lantern_abyssal:{name:'Lantern Abyssal',school:'storm',hp:7000,damage:[135,195],accuracy:77},
-  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:40000,damage:[140,200],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
-  // W7 Penumbra — players have ~175% dmg, ~7000 HP
-  echo_shade:{name:'Echo Shade',school:'death',hp:8000,damage:[148,210],accuracy:82},
-  echo_wraith:{name:'Echo Wraith',school:'storm',hp:9000,damage:[158,225],accuracy:80},
-  rift_stalker:{name:'Rift Stalker',school:'fire',hp:8600,damage:[152,218],accuracy:81},
-  rift_predator:{name:'Rift Predator',school:'myth',hp:10000,damage:[165,235],accuracy:83},
-  void_mote:{name:'Void Mote',school:'death',hp:7600,damage:[142,205],accuracy:84},
-  void_devourer:{name:'Void Devourer',school:'ice',hp:9600,damage:[155,222],accuracy:82},
-  fractured_golem:{name:'Fractured Golem',school:'myth',hp:10600,damage:[168,240],accuracy:80},
-  fractured_titan:{name:'Fractured Titan',school:'fire',hp:12000,damage:[178,255],accuracy:81},
-  memory_wisp:{name:'Memory Wisp',school:'life',hp:8200,damage:[145,208],accuracy:85},
-  memory_torment:{name:'Memory Torment',school:'death',hp:10000,damage:[170,242],accuracy:83},
-  unraveler:{name:'Unraveler',school:'storm',hp:9200,damage:[162,232],accuracy:78},
-  unraveler_prime:{name:'Unraveler Prime',school:'ice',hp:11200,damage:[180,258],accuracy:82},
-  your_echo:{name:'Your Echo',school:'storm',hp:55000,damage:[185,265],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
-  // W8 Grand Practicum — players have ~190% dmg, ~8500 HP
-  prac_inkling:{name:'Practicum Inkling',school:'storm',hp:12000,damage:[185,265],accuracy:82},
-  prac_mander:{name:'Practicum Mander',school:'fire',hp:12600,damage:[192,275],accuracy:82},
-  prac_cogsworth:{name:'Practicum Cogsworth',school:'myth',hp:13200,damage:[198,285],accuracy:82},
-  prac_monk:{name:'Practicum Monk',school:'life',hp:14000,damage:[188,268],accuracy:84},
-  prac_knight:{name:'Practicum Knight',school:'death',hp:14600,damage:[205,295],accuracy:82},
-  prac_warden:{name:'Practicum Warden',school:'ice',hp:16000,damage:[195,280],accuracy:84},
-  prac_shade:{name:'Practicum Shade',school:'death',hp:15200,damage:[210,300],accuracy:83},
-  prac_elite:{name:'Practicum Elite',school:'balance',hp:17200,damage:[215,308],accuracy:85},
-  the_culmination:{name:'The Culmination',school:'balance',hp:85000,damage:[220,315],accuracy:90,boss:true,cheats:['phase_boss']},
+  // W1 Spindlewood — players have ~10% dmg, ~400-650 HP
+  inkling_smear:{name:'Inkling Smear',school:'storm',hp:200,damage:[28,42],accuracy:75},
+  inkling_blot:{name:'Inkling Blot',school:'fire',hp:260,damage:[32,48],accuracy:75},
+  bindling_page:{name:'Loose Page',school:'myth',hp:300,damage:[35,52],accuracy:78},
+  bindling_tome:{name:'Rogue Tome',school:'ice',hp:400,damage:[38,58],accuracy:78},
+  thornwick_shoot:{name:'Thornwick Shoot',school:'life',hp:360,damage:[32,50],accuracy:80},
+  thornwick_creep:{name:'Thornwick Creeper',school:'death',hp:480,damage:[40,62],accuracy:80},
+  dummy_sparring:{name:'Sparring Dummy',school:'balance',hp:320,damage:[30,45],accuracy:85},
+  dummy_dueling:{name:'Dueling Dummy',school:'fire',hp:500,damage:[45,68],accuracy:82},
+  dummy_rogue:{name:'Rogue Dummy',school:'storm',hp:580,damage:[50,78],accuracy:80},
+  glow_sprite:{name:'Flickering Sprite',school:'storm',hp:180,damage:[35,55],accuracy:70},
+  glow_sprite_wild:{name:'Wild Sprite',school:'myth',hp:280,damage:[42,65],accuracy:72},
+  grimsworth:{name:'Aldric Grimsworth',school:'balance',hp:2200,damage:[55,82],accuracy:85,boss:true},
+  // W2 Solara — players have ~25% dmg, ~800 HP, target ~7-8% per hit
+  mander_digger:{name:'Mander Digger',school:'fire',hp:650,damage:[48,72],accuracy:78},
+  mander_sentinel:{name:'Mander Sentinel',school:'ice',hp:850,damage:[45,68],accuracy:80},
+  mander_keeper:{name:'Mander Keeper',school:'life',hp:750,damage:[42,62],accuracy:82},
+  dustwrap_shuffler:{name:'Dustwrap Shuffler',school:'death',hp:720,damage:[55,82],accuracy:76},
+  dustwrap_guardian:{name:'Dustwrap Guardian',school:'death',hp:1000,damage:[60,88],accuracy:78},
+  scarab_tomb:{name:'Tomb Scarab',school:'fire',hp:580,damage:[58,85],accuracy:75},
+  scarab_gilded:{name:'Gilded Scarab',school:'balance',hp:820,damage:[55,80],accuracy:80},
+  sandcaster_acolyte:{name:'Sandcaster Acolyte',school:'storm',hp:650,damage:[65,95],accuracy:72},
+  sandcaster_shaper:{name:'Sandcaster Shaper',school:'myth',hp:900,damage:[62,90],accuracy:78},
+  jackal_prowler:{name:'Jackal Prowler',school:'storm',hp:580,damage:[68,98],accuracy:74},
+  jackal_raider:{name:'Jackal Raider',school:'fire',hp:780,damage:[65,95],accuracy:76},
+  khet_amun:{name:'Khet-Amun the Sealed',school:'death',hp:5000,damage:[78,115],accuracy:85,boss:true,cheats:['self_heal_3']},
+  // W3 Pendleton — players have ~50% dmg, ~1500 HP, target ~8% per hit
+  cogs_worker:{name:'Cogsworth Worker',school:'myth',hp:1400,damage:[85,125],accuracy:78},
+  cogs_foreman:{name:'Cogsworth Foreman',school:'ice',hp:1800,damage:[95,140],accuracy:80},
+  brass_patrol:{name:'Brasshound Patrol',school:'fire',hp:1550,damage:[90,132],accuracy:79},
+  brass_alpha:{name:'Brasshound Alpha',school:'storm',hp:1900,damage:[105,155],accuracy:77},
+  piston_guard:{name:'Pistonier Guard',school:'ice',hp:2000,damage:[92,135],accuracy:82},
+  piston_captain:{name:'Pistonier Captain',school:'myth',hp:2300,damage:[110,162],accuracy:80},
+  steam_spinner:{name:'Steamweaver Spinner',school:'fire',hp:1600,damage:[100,148],accuracy:78},
+  steam_queen:{name:'Steamweaver Queen',school:'death',hp:2100,damage:[115,168],accuracy:80},
+  chimney_wisp:{name:'Chimney Wisp',school:'storm',hp:1300,damage:[95,140],accuracy:75},
+  chimney_blaze:{name:'Chimney Blaze',school:'fire',hp:1700,damage:[108,158],accuracy:76},
+  magnus_prime:{name:'Magnus Prime',school:'myth',hp:12000,damage:[125,182],accuracy:85,boss:true,cheats:['spawn_minion','shield_at_3']},
+  // W4 Mistral — players have ~80% dmg, ~2500 HP, target ~9% per hit
+  jade_monk:{name:'Jade Monk',school:'life',hp:2400,damage:[155,225],accuracy:82},
+  jade_elder:{name:'Jade Elder',school:'myth',hp:3000,damage:[175,255],accuracy:84},
+  paper_sentinel:{name:'Paper Sentinel',school:'storm',hp:2200,damage:[168,245],accuracy:78},
+  paper_master:{name:'Paper Master',school:'ice',hp:2800,damage:[158,230],accuracy:82},
+  cloud_serpent:{name:'Cloud Serpent',school:'storm',hp:2700,damage:[182,265],accuracy:76},
+  cloud_wyrm:{name:'Cloud Wyrm',school:'ice',hp:3400,damage:[172,250],accuracy:80},
+  stonewarden:{name:'Stonewarden',school:'life',hp:3200,damage:[148,215],accuracy:85},
+  stonewarden_elder:{name:'Stonewarden Elder',school:'death',hp:3800,damage:[185,268],accuracy:82},
+  bamboo_stalker:{name:'Bamboo Stalker',school:'myth',hp:2600,damage:[172,250],accuracy:80},
+  bamboo_ronin:{name:'Bamboo Ronin',school:'fire',hp:3200,damage:[188,272],accuracy:78},
+  kaelith:{name:'Kaelith the Unbroken',school:'life',hp:18000,damage:[195,285],accuracy:88,boss:true,cheats:['stacking_dot']},
+  // W5 Pyralis — players have ~110% dmg, ~3500 HP, target ~9% per hit
+  ash_knight:{name:'Ash Knight',school:'fire',hp:3800,damage:[215,312],accuracy:80},
+  ash_champion:{name:'Ash Champion',school:'death',hp:4800,damage:[240,348],accuracy:82},
+  glassborn:{name:'Glassborn',school:'fire',hp:4200,damage:[225,328],accuracy:78},
+  glassborn_shaper:{name:'Glassborn Shaper',school:'storm',hp:4500,damage:[252,365],accuracy:76},
+  cinder_wolf:{name:'Cinder Wolf',school:'fire',hp:3600,damage:[235,340],accuracy:79},
+  cinder_alpha:{name:'Cinder Alpha',school:'death',hp:5200,damage:[258,375],accuracy:80},
+  forge_wraith:{name:'Forge Wraith',school:'death',hp:4600,damage:[242,350],accuracy:82},
+  forge_specter:{name:'Forge Specter',school:'ice',hp:5500,damage:[225,325],accuracy:84},
+  obsidian_golem:{name:'Obsidian Golem',school:'ice',hp:6200,damage:[210,305],accuracy:85},
+  obsidian_titan:{name:'Obsidian Titan',school:'myth',hp:7000,damage:[265,385],accuracy:82},
+  slag_crawler:{name:'Slag Crawler',school:'fire',hp:4100,damage:[248,360],accuracy:75},
+  slag_horror:{name:'Slag Horror',school:'storm',hp:5200,damage:[272,395],accuracy:74},
+  pyrrhus:{name:'Pyrrhus the Architect',school:'fire',hp:28000,damage:[285,412],accuracy:88,boss:true,cheats:['blade_shatter']},
+  // W6 Abyssia — players have ~145% dmg, ~5000 HP, target ~10% per hit
+  coral_warden:{name:'Coral Warden',school:'ice',hp:5800,damage:[340,492],accuracy:82},
+  coral_sentinel:{name:'Coral Sentinel',school:'life',hp:6800,damage:[328,475],accuracy:84},
+  tide_crawler:{name:'Tide Crawler',school:'storm',hp:5600,damage:[365,528],accuracy:78},
+  tide_ravager:{name:'Tide Ravager',school:'fire',hp:7200,damage:[380,550],accuracy:80},
+  kelp_horror:{name:'Kelp Horror',school:'death',hp:6400,damage:[355,515],accuracy:80},
+  kelp_leviathan:{name:'Kelp Leviathan',school:'myth',hp:8000,damage:[375,542],accuracy:82},
+  pressure_drone:{name:'Pressure Drone',school:'storm',hp:6000,damage:[372,538],accuracy:76},
+  pressure_engine:{name:'Pressure Engine',school:'ice',hp:7800,damage:[345,500],accuracy:84},
+  pearl_shaper:{name:'Pearl Shaper',school:'life',hp:6800,damage:[338,490],accuracy:85},
+  pearl_oracle:{name:'Pearl Oracle',school:'myth',hp:7400,damage:[365,528],accuracy:83},
+  lantern_angler:{name:'Lantern Angler',school:'death',hp:6200,damage:[382,552],accuracy:79},
+  lantern_abyssal:{name:'Lantern Abyssal',school:'storm',hp:7000,damage:[395,572],accuracy:77},
+  tidebound_chorus:{name:'The Tidebound Chorus',school:'ice',hp:40000,damage:[408,590],accuracy:88,boss:true,cheats:['single_target_shield','heal_5']},
+  // W7 Penumbra — players have ~175% dmg, ~7000 HP, target ~10% per hit
+  echo_shade:{name:'Echo Shade',school:'death',hp:8000,damage:[478,692],accuracy:82},
+  echo_wraith:{name:'Echo Wraith',school:'storm',hp:9000,damage:[508,735],accuracy:80},
+  rift_stalker:{name:'Rift Stalker',school:'fire',hp:8600,damage:[492,712],accuracy:81},
+  rift_predator:{name:'Rift Predator',school:'myth',hp:10000,damage:[528,765],accuracy:83},
+  void_mote:{name:'Void Mote',school:'death',hp:7600,damage:[465,675],accuracy:84},
+  void_devourer:{name:'Void Devourer',school:'ice',hp:9600,damage:[502,728],accuracy:82},
+  fractured_golem:{name:'Fractured Golem',school:'myth',hp:10600,damage:[538,778],accuracy:80},
+  fractured_titan:{name:'Fractured Titan',school:'fire',hp:12000,damage:[568,822],accuracy:81},
+  memory_wisp:{name:'Memory Wisp',school:'life',hp:8200,damage:[472,682],accuracy:85},
+  memory_torment:{name:'Memory Torment',school:'death',hp:10000,damage:[545,788],accuracy:83},
+  unraveler:{name:'Unraveler',school:'storm',hp:9200,damage:[518,750],accuracy:78},
+  unraveler_prime:{name:'Unraveler Prime',school:'ice',hp:11200,damage:[572,828],accuracy:82},
+  your_echo:{name:'Your Echo',school:'storm',hp:55000,damage:[595,862],accuracy:90,boss:true,cheats:['full_school_resist','mirror_spell'],resistSchool:'storm',resistPercent:100},
+  // W8 Grand Practicum — players have ~190% dmg, ~8500 HP, target ~10% per hit
+  prac_inkling:{name:'Practicum Inkling',school:'storm',hp:12000,damage:[580,840],accuracy:82},
+  prac_mander:{name:'Practicum Mander',school:'fire',hp:12600,damage:[598,865],accuracy:82},
+  prac_cogsworth:{name:'Practicum Cogsworth',school:'myth',hp:13200,damage:[615,890],accuracy:82},
+  prac_monk:{name:'Practicum Monk',school:'life',hp:14000,damage:[588,852],accuracy:84},
+  prac_knight:{name:'Practicum Knight',school:'death',hp:14600,damage:[638,925],accuracy:82},
+  prac_warden:{name:'Practicum Warden',school:'ice',hp:16000,damage:[608,880],accuracy:84},
+  prac_shade:{name:'Practicum Shade',school:'death',hp:15200,damage:[648,938],accuracy:83},
+  prac_elite:{name:'Practicum Elite',school:'balance',hp:17200,damage:[665,962],accuracy:85},
+  the_culmination:{name:'The Culmination',school:'balance',hp:85000,damage:[682,988],accuracy:90,boss:true,cheats:['phase_boss']},
 };
 
 // ===== WORLDS & ZONES =====
@@ -2256,12 +2256,26 @@ function migratePotions() {
   }
 }
 
+function getZonePotionLimit() {
+  var w = getEffectiveWorldIndex();
+  if (w >= 5) return 5;
+  if (w >= 3) return 4;
+  return 3;
+}
 function usePotion(potionId) {
   migratePotions();
   if (!Game.potions[potionId] || Game.potions[potionId] <= 0) return false;
   var pot = POTIONS[potionId];
   if (!pot) return false;
+  if (!Game._zonePotionsUsed) Game._zonePotionsUsed = {};
+  var limit = getZonePotionLimit();
+  var isHp = pot.effect === 'hp' || pot.effect === 'both';
+  var isMana = pot.effect === 'mana' || pot.effect === 'both';
+  if (isHp && (Game._zonePotionsUsed.hp || 0) >= limit) { addLog('Health potion limit reached (' + limit + '/zone).', 'info'); return false; }
+  if (isMana && (Game._zonePotionsUsed.mana || 0) >= limit) { addLog('Mana potion limit reached (' + limit + '/zone).', 'info'); return false; }
   Game.potions[potionId]--;
+  if (isHp) Game._zonePotionsUsed.hp = (Game._zonePotionsUsed.hp || 0) + 1;
+  if (isMana) Game._zonePotionsUsed.mana = (Game._zonePotionsUsed.mana || 0) + 1;
   var healAmt = 0, manaAmt = 0;
   if (pot.effect === 'hp' || pot.effect === 'both') {
     healAmt = Math.floor(Game.wizard.maxHp * pot.percent / 100);
@@ -2280,11 +2294,13 @@ function usePotion(potionId) {
 
 function autoPotions() {
   if (Game.autoPotions === false) return;
+  if (!Game._zonePotionsUsed) Game._zonePotionsUsed = {};
+  var limit = getZonePotionLimit();
   migratePotions();
   var hpPct = Game.wizard.hp / Game.wizard.maxHp;
   var manaPct = Game.wizard.mana / Game.wizard.maxMana;
   // Use health potion at <30% HP
-  if (hpPct < 0.3) {
+  if (hpPct < 0.3 && (Game._zonePotionsUsed.hp || 0) < limit) {
     if (Game.potions.health_elixir > 0) { usePotion('health_elixir'); return; }
     if (Game.potions.wisps_brew > 0) { usePotion('wisps_brew'); return; }
     if (Game.potions.restorative > 0) { usePotion('restorative'); return; }
@@ -2297,7 +2313,7 @@ function autoPotions() {
       var sp = SPELLS[Game.combat.hand[i]];
       if (sp && sp.mana > 0 && Game.wizard.mana >= sp.mana) { canCastAny = true; break; }
     }
-    if (!canCastAny && Game.wizard.mana < Game.wizard.maxMana * 0.3) {
+    if (!canCastAny && Game.wizard.mana < Game.wizard.maxMana * 0.3 && (Game._zonePotionsUsed.mana || 0) < limit) {
       if (Game.potions.mana_elixir > 0) { usePotion('mana_elixir'); return; }
       if (Game.potions.wisps_brew > 0) { usePotion('wisps_brew'); return; }
       if (Game.potions.restorative > 0) { usePotion('restorative'); return; }
@@ -4835,6 +4851,7 @@ function returnToProgress() {
 }
 
 function startEncounter() {
+  if (Game.currentEncounter === 0) Game._zonePotionsUsed = {};
   const zone = getCurrentZone();
   if (!zone) return;
   const encounterDef = zone.encounters[Game.currentEncounter];
@@ -5739,7 +5756,7 @@ function processOfflineProgress() {
     var details = [];
     if (summary.gold > 0) details.push('+' + summary.gold + ' gold');
     if (summary.motes > 0) details.push('+' + summary.motes + ' reagents');
-    if (summary.snacks > 0) details.push('+' + summary.snacks + ' snacks');
+    if (summary.snacks > 0) details.push('+' + summary.snacks + ' familiar snacks');
     if (summary.potions > 0) details.push('+' + summary.potions + ' potions');
     if (summary.gardenHarvests > 0) details.push('Garden advanced');
     if (summary.craftsCompleted > 0) details.push('Craft completed');
