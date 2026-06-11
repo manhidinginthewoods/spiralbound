@@ -5641,10 +5641,9 @@ function processOfflineProgress() {
     // Offline runs at 50% efficiency (simulate fewer ticks than actually passed)
     elapsedTicks = Math.floor(elapsedTicks * 0.5);
 
-    var summary = {gold:0, xp:0, motes:0, snacks:0, gardenHarvests:0, craftsCompleted:0, petXp:0};
+    var summary = {gold:0, motes:0, potions:0, snacks:0, gardenHarvests:0, craftsCompleted:0};
 
-    // Offline rewards — grant gold, XP, reagents, and pet XP based on time away
-    // Does NOT advance encounters/zones/worlds — progression stays where you left off
+    // Offline rewards — gold and consumables only, no XP
     if (Game.state === 'fighting' || Game.state === 'resting') {
       var zone = getCurrentZone();
       var world = getCurrentWorld();
@@ -5652,10 +5651,9 @@ function processOfflineProgress() {
         var encDef = zone.encounters[Game.currentEncounter] || zone.encounters[0];
         var enemyIds = Array.isArray(encDef[0]) ? encDef[0] : encDef;
         var totalEnemyHp = 0;
-        var avgEnemyDmg = 0;
         for (var ei = 0; ei < enemyIds.length; ei++) {
           var et = ENEMIES[enemyIds[ei]];
-          if (et) { totalEnemyHp += et.hp; avgEnemyDmg += (et.damage[0]+et.damage[1])/2; }
+          if (et) totalEnemyHp += et.hp;
         }
         var avgDmg = 135 * (1 + Game.wizard.damage/100);
         var roundsToKill = Math.max(1, Math.ceil(totalEnemyHp / avgDmg));
@@ -5667,12 +5665,6 @@ function processOfflineProgress() {
           var goldEarned = Math.floor((Math.random()*offGoldScale + offGoldScale) * enemyIds.length);
           Game.gold += goldEarned;
           summary.gold += goldEarned;
-          var xpEarned = Math.floor(worldMult * enemyIds.length * 8);
-          Game.wizard.xp += xpEarned;
-          if (!Game.wizard.level) Game.wizard.level = 1;
-          var _olvt = [0,15,40,75,120,180,260,360,480,620,800,1020,1280,1580,1920,2300,2750,3250,3800,4400,5100,5900,6800,7800,9000,10300,11800,13400,15200,17200,18500,19500,20500,21500,22500,23500,24500,25500,26500,28000];
-          while (Game.wizard.level < _olvt.length && Game.wizard.xp >= _olvt[Game.wizard.level]) { Game.wizard.level++; }
-          summary.xp += xpEarned;
           for (var ri = 0; ri < enemyIds.length; ri++) {
             if (Math.random() < 0.12) {
               var worldReagents = getReagentDropsForWorld(getEffectiveWorldIndex());
@@ -5681,13 +5673,19 @@ function processOfflineProgress() {
               summary.motes++;
             }
           }
-          if (Game.pet) {
-            var petXp = Math.floor(worldMult * 2);
-            Game.pet.xp += petXp;
-            summary.petXp += petXp;
+          if (Math.random() < 0.08) {
+            migrateSnacks();
+            var snackTier = worldMult >= 5 ? 'iron_biscuit' : 'breadcrumb';
+            addSnack(snackTier, 1);
+            summary.snacks++;
+          }
+          if (Math.random() < 0.06) {
+            migratePotions();
+            var potionId = worldMult >= 4 ? 'mana_potion' : 'health_potion';
+            Game.potions[potionId] = (Game.potions[potionId]||0) + 1;
+            summary.potions++;
           }
         }
-        // Restore to full so the player comes back ready to fight
         Game.wizard.hp = Game.wizard.maxHp;
         Game.wizard.mana = Game.wizard.maxMana;
         Game.state = 'fighting';
@@ -5740,9 +5738,9 @@ function processOfflineProgress() {
     var msg = 'Welcome back! (' + timeStr + ' away)';
     var details = [];
     if (summary.gold > 0) details.push('+' + summary.gold + ' gold');
-    if (summary.xp > 0) details.push('+' + summary.xp + ' XP');
     if (summary.motes > 0) details.push('+' + summary.motes + ' reagents');
-    if (summary.petXp > 0) details.push('+' + summary.petXp + ' familiar XP');
+    if (summary.snacks > 0) details.push('+' + summary.snacks + ' snacks');
+    if (summary.potions > 0) details.push('+' + summary.potions + ' potions');
     if (summary.gardenHarvests > 0) details.push('Garden advanced');
     if (summary.craftsCompleted > 0) details.push('Craft completed');
 
