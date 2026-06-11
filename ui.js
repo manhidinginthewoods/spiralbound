@@ -336,6 +336,14 @@ function updateTabVisibility() {
           addLog('★ ' + tabNames[tabId] + ' tab unlocked!', 'crit');
           addTabDot(tabId, 'var(--gold)');
           tabBtns[i].classList.add('tab-new');
+          var _tabTips = {
+            shop: 'Buy gear from the Shop to boost your stats. Hover over items to compare. Equip Best auto-picks the strongest gear for each slot.',
+            map: 'The Atlas shows all worlds and zones. Travel back to earlier zones to farm for XP, Gold, and reagent drops.',
+            bestiary: 'The Bestiary tracks every enemy you defeat. Extract animus to craft Treasure Cards — one-time-use spells for tough fights.',
+            craft: 'The Workshop lets you craft potions, snacks, enchantments, jewels, and gear from reagents. Crafting XP unlocks new recipes.',
+            fishing: 'Cast your line and time your strike to catch fish. Fish sell for Gold. Better rods improve your catch rate and rewards.',
+          };
+          if (_tabTips[tabId]) showTip('tab_' + tabId, _tabTips[tabId]);
         }
       }
     }

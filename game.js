@@ -234,6 +234,7 @@ function checkLevelUp() {
       changed = true;
       addLog('', 'info');
       addLog('★ Level ' + w.level + '!', 'crit');
+      showTip('first_level', 'Leveling up teaches new spells and improves your stats. New spells are auto-added to your deck — adjust copies in the Spellbook tab.');
       if (typeof SFX !== 'undefined') SFX.levelUp();
       var newSpells = SCHOOL_SPELL_LEVELS[w.school] ? SCHOOL_SPELL_LEVELS[w.school][w.level] : null;
       if (newSpells) {
@@ -248,6 +249,11 @@ function checkLevelUp() {
             addLog('  ★ ' + getProfessorName() + ' teaches: ' + (sp?sp.name:sid) + '!', 'crit');
             addLog('  ' + getProfessorQuote() + ' — ' + getProfessorName(), 'info');
             if (sp && sp.type === 'blade') showTip('first_blade', 'Blades boost your next attack. Adjust how many copies go in your deck in the Spellbook tab.');
+            if (sp && sp.type === 'trap') showTip('first_trap', 'Traps are placed on enemies and boost the next damage they receive. Stack a blade and trap before your big hit for massive damage.');
+            if (sp && sp.type === 'shield') showTip('first_shield', 'Shields reduce the next incoming attack. Use them before boss hits or when your HP is getting low.');
+            if (sp && sp.type === 'heal') showTip('first_heal', 'Heals restore your HP. Life wizards specialize in healing, but any school can learn heals via Training Points.');
+            if (sp && sp.type === 'drain') showTip('first_drain', 'Drain spells deal damage and heal you for a portion of what they deal. Death wizards are built around this mechanic.');
+            if (sp && sp.type === 'summon') showTip('first_summon', 'Minions fight alongside you, attacking each round. Myth\'s Living Story mechanic stacks damage while your minion is alive.');
           }
         }
       }
@@ -1201,6 +1207,7 @@ function graduate() {
   addLog('Mastery Aura unlocked: ' + MASTERY_AURAS[school].name + ' — ' + MASTERY_AURAS[school].desc, 'crit');
   addLog('═══════════════════════════════', 'crit');
   addHubLog('GRADUATED ' + school.toUpperCase() + '! Aura: ' + MASTERY_AURAS[school].name, 'crit');
+  showTip('first_graduation', 'Graduation unlocks a permanent Mastery Aura that carries over to all future runs. Enroll in a new school to start fresh — familiars, crafting rank, and auras carry over. Gear, spells, Gold, and progression reset.');
   rivalGraduation();
 
   if (Game.graduatedSchools.length >= 6) {
@@ -1208,6 +1215,7 @@ function graduate() {
     addLog('★ ALL SIX SCHOOLS MASTERED ★', 'crit');
     addLog('Balance has awakened. The Spiral calls.', 'system');
     addHubLog('ALL 6 SCHOOLS GRADUATED — Balance unlocked!', 'crit');
+    showTip('balance_unlock', 'Balance wizards have every spell, every mastery aura, and enter The Spiral — an infinite endgame that cycles through all worlds with escalating difficulty and modifiers. Spiral Shards grant permanent stat boosts.');
   }
 
   saveGame();
@@ -2428,7 +2436,7 @@ function craftingTick() {
       if (r.result.snack) { migrateSnacks(); var sq = r.result.snackQty||1; addSnack(r.result.snack, sq); addLog('Crafted: ' + SNACKS[r.result.snack].name + ' x' + sq, 'crit'); addHubLog('Crafted ' + SNACKS[r.result.snack].name + ' x' + sq, 'crit'); }
       if (r.result.snacks) { migrateSnacks(); addSnack('breadcrumb', r.result.snacks); addLog('Crafted: ' + r.name + ' (+' + r.result.snacks + ' Breadcrumbs)', 'crit'); }
       if (r.result.potion) { migratePotions(); var pq = r.result.potionQty||1; Game.potions[r.result.potion] = (Game.potions[r.result.potion]||0) + pq; addLog('Crafted: ' + POTIONS[r.result.potion].name + ' x' + pq, 'crit'); addHubLog('Crafted ' + POTIONS[r.result.potion].name + ' x' + pq, 'crit'); }
-      if (r.result.enchantment) { Game.crafting.inventory.enchantments.push(r.result.enchantment); addLog('Crafted: ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment!', 'crit'); addHubLog('Crafted ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment', 'crit'); }
+      if (r.result.enchantment) { Game.crafting.inventory.enchantments.push(r.result.enchantment); addLog('Crafted: ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment!', 'crit'); addHubLog('Crafted ' + ENCHANTMENTS[r.result.enchantment].name + ' enchantment', 'crit'); showTip('first_enchant', 'Apply enchantments to damage spells in the Spellbook tab. Each enchantment permanently boosts a spell\'s damage, pierce, or crit chance.'); }
       if (r.result.jewel) { Game.crafting.inventory.jewels.push(r.result.jewel); addLog('Crafted: ' + PET_JEWELS[r.result.jewel].name + ' jewel!', 'crit'); addHubLog('Crafted ' + PET_JEWELS[r.result.jewel].name + ' jewel', 'crit'); }
       if (r.result.gear) {
         var gid = r.result.gear;
@@ -3554,7 +3562,9 @@ function equipGear(gearId) {
   if (w.gear[item.slot]) w.inventory.push(w.gear[item.slot]);
   w.inventory = w.inventory.filter(id => id !== gearId);
   w.gear[item.slot] = gearId;
-  recalcStats(); addLog('Equipped ' + item.name, 'system'); saveGame();
+  recalcStats(); addLog('Equipped ' + item.name, 'system');
+  showTip('first_equip', 'Gear boosts your stats. Each school scales gear differently — Storm gets more damage, Ice gets more HP. Check Stat Sources in the Wizard tab to see the breakdown.');
+  saveGame();
 }
 function unequipGear(slot) {
   const w = Game.wizard; const gearId = w.gear[slot]; if (!gearId) return;
@@ -3741,6 +3751,7 @@ function castSpell(spell, targetIndex) {
     if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) fizzMana += 1;
     Game.wizard.mana = Math.max(0, Game.wizard.mana - fizzMana);
     addLog('R' + Game.round + ': ' + spell.name + ' → MISCAST ✗', 'fizzle');
+    showTip('first_miscast', 'Miscasts happen when your accuracy roll fails. Sigils are spent but the spell does nothing. Gear with accuracy bonuses and accuracy charms reduce miscast chance.');
     if (typeof SFX !== 'undefined') SFX.fizzle();
     if (Game.wizard.school === 'storm' && Game.wizard._voltage > 0) {
       addLog('  Voltage reset!', 'info');
@@ -3877,6 +3888,7 @@ function castSpell(spell, targetIndex) {
           if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('volatile') !== -1) critMult += 0.5;
           dmg = Math.floor(dmg * critMult);
           if (!Game.stats) Game.stats = {}; Game.stats.crits = (Game.stats.crits||0) + 1;
+          showTip('first_crit', 'Critical hits deal double damage (2.5x with Storm mastery aura). Gear and enchantments with crit chance increase your odds. Enemies can block crits with crit block.');
           trackAssignment('critsLanded', null, 1);
         }
 
@@ -3954,6 +3966,8 @@ function castSpell(spell, targetIndex) {
           addLog('  ↳ ' + tgt.name + ' defeated!', 'kill');
           if (!Game.stats) Game.stats = {};
           Game.stats.enemiesDefeated = (Game.stats.enemiesDefeated||0) + 1;
+          showTip('first_kill', 'Enemies drop Gold, XP, and sometimes reagents or seeds. Defeat enough to level up and learn new spells.');
+          if (tgt.boss) showTip('first_boss_kill', 'Boss defeated! You ranked up. Your deck size, hand size, and Power Sigil chance all increased. Check your new stats in the Wizard tab.');
           recordBestiaryKill(tgt.id || tgt.name, tgt.name);
           extractAnimus(tgt.id || tgt.name, tgt.name, !!tgt.boss);
           trackAssignment('enemiesKilled', tgt.school, 1);
@@ -4885,6 +4899,27 @@ function startEncounter() {
     addLog('', 'info');
     addLog('★ BOSS AHEAD: ' + bossName, 'crit');
     addLog('Prepare your deck. Press "Begin Fight" when ready.', 'system');
+    var _bossEnemy = enemies.find(e => e.boss);
+    if (_bossEnemy && _bossEnemy.cheats && _bossEnemy.cheats.length > 0) {
+      var _cheatDescs = {
+        'self_heal_3': 'Heals 15% HP every 3 rounds',
+        'spawn_minion': 'Summons a minion every 2 rounds',
+        'shield_at_3': 'Gains a shield while 3+ minions are alive',
+        'stacking_dot': 'Deals escalating damage each round that stacks higher over time',
+        'blade_shatter': 'Shatters your blade and deals damage when you have one active',
+        'single_target_shield': 'Blocks reduced damage from single-target spells',
+        'heal_5': 'Heals 15% HP every 5 rounds',
+        'full_school_resist': '100% resist to ' + (_bossEnemy.resistSchool || 'your') + ' school — use off-school spells or Prism',
+        'mirror_spell': 'Reflects 40% of your last spell\'s damage back at you',
+        'phase_boss': 'Changes tactics at 75%, 50%, and 25% HP — summons fragments, burns with aura, shatters blades, and heals',
+        'shield_persist': 'Maintains a persistent shield',
+      };
+      addLog('Boss cheats:', 'system');
+      for (var _ci = 0; _ci < _bossEnemy.cheats.length; _ci++) {
+        var _cd = _cheatDescs[_bossEnemy.cheats[_ci]];
+        if (_cd) addLog('  • ' + _cd, 'system');
+      }
+    }
     showTip('first_boss', 'Boss fights are always manual. Check your deck and potions before you begin.');
     return;
   }
@@ -4903,6 +4938,13 @@ function startEncounter() {
   if (!reuseCards) drawCards();
   Game.round = 0; Game.state = 'fighting'; Game.phase = 'round_start';
   showTip('first_combat', 'Pick a spell from your hand each round. Accuracy determines whether it lands. Switch to the Battle tab to fight.');
+  showTip('sigils_intro', 'You gain 1 Sigil per round. Spells cost Sigils to cast. Power Sigils count as 2 but only for your own school.');
+  for (var _eti = 0; _eti < enemies.length; _eti++) {
+    if (enemies[_eti].school === Game.wizard.school) {
+      showTip('school_matchup', 'This enemy is your own school — your spells deal reduced damage against same-school targets. Use Prism spells to convert your damage to their weakness, or use off-school Training Point spells.');
+      break;
+    }
+  }
   // Reset per-encounter school mechanics
   Game.wizard._voltage = 0;
   Game.wizard._convergenceSchools = [];
@@ -5207,6 +5249,7 @@ function advanceEncounter() {
       if (!Game.wizard.trainingPoints) Game.wizard.trainingPoints = 0;
       Game.wizard.trainingPoints += 1;
       addLog('  +1 Training Point! (Total: ' + Game.wizard.trainingPoints + ')', 'crit');
+      showTip('first_tp', 'Training Points let you learn spells from other schools in the Spellbook tab. Off-school spells add versatility but cost more Sigils.');
     }
 
     // Auto-combat unlocks after clearing Training Grounds (W1 zone 2)
@@ -5215,6 +5258,7 @@ function advanceEncounter() {
       addLog('', 'info');
       addLog('★ AUTO COMBAT UNLOCKED!', 'crit');
       addLog('Set priority rules in the Spellbook tab — IF/THEN rules control what auto-combat casts each round.', 'system');
+      showTip('auto_rules', 'Rules evaluate top-to-bottom. First match fires. Example: IF no blade → cast Blade, IF Sigils above 4 → cast your biggest hit, IF always → cast a basic attack. Load a preset to start.');
     }
 
     // Farming mode: loop back to start of current zone
@@ -5381,6 +5425,7 @@ function advanceEncounter() {
 
 function handleDeath() {
   if (!Game.stats) Game.stats = {}; Game.stats.deathCount = (Game.stats.deathCount||0) + 1;
+  showTip('first_death', 'Death sends you back to the start of the zone with some Gold lost. Upgrade your gear, adjust your deck, or try using potions and shields.');
   if (typeof SFX !== 'undefined') SFX.death();
   // Spire death — end the run
   if (Game.spire && Game.spire.active) {
@@ -6690,6 +6735,7 @@ function enterSpire(school) {
   if (Game.spire.active) return;
 
   Game.spire.active = true;
+  showTip('first_spire', 'The Spire is manual combat only. You earn rune buffs every 2 floors and gear every 5. Your main progression is saved — dying or leaving ends the run.');
   Game.spire.floor = 0;
   Game.spire.school = school || Game.wizard.school;
   Game.spire.runes = [];
@@ -7252,6 +7298,7 @@ function startDuel(duelistId) {
   if (!duelist) return;
 
   Game.dueling.active = true;
+  showTip('first_duel', 'Duels are manual 1v1 fights. Win streaks multiply Gold rewards by +25% each. Your rival scales with your progression and appears periodically.');
   Game.dueling.currentDuelist = duelistId;
 
   // Save state
@@ -7825,6 +7872,7 @@ function awardWandCore(coreId) {
   addLog('★ Found wand core: ' + core.name + '!', 'crit');
   addLog('  ' + core.desc, 'info');
   addHubLog('Wand core: ' + core.name, 'crit');
+  showTip('first_wand_part', 'Wand cores and woods customize your wand stats. Equip them in the Equipped Gear section of the Wizard tab. Cores add offensive stats, woods add defensive stats.');
   saveGame();
 }
 
@@ -7836,6 +7884,7 @@ function awardWandWood(woodId) {
   addLog('★ Found wand wood: ' + wood.name + '!', 'crit');
   addLog('  ' + wood.desc, 'info');
   addHubLog('Wand wood: ' + wood.name, 'crit');
+  showTip('first_wand_part', 'Wand cores and woods customize your wand stats. Equip them in the Equipped Gear section of the Wizard tab. Cores add offensive stats, woods add defensive stats.');
   saveGame();
 }
 
