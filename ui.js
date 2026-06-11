@@ -48,7 +48,7 @@ var SFX = {
   death: function() { _playTone(200, 0.3, 'sawtooth', 0.2, 50); setTimeout(function(){_playTone(100, 0.4, 'sawtooth', 0.15, 30);}, 200); },
   levelUp: function() { var n=[523,659,784,1047]; for(var i=0;i<n.length;i++){(function(f,d){setTimeout(function(){_playTone(f,0.15,'sine',0.2);},d);})(n[i],i*100);} },
   achievement: function() { var n=[784,988,1175,1568]; for(var i=0;i<n.length;i++){(function(f,d){setTimeout(function(){_playTone(f,0.2,'sine',0.15);},d);})(n[i],i*80);} },
-  gold: function() { _playTone(1400, 0.05, 'sine', 0.1); setTimeout(function(){_playTone(1800, 0.08, 'sine', 0.08);}, 40); },
+  Gold: function() { _playTone(1400, 0.05, 'sine', 0.1); setTimeout(function(){_playTone(1800, 0.08, 'sine', 0.08);}, 40); },
   click: function() { _playTone(1000, 0.03, 'sine', 0.08); },
   boss: function() { _playChord([220,277,330], 0.4, 'sawtooth', 0.1); setTimeout(function(){_playChord([196,247,294], 0.5, 'sawtooth', 0.12);}, 300); },
   spiralVoice: function() { _playTone(330, 0.3, 'sine', 0.1, 220); setTimeout(function(){_playTone(440, 0.4, 'sine', 0.08, 330);}, 200); },
@@ -84,7 +84,7 @@ function showOfflinePopup(timeStr, summary) {
   box += '<div style="font-size:16px;color:var(--text-bright);margin-bottom:4px">Welcome Back</div>';
   box += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">You were away for ' + timeStr + '</div>';
   box += '<div style="text-align:left;font-size:12px;line-height:1.8;margin-bottom:16px">';
-  if (summary.gold > 0) box += '<div style="color:var(--gold)">+' + summary.gold.toLocaleString() + ' gold</div>';
+  if (summary.gold > 0) box += '<div style="color:var(--gold)">+' + summary.gold.toLocaleString() + ' Gold</div>';
   if (summary.xp > 0) box += '<div style="color:var(--xp-bar)">+' + summary.xp.toLocaleString() + ' XP</div>';
   if (summary.motes > 0) box += '<div style="color:var(--cast)">+' + summary.motes + ' reagents</div>';
   if (summary.petXp > 0) box += '<div style="color:var(--myth)">+' + summary.petXp + ' familiar XP</div>';
@@ -171,7 +171,7 @@ function showEnemyDeath(enemyIndex) {
   card.classList.add('dying');
 }
 
-function goldFlash() {
+function GoldFlash() {
   var el = document.getElementById('header-gold');
   if (!el) return;
   el.classList.remove('gold-flash');
@@ -181,7 +181,7 @@ function goldFlash() {
 window.screenShake = screenShake;
 window.critFlash = critFlash;
 window.showEnemyDeath = showEnemyDeath;
-window.goldFlash = goldFlash;
+window.goldFlash = GoldFlash;
 
 var _lastPipCount = 0;
 var _lastTabSet = '';
@@ -802,7 +802,7 @@ function renderDuelPanel() {
     h += '<summary class="section-head" style="cursor:pointer;list-style:none"><span class="tri"></span> Dueling Club</summary>';
     h += '<div class="status-box" style="margin-top:6px">';
     h += '<div style="font-style:italic;font-size:11px;color:var(--text-dim);margin-bottom:8px">"The club meets after hours. Bring your own bandages." — Professor Ashveil</div>';
-    h += '<div style="font-size:11px;color:var(--text);margin-bottom:8px;line-height:1.5">Quick 1v1 duels against named opponents. Manual combat. Win streaks multiply gold rewards. Your progress outside is saved.</div>';
+    h += '<div style="font-size:11px;color:var(--text);margin-bottom:8px;line-height:1.5">Quick 1v1 duels against named opponents. Manual combat. Win streaks multiply Gold rewards. Your progress outside is saved.</div>';
     if (duel.bestStreak > 0) h += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">Wins: ' + duel.totalWins + ' · Losses: ' + duel.totalLosses + ' · Best streak: ' + duel.bestStreak + '</div>';
 
     var available = getAvailableDuelists();
@@ -835,7 +835,7 @@ function renderDuelPanel() {
       h += '</div>';
     }
 
-    if (available.length > 0) h += '<div style="font-size:10px;color:var(--text-dim);margin-top:6px">Rewards: ' + available[0].reward.gold + '-' + available[available.length-1].reward.gold + 'g · Streak bonus: +25% per win</div>';
+    if (available.length > 0) h += '<div style="font-size:10px;color:var(--text-dim);margin-top:6px">Rewards: ' + available[0].reward.gold + '-' + available[available.length-1].reward.gold + ' Gold · Streak bonus: +25% per win</div>';
     h += '</div></details>';
   }
 
@@ -1261,7 +1261,7 @@ function renderGear() {
     } else if (Game.state === 'resting') {
       var skipCost = Math.floor(w.maxHp * 0.05);
       statusText = 'Resting — ' + w.mana + '/' + w.maxMana + ' mana, ' + w.hp + '/' + w.maxHp + ' HP';
-      sh += '<button class="btn" onclick="skipRest();updateUI();" style="font-size:10px;padding:3px 10px;margin-top:4px" title="Pay gold to fully recover and resume combat immediately."' + (Game.gold < skipCost ? ' disabled' : '') + '>Skip Rest (' + skipCost + 'g)</button>';
+      sh += '<button class="btn" onclick="skipRest();updateUI();" style="font-size:10px;padding:3px 10px;margin-top:4px" title="Pay Gold to fully recover and resume combat immediately."' + (Game.gold < skipCost ? ' disabled' : '') + '>Skip Rest (' + skipCost + ' Gold)</button>';
     } else if (Game.state === 'waiting_boss') {
       statusText = 'Boss ahead! Check Battle tab.';
     } else if (Game.state === 'complete') {
@@ -1269,7 +1269,7 @@ function renderGear() {
       // Enrollment UI
       sh += '<div style="background:var(--bg-card);border:2px solid var(--gold);border-radius:6px;padding:16px;margin-top:8px;margin-bottom:8px;text-align:center">';
       sh += '<div style="font-size:14px;color:var(--gold);margin-bottom:8px">★ THE GRAND ENROLLMENT ★</div>';
-      sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Choose your next school. Mastery auras, pets, and crafting rank carry over. Gear, spells, reagents, and gold reset.</div>';
+      sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Choose your next school. Mastery auras, pets, and crafting rank carry over. Gear, spells, reagents, and Gold reset.</div>';
       if (Game.graduatedSchools && Game.graduatedSchools.length > 0) {
         sh += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">Auras: ' + Game.graduatedSchools.map(function(s){return '<span style="color:var(--'+s+')">' + MASTERY_AURAS[s].name + '</span>';}).join(', ') + '</div>';
       }
@@ -1364,7 +1364,7 @@ function renderGear() {
           ah += '<div style="height:4px;background:var(--bg);border-radius:2px;margin-top:3px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + (isDone ? 'var(--gold)' : typeColor) + ';border-radius:2px;transition:width 0.3s"></div></div>';
         }
         if (!isClaimed && !isDone) {
-          ah += '<div style="font-size:9px;color:var(--text-dim);margin-top:2px">Reward: ' + a.goldReward + 'g · ' + a.xpReward + ' XP · ' + a.reagentReward + ' reagents</div>';
+          ah += '<div style="font-size:9px;color:var(--text-dim);margin-top:2px">Reward: ' + a.goldReward + ' Gold · ' + a.xpReward + ' XP · ' + a.reagentReward + ' reagents</div>';
         }
         ah += '</div>';
       }
@@ -1388,7 +1388,7 @@ function renderGear() {
     ph += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
     ph += '<div><div style="font-size:16px;color:var(--text-bright)">' + (w.name || 'Wizard') + '</div>';
     ph += '<div style="font-size:11px;color:var(--text-dim)">' + getWizardTitle() + ' · <span style="color:'+schoolColor+'">' + w.school.charAt(0).toUpperCase()+w.school.slice(1) + '</span> | ' + (world?world.name:'') + '</div></div>';
-    ph += '<div style="text-align:right;font-size:12px;font-family:Courier New,monospace"><span style="color:var(--gold)">' + Game.gold + 'g</span>';
+    ph += '<div style="text-align:right;font-size:12px;font-family:Courier New,monospace"><span style="color:var(--gold)">' + Game.gold + ' Gold</span>';
     if (Game.enrollmentCount > 0) ph += '<br><span style="color:var(--text-dim);font-size:10px">Run ' + (Game.enrollmentCount+1) + '</span>';
     ph += '</div></div>';
     // XP bar
@@ -1608,7 +1608,7 @@ function renderGear() {
       for (var _ugi = 0; _ugi < _ungrad.length; _ugi++) {
         ph += '<div style="padding:3px 8px;margin-bottom:2px;border-left:2px solid var(--border);color:var(--text-dim);font-size:10px;text-transform:capitalize">' + _ungrad[_ugi] + '</div>';
       }
-      ph += '<div style="color:var(--text-dim);font-size:10px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px">Carries over: mastery auras, familiars, crafting rank, jewels<br>Resets: gear, spells, gold, reagents, world progress, deck</div>';
+      ph += '<div style="color:var(--text-dim);font-size:10px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px">Carries over: mastery auras, familiars, crafting rank, jewels<br>Resets: gear, spells, Gold, reagents, world progress, deck</div>';
       ph += '</div></details>';
     }
     ph += '</div>';
@@ -1723,7 +1723,7 @@ function renderGear() {
     if (w.inventory.length > 0) {
       ih += '<div style="display:flex;gap:4px;margin-bottom:6px">';
       ih += '<button class="btn primary" onclick="equipBest();_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 10px" title="Equip the strongest item for each slot based on your school scaling.">Equip Best</button>';
-      ih += '<button class="btn" onclick="if(confirm(\'Sell all \'+Game.wizard.inventory.length+\' unequipped items?\')){sellAllGear();_gearDirty=true;updateUI();}" style="font-size:10px;padding:2px 10px;color:var(--fizzle)" title="Sell all unequipped gear for gold.">Sell All</button>';
+      ih += '<button class="btn" onclick="if(confirm(\'Sell all \'+Game.wizard.inventory.length+\' unequipped items?\')){sellAllGear();_gearDirty=true;updateUI();}" style="font-size:10px;padding:2px 10px;color:var(--fizzle)" title="Sell all unequipped gear for Gold.">Sell All</button>';
       ih += '</div>';
     }
     if (w.inventory.length === 0) {
@@ -1737,7 +1737,7 @@ function renderGear() {
         ih += '<div title="'+getScaledGearDesc(item2)+(cur?' | Replaces: '+cur.name:'')+'" style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin-bottom:3px;background:var(--bg-card);border:1px solid '+(locked?'var(--gold)':'var(--border)')+';border-radius:3px;font-size:11px;cursor:help"><span><button class="btn" onclick="toggleGearLock(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:9px;padding:1px 4px;margin-right:4px;color:'+(locked?'var(--gold)':'var(--text-dim)')+'" title="'+(locked?'Unlock — allow selling':'Lock — prevent selling')+'">'+(locked?'Locked':'Lock')+'</button><span style="color:var(--text-bright)">'+item2.name+'</span> <span style="color:var(--text-dim)">('+item2.slot+') — '+getScaledGearDesc(item2)+'</span>';
         if (cur) ih += ' <span style="color:var(--text-dim);font-size:10px">[replaces: '+cur.name+']</span>';
         var sellPrice = Math.max(5, Math.floor((item2.cost||20) * 0.3));
-        ih += '</span><span><button class="btn primary" onclick="equipGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" title="Equip this item. Replaces current gear in the '+item2.slot+' slot.">Equip</button> <button class="btn" onclick="sellGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)'+(locked?';opacity:0.3;pointer-events:none':'')+'" title="Sell for '+sellPrice+' gold.'+(locked?' (Locked)':'')+'"'+(locked?' disabled':'')+'>Sell ('+sellPrice+'g)</button></span></div>';
+        ih += '</span><span><button class="btn primary" onclick="equipGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" title="Equip this item. Replaces current gear in the '+item2.slot+' slot.">Equip</button> <button class="btn" onclick="sellGear(\''+item2.id+'\');_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)'+(locked?';opacity:0.3;pointer-events:none':'')+'" title="Sell for '+sellPrice+' Gold.'+(locked?' (Locked)':'')+'"'+(locked?' disabled':'')+'>Sell ('+sellPrice+' Gold)</button></span></div>';
       }
     }
     ih += '</div></details>';
@@ -1877,7 +1877,7 @@ function renderGear() {
         var frdStats = [];
         if (frd.stats.zoneBonus) frdStats.push('+' + frd.stats.zoneBonus + '% zone');
         if (frd.stats.speedReduction) frdStats.push('-' + (frd.stats.speedReduction * 100).toFixed(0) + '% speed');
-        if (frd.stats.goldBonus) frdStats.push('+' + frd.stats.goldBonus + '% gold');
+        if (frd.stats.goldBonus) frdStats.push('+' + frd.stats.goldBonus + '% Gold');
         if (frd.stats.rarityBonus) frdStats.push('+' + frd.stats.rarityBonus + '% rarity');
         if (frd.stats.energySave) frdStats.push('-' + frd.stats.energySave + ' energy');
         ih += '<div title="' + frd.desc + ' | Source: ' + frd.source + '" style="font-size:11px;padding:3px 0;cursor:help;color:' + (isEquipped ? 'var(--cast)' : 'var(--text-dim)') + '">';
@@ -1964,7 +1964,7 @@ function renderCraft() {
 
   // Transmutation
   ch += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;list-style:none;margin-bottom:6px"><span class="tri"></span> Transmutation</summary>';
-  ch += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Convert 10 of one reagent into 1 of the next tier (50g).</p>';
+  ch += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Convert 10 of one reagent into 1 of the next tier (50 Gold).</p>';
   ch += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
   for (var ti = 0; ti < REAGENT_IDS.length; ti++) {
     var fromR = ALL_REAGENTS[REAGENT_IDS[ti]];
@@ -2159,7 +2159,7 @@ function renderShop() {
       var canBuy = Game.gold >= item.cost && !owned;
       h += '<div title="'+gearCompareTooltip(item)+'" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;font-size:12px;cursor:help;'+(owned?'opacity:0.5':'')+'"><span><span style="color:var(--text-bright)">'+item.name+'</span> <span style="color:var(--text-dim)">('+item.slot+') — '+getScaledGearDesc(item)+'</span></span>';
       if (owned) h += '<span style="color:var(--text-dim);font-size:10px">Owned</span>';
-      else h += '<button class="btn" onclick="buyGear(\''+item.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+item.cost+' gold</button>';
+      else h += '<button class="btn" onclick="buyGear(\''+item.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+item.cost+' Gold</button>';
       h += '</div>';
     }
     vendorEl.innerHTML = h;
@@ -2195,7 +2195,7 @@ function renderShop() {
           else gh += '<br><span style="color:var(--text-dim);font-size:10px">Seller: '+nListing.seller+'</span></div>';
           gh += '<div class="item-actions">';
           if (nOwned) gh += '<span style="color:var(--text-dim);font-size:10px">Owned</span>';
-          else gh += '<button class="btn" onclick="bazaarBuyGear('+nRealIdx+');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(nCanBuy?'':'disabled')+'>'+nListing.price+'g</button>';
+          else gh += '<button class="btn" onclick="bazaarBuyGear('+nRealIdx+');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(nCanBuy?'':'disabled')+'>'+nListing.price+' Gold</button>';
           gh += '</div></div>';
         }
       }
@@ -2208,7 +2208,7 @@ function renderShop() {
           if (!pItem) continue;
           gh += '<div class="bazaar-row"><div class="item-info"><span class="item-name" style="color:var(--gold)">'+pItem.name+'</span> <span class="item-meta">('+pItem.slot+') '+pItem.desc+'</span>';
           gh += '<br><span style="color:var(--text-dim);font-size:10px">Listed for '+pListing.price+'g — waiting for a buyer</span></div>';
-          gh += '<div class="item-actions"><span style="font-size:10px;color:var(--gold)">'+pListing.price+'g</span></div></div>';
+          gh += '<div class="item-actions"><span style="font-size:10px;color:var(--gold)">'+pListing.price+' Gold</span></div></div>';
         }
       }
 
@@ -2222,8 +2222,8 @@ function renderShop() {
           var listPrice = Math.max(10, Math.floor((sItem.cost||30) * 0.5));
           gh += '<div class="bazaar-row"><div class="item-info"><span class="item-name">'+sItem.name+'</span> <span class="item-meta">('+sItem.slot+') '+sItem.desc+'</span></div>';
           gh += '<div class="item-actions">';
-          gh += '<button class="btn" onclick="bazaarQuickSellGear(\''+sItem.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" title="Instant sale at 30% value">Quick Sell ('+quickPrice+'g)</button>';
-          gh += ' <button class="btn" onclick="bazaarListGear(\''+sItem.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--gold)" title="List at 50% value — an NPC wizard may buy it over time">List ('+listPrice+'g)</button>';
+          gh += '<button class="btn" onclick="bazaarQuickSellGear(\''+sItem.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" title="Instant sale at 30% value">Quick Sell ('+quickPrice+' Gold)</button>';
+          gh += ' <button class="btn" onclick="bazaarListGear(\''+sItem.id+'\');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--gold)" title="List at 50% value — an NPC wizard may buy it over time">List ('+listPrice+' Gold)</button>';
           gh += '</div></div>';
         }
       }
@@ -2233,7 +2233,7 @@ function renderShop() {
         gh += '<div class="bazaar-section-head" style="margin-top:12px">Recent Sales</div>';
         for (var sli = Game.bazaar.soldLog.length - 1; sli >= 0; sli--) {
           var sale = Game.bazaar.soldLog[sli];
-          gh += '<div style="font-size:11px;color:var(--text-dim);padding:2px 0"><span style="color:var(--gold)">'+sale.buyer+'</span> bought your <span style="color:var(--text-bright)">'+sale.item+'</span> for <span style="color:var(--gold)">'+sale.price+'g</span></div>';
+          gh += '<div style="font-size:11px;color:var(--text-dim);padding:2px 0"><span style="color:var(--gold)">'+sale.buyer+'</span> bought your <span style="color:var(--text-bright)">'+sale.item+'</span> for <span style="color:var(--gold)">'+sale.price+' Gold</span></div>';
         }
       }
 
@@ -2271,9 +2271,9 @@ function renderShop() {
         ch2 += '<div class="bazaar-row" style="' + (rUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+reagent.color+'">' + reagent.name + '</span>';
         if (!rUnlocked) ch2 += ' <span style="color:var(--text-dim);font-size:9px">[' + reagent.worlds.map(function(w){return WORLDS[w]?WORLDS[w].name:'?';}).join('/') + ']</span>';
         ch2 += ' <span class="item-meta">×' + ownedR + '</span></div>';
-        ch2 += '<div class="item-actions"><span class="price-tag ' + priceClass + '">' + arrow + ' ' + buyPrice + 'g</span><span class="stock-tag">' + stock + '</span>';
+        ch2 += '<div class="item-actions"><span class="price-tag ' + priceClass + '">' + arrow + ' ' + buyPrice + ' Gold</span><span class="stock-tag">' + stock + '</span>';
         ch2 += ' <button class="btn" onclick="bazaarBuyReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(rUnlocked && Game.gold >= buyPrice && stock > 0 ? '' : 'disabled')+'>Buy</button>';
-        ch2 += ' <button class="btn" onclick="bazaarSellReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(ownedR > 0 ? '' : 'disabled')+'>Sell (' + sellPrice + 'g)</button>';
+        ch2 += ' <button class="btn" onclick="bazaarSellReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(ownedR > 0 ? '' : 'disabled')+'>Sell (' + sellPrice + ' Gold)</button>';
         ch2 += '</div></div>';
       }
       ch2 += '</div></details>';
@@ -2289,7 +2289,7 @@ function renderShop() {
         var cpPot = POTIONS[cpId];
         var cpOwned = Game.potions[cpId] || 0;
         ch2 += '<div class="bazaar-row" style="' + (cpUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+cpPot.color+'">' + cpPot.name + '</span> <span class="item-meta">x' + cpOwned + ' — ' + cpPot.desc + '</span></div>';
-        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + cpPot.bazaarPrice + 'g</span>';
+        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + cpPot.bazaarPrice + ' Gold</span>';
         ch2 += ' <button class="btn" onclick="bazaarBuyPotion(\''+cpId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(cpUnlocked && Game.gold >= cpPot.bazaarPrice ? '' : 'disabled')+'>Buy</button>';
         ch2 += '</div></div>';
       }
@@ -2310,9 +2310,9 @@ function renderShop() {
         var csSellPrice = SNACK_SELL_UI[csId] || Math.max(1, Math.floor(csSnack.xp * 2));
         var csStock = (Game.bazaar.snackStock && Game.bazaar.snackStock[csId]) || 0;
         ch2 += '<div class="bazaar-row" style="' + (csUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+csSnack.color+'">' + csSnack.name + '</span> <span class="item-meta">x' + csOwned + ' — ' + csSnack.xp + ' XP</span></div>';
-        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + csBuyPrice + 'g</span><span class="stock-tag">' + csStock + '</span>';
+        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + csBuyPrice + ' Gold</span><span class="stock-tag">' + csStock + '</span>';
         ch2 += ' <button class="btn" onclick="bazaarBuySnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(csUnlocked && Game.gold >= csBuyPrice && csStock > 0 ? '' : 'disabled')+'>Buy</button>';
-        ch2 += ' <button class="btn" onclick="bazaarSellSnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(csOwned > 0 ? '' : 'disabled')+'>Sell ('+csSellPrice+'g)</button>';
+        ch2 += ' <button class="btn" onclick="bazaarSellSnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(csOwned > 0 ? '' : 'disabled')+'>Sell ('+csSellPrice+' Gold)</button>';
         ch2 += '</div></div>';
       }
       ch2 += '</div></details>';
@@ -2328,7 +2328,7 @@ function renderShop() {
         var seedPrice = BAZAAR_SEED_PRICES[seedId];
         var seedOwned = (Game.garden && Game.garden.seeds[seedId]) || 0;
         ch2 += '<div class="bazaar-row" style="' + (seedUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:var(--heal)">' + seed.name + '</span> <span class="item-meta">x' + seedOwned + ' — ' + seed.desc + '</span></div>';
-        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + seedPrice + 'g</span>';
+        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + seedPrice + ' Gold</span>';
         ch2 += ' <button class="btn" onclick="bazaarBuySeed(\''+seedId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(seedUnlocked && Game.gold >= seedPrice ? '' : 'disabled')+'>Buy</button>';
         ch2 += '</div></div>';
       }
@@ -2351,7 +2351,7 @@ function renderGarden() {
 
   var h = '<div class="section-head">Garden Plots</div>';
   h += '<div style="font-style:italic;font-size:11px;color:var(--text-dim);margin-bottom:6px">"Water, sunlight, and a little conversation. Plants are better listeners than most wizards." — Barlow Rootwise</div>';
-  h += '<div style="margin-bottom:8px"><button class="btn" onclick="tendAll()">Tend All (3g each)</button> <span style="color:var(--text-dim);font-size:11px">Snacks: '+getTotalSnacks()+'</span></div>';
+  h += '<div style="margin-bottom:8px"><button class="btn" onclick="tendAll()">Tend All (3 Gold each)</button> <span style="color:var(--text-dim);font-size:11px">Snacks: '+getTotalSnacks()+'</span></div>';
 
   for (var i = 0; i < Game.garden.plots.length; i++) {
     var plot = Game.garden.plots[i];
@@ -2404,7 +2404,7 @@ function renderGarden() {
 
       // Action buttons
       if (plot.needsTending) {
-        h += '<button class="btn" onclick="tendPlot('+i+')" style="font-size:10px;padding:2px 8px;margin-right:4px" title="Costs 3 gold. Prevents wilting and keeps the plant growing.">Tend (3g)</button>';
+        h += '<button class="btn" onclick="tendPlot('+i+')" style="font-size:10px;padding:2px 8px;margin-right:4px" title="Costs 3 Gold. Prevents wilting and keeps the plant growing.">Tend (3 Gold)</button>';
       }
       if (plot.stage === 'mature') {
         h += '<button class="btn primary" onclick="harvestPlot('+i+',false)" style="font-size:10px;padding:2px 8px;margin-right:4px" title="Harvest now for reagents and snacks. Plant continues growing to Elder.">Harvest (Mature)</button>';
@@ -2446,7 +2446,7 @@ function renderGarden() {
       var canBuy = Game.gold >= ss.cost;
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:3px;background:var(--bg);border:1px solid var(--border);border-radius:3px;font-size:12px">';
       h += '<span><span style="color:var(--text-bright)">'+ss.name+'</span> <span style="color:var(--text-dim)">— '+ss.desc+'</span></span>';
-      h += '<button class="btn" onclick="buySeed(\''+ss.id+'\')" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+ss.cost+' gold</button>';
+      h += '<button class="btn" onclick="buySeed(\''+ss.id+'\')" style="font-size:10px;padding:2px 8px" '+(canBuy?'':'disabled')+'>'+ss.cost+' Gold</button>';
       h += '</div>';
     }
   }
@@ -2576,7 +2576,7 @@ function renderPet() {
     h += '</select>';
     h += '</div>';
     h += '<button class="btn primary" onclick="var a=document.getElementById(\'hatch-parent-a\').value;var b=document.getElementById(\'hatch-parent-b\').value;if(a&&b){hatchPet(a,b);updateUI();}" style="font-size:11px;padding:4px 14px">Hatch</button>';
-    h += '<span style="font-size:11px;color:var(--text-dim);margin-left:8px">Cost: ~100g per parent stage avg</span>';
+    h += '<span style="font-size:11px;color:var(--text-dim);margin-left:8px">Cost: ~100 Gold per parent stage avg</span>';
     h += '</div>';
     h += '</div></details>';
   }
@@ -2632,7 +2632,7 @@ function renderPet() {
           var avWorld = WORLDS[av.world] ? WORLDS[av.world].name : 'The Spiral';
           var avDurSec = Math.ceil(av.duration * Game.TICK_MS / 1000);
           var avDurStr = avDurSec >= 60 ? Math.floor(avDurSec/60) + 'm ' + (avDurSec%60) + 's' : avDurSec + 's';
-          var avRewards = [av.rewards.gold[0] + '-' + av.rewards.gold[1] + 'g', av.rewards.reagents + ' reagents'];
+          var avRewards = [av.rewards.gold[0] + '-' + av.rewards.gold[1] + ' Gold', av.rewards.reagents + ' reagents'];
           if (av.rewards.fishChance) avRewards.push('fish');
           if (av.rewards.snackChance) avRewards.push('snacks');
           if (av.rewards.animusChance) avRewards.push('animus');
@@ -2842,7 +2842,7 @@ function renderMap() {
       h += '<span style="display:flex;align-items:center;gap:6px">';
       if (progress) h += '<span style="font-size:10px;color:var(--text-dim)">' + progress + '</span>';
       if (canTravel && !(isCurrentWorld && z === Game.currentZone)) {
-        h += '<button class="btn" onclick="travelToWorld('+w+','+z+')" style="font-size:9px;padding:1px 8px" title="Travel here to farm this zone for XP, gold, and drops.">Farm</button>';
+        h += '<button class="btn" onclick="travelToWorld('+w+','+z+')" style="font-size:9px;padding:1px 8px" title="Travel here to farm this zone for XP, Gold, and drops.">Farm</button>';
       }
       h += '</span></div>';
       if (status !== 'locked' && status !== 'completed') h += '<div class="bar-track" style="margin-top:3px"><div class="bar-fill" style="width:'+zPct+'%;background:'+wColor+'"></div></div>';
@@ -2906,7 +2906,7 @@ function renderFishing() {
     var rodStatParts = [];
     if (eqRodData.stats.zoneBonus) rodStatParts.push('+' + eqRodData.stats.zoneBonus + '% zone');
     if (eqRodData.stats.speedReduction) rodStatParts.push('-' + (eqRodData.stats.speedReduction * 100).toFixed(0) + '% speed');
-    if (eqRodData.stats.goldBonus) rodStatParts.push('+' + eqRodData.stats.goldBonus + '% gold');
+    if (eqRodData.stats.goldBonus) rodStatParts.push('+' + eqRodData.stats.goldBonus + '% Gold');
     if (eqRodData.stats.rarityBonus) rodStatParts.push('+' + eqRodData.stats.rarityBonus + '% rarity');
     if (eqRodData.stats.energySave) rodStatParts.push('-' + eqRodData.stats.energySave + ' energy');
     if (rodStatParts.length > 0) h += '<span style="font-size:9px;color:var(--text-dim)">' + rodStatParts.join(' · ') + '</span>';
@@ -2920,7 +2920,7 @@ function renderFishing() {
       var rdStats = [];
       if (rd.stats.zoneBonus) rdStats.push('+' + rd.stats.zoneBonus + '% zone');
       if (rd.stats.speedReduction) rdStats.push('slower');
-      if (rd.stats.goldBonus) rdStats.push('+' + rd.stats.goldBonus + '% gold');
+      if (rd.stats.goldBonus) rdStats.push('+' + rd.stats.goldBonus + '% Gold');
       if (rd.stats.rarityBonus) rdStats.push('+' + rd.stats.rarityBonus + '% rarity');
       if (rd.stats.energySave) rdStats.push('-' + rd.stats.energySave + ' energy');
       h += '<option value="' + rods[ri2] + '"' + (rods[ri2] === equippedRod ? ' selected' : '') + '>' + rd.name + (rdStats.length > 0 ? ' (' + rdStats.join(', ') + ')' : '') + '</option>';
@@ -2974,7 +2974,7 @@ function renderFishing() {
       h += '<div class="item-info"><span class="item-name" style="color:' + FISH_RARITY_COLORS[cfish.rarity] + '">' + cfish.name + '</span>';
       h += '<span style="color:var(--text-dim);font-size:10px"> ×' + cqty + '</span>';
       h += '<div class="item-meta" style="color:var(--' + cfish.school + ')">' + cfish.school + ' · ' + cfish.rarity + '</div></div>';
-      h += '<div class="item-actions"><span class="price-tag price-normal">' + cfish.gold + 'g</span>';
+      h += '<div class="item-actions"><span class="price-tag price-normal">' + cfish.gold + ' Gold</span>';
       h += '<button class="btn" onclick="sellFish(\'' + cid + '\');_fishDirty=true;updateUI();" style="font-size:10px;padding:2px 6px">Sell</button></div>';
       h += '</div>';
     }
@@ -3008,7 +3008,7 @@ function renderFishing() {
         var qty = (f.catches && f.catches[tfid]) || 0;
         h += '<div style="padding:3px 6px;margin-bottom:2px;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;font-size:10px;border-left:3px solid ' + FISH_RARITY_COLORS[tf.rarity] + '">';
         h += '<div style="display:flex;justify-content:space-between"><span style="color:' + FISH_RARITY_COLORS[tf.rarity] + '">' + tf.name + '</span>';
-        h += '<span style="color:var(--text-dim)">' + tf.rarity + ' · ' + tf.gold + 'g</span></div>';
+        h += '<span style="color:var(--text-dim)">' + tf.rarity + ' · ' + tf.gold + ' Gold</span></div>';
         h += '<div style="color:var(--' + tf.school + ');font-size:9px">' + tf.school + ' · Rank ' + tf.rank + (tf.sentinel ? ' · Sentinel' : '') + '</div>';
         h += '<div style="color:var(--text-dim);font-size:9px;font-style:italic">' + tf.desc + '</div>';
         h += '</div>';
@@ -3480,19 +3480,19 @@ function renderGrimoire() {
 }
 function addToDeck(id) { setDeckSpellCount(id, (Game.deckBuild[id]||0)+1); _deckDirty=true; updateUI(); }
 function removeFromDeck(id) { setDeckSpellCount(id, 0); for(var i=0;i<Game.rules.length;i++){if(Game.rules[i].spellId===id)Game.rules[i].spellId='';} _deckDirty=true; updateUI(); }
-function updateRule(i,f,v) { if(f==='condition')Game.rules[i].conditionId=v; if(f==='spell')Game.rules[i].spellId=v; Game._customRules=true; saveGame(); }
+function updateRule(i,f,v) { if(f==='condition')Game.rules[i].conditionId=v; if(f==='spell')Game.rules[i].spellId=v; Game._customRules=true; saveGame(); _deckDirty=true; updateUI(); }
 function moveRule(i,dir) {
   var j = i + dir;
   if (j < 0 || j >= Game.rules.length) return;
   var tmp = Game.rules[i]; Game.rules[i] = Game.rules[j]; Game.rules[j] = tmp;
-  Game._customRules = true; saveGame();
+  Game._customRules = true; saveGame(); _deckDirty=true; updateUI();
 }
 function addRule() {
   var maxRules = Game.wizard.school === 'balance' ? 99 : getEffectiveWorldIndex() <= 1 ? 6 : getEffectiveWorldIndex() <= 3 ? 8 : getEffectiveWorldIndex() <= 5 ? 10 : 12;
   if(Game.rules.length>=maxRules){alert('Max '+maxRules+' rules at this world.');return;}
-  Game.rules.push({conditionId:'',spellId:''}); Game._customRules=true; saveGame();
+  Game.rules.push({conditionId:'',spellId:''}); Game._customRules=true; saveGame(); _deckDirty=true; updateUI();
 }
-function deleteRule(i) { Game.rules.splice(i,1); Game._customRules=true; saveGame(); }
+function deleteRule(i) { Game.rules.splice(i,1); Game._customRules=true; saveGame(); _deckDirty=true; updateUI(); }
 
 window.switchTab=switchTab; window.toggleMode=toggleMode; window.updateUI=updateUI;
 window.showFloatNumber=showFloatNumber; window.showPlayerFloat=showPlayerFloat; window.flashElement=flashElement;

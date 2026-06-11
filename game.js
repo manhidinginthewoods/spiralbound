@@ -23,7 +23,7 @@ const Game = {
   masteryAuras: {},
   enrollmentCount: 0,
   achievements: {},
-  stats: {encountersCleared:0, enemiesDefeated:0, bossesDefeated:0, spellsCast:0, fizzles:0, crits:0, goldEarned:0, deathCount:0},
+  stats: {encountersCleared:0, enemiesDefeated:0, bossesDefeated:0, spellsCast:0, fizzles:0, crits:0, GoldEarned:0, deathCount:0},
 };
 
 // ===== SCHOOL STATS =====
@@ -1423,7 +1423,7 @@ const ACHIEVEMENTS = {
   century:{name:'Century',desc:'Clear 100 encounters',check:function(){return Game.stats.encountersCleared>=100;}},
   thousand:{name:'Thousand',desc:'Clear 1000 encounters',check:function(){return Game.stats.encountersCleared>=1000;}},
   crit_master:{name:'Critical Master',desc:'Land 50 critical hits',check:function(){return Game.stats.crits>=50;}},
-  gold_hoarder:{name:'Gold Hoarder',desc:'Earn 10,000 gold total',check:function(){return Game.stats.goldEarned>=10000;}},
+  Gold_hoarder:{name:'Gold Hoarder',desc:'Earn 10,000 Gold total',check:function(){return Game.stats.goldEarned>=10000;}},
   first_death:{name:'Defeat',desc:'Get defeated for the first time',check:function(){return Game.stats.deathCount>=1;}},
   world_beater:{name:'World Beater',desc:'Complete Spindlewood',check:function(){return Game.furthestWorld>=1;}},
   globe_trotter:{name:'Globe Trotter',desc:'Reach Pyralis (World 5)',check:function(){return Game.furthestWorld>=4;}},
@@ -1923,7 +1923,7 @@ function bazaarTick() {
         tick: Game.tick
       });
       if (Game.bazaar.soldLog.length > 10) Game.bazaar.soldLog.shift();
-      addHubLog(buyerName + ' bought your ' + (bItem?bItem.name:bought.id) + ' for ' + bought.price + 'g!', 'crit');
+      addHubLog(buyerName + ' bought your ' + (bItem?bItem.name:bought.id) + ' for ' + bought.price + ' Gold!', 'crit');
       Game.bazaar.gearListings.splice(buyIdx, 1);
     }
   }
@@ -1954,7 +1954,7 @@ function bazaarBuyReagent(rid) {
   Game.gold -= price;
   Game.reagents[rid] = (Game.reagents[rid]||0) + 1;
   Game.bazaar.reagentStock[rid]--;
-  addLog('Bought ' + ALL_REAGENTS[rid].name + ' for ' + price + 'g', 'system');
+  addLog('Bought ' + ALL_REAGENTS[rid].name + ' for ' + price + ' Gold', 'system');
   saveGame();
 }
 
@@ -1965,7 +1965,7 @@ function bazaarSellReagent(rid) {
   Game.reagents[rid]--;
   Game.gold += price;
   Game.bazaar.reagentStock[rid] = (Game.bazaar.reagentStock[rid]||0) + 1;
-  addLog('Sold ' + ALL_REAGENTS[rid].name + ' for ' + price + 'g', 'system');
+  addLog('Sold ' + ALL_REAGENTS[rid].name + ' for ' + price + ' Gold', 'system');
   saveGame();
 }
 
@@ -1979,7 +1979,7 @@ function bazaarBuySnack(snackId) {
   migrateSnacks();
   addSnack(snackId, 1);
   if (Game.bazaar.snackStock) Game.bazaar.snackStock[snackId]--;
-  addLog('Bought ' + snack.name + ' for ' + price + 'g', 'system');
+  addLog('Bought ' + snack.name + ' for ' + price + ' Gold', 'system');
   saveGame();
 }
 
@@ -1992,7 +1992,7 @@ function bazaarSellSnack(snackId) {
   var price = SELL_PRICES[snackId] || Math.max(1, Math.floor(snack.xp * 2));
   Game.snacks[snackId]--;
   Game.gold += price;
-  addLog('Sold ' + snack.name + ' for ' + price + 'g', 'system');
+  addLog('Sold ' + snack.name + ' for ' + price + ' Gold', 'system');
   saveGame();
 }
 
@@ -2005,7 +2005,7 @@ function bazaarBuySeed(seedId) {
   Game.gold -= price;
   if (!Game.garden) createGarden();
   Game.garden.seeds[seedId] = (Game.garden.seeds[seedId]||0) + 1;
-  addLog('Bought ' + seed.name + ' seed for ' + price + 'g', 'system');
+  addLog('Bought ' + seed.name + ' seed for ' + price + ' Gold', 'system');
   saveGame();
 }
 
@@ -2017,7 +2017,7 @@ function bazaarListGear(gearId) {
   var price = Math.max(10, Math.floor((item.cost||30) * 0.5));
   Game.wizard.inventory.splice(idx, 1);
   Game.bazaar.gearListings.push({id:gearId, price:price, listed:Game.tick, seller:'You', npc:false});
-  addLog('Listed ' + item.name + ' on the Bazaar for ' + price + 'g', 'system');
+  addLog('Listed ' + item.name + ' on the Bazaar for ' + price + ' Gold', 'system');
   addHubLog('Listed ' + item.name + ' on Bazaar — NPCs may buy it', 'system');
   saveGame();
 }
@@ -2033,8 +2033,8 @@ function bazaarBuyGear(listIdx) {
   Game.wizard.inventory.push(listing.id);
   Game.bazaar.gearListings.splice(listIdx, 1);
   var sellerName = listing.seller || 'Unknown';
-  addLog('Bought ' + item.name + ' from ' + sellerName + ' for ' + listing.price + 'g', 'system');
-  addHubLog('Bought ' + item.name + ' from Bazaar (-' + listing.price + 'g)', 'system');
+  addLog('Bought ' + item.name + ' from ' + sellerName + ' for ' + listing.price + ' Gold', 'system');
+  addHubLog('Bought ' + item.name + ' from Bazaar (-' + listing.price + ' Gold)', 'system');
   saveGame();
 }
 
@@ -2045,8 +2045,8 @@ function bazaarQuickSellGear(gearId) {
   var price = Math.max(5, Math.floor((item.cost||20) * 0.3));
   Game.wizard.inventory.splice(idx, 1);
   Game.gold += price;
-  addLog('Quick-sold ' + item.name + ' for ' + price + 'g', 'system');
-  addHubLog('Quick-sold ' + item.name + ' (+' + price + 'g)', 'system');
+  addLog('Quick-sold ' + item.name + ' for ' + price + ' Gold', 'system');
+  addHubLog('Quick-sold ' + item.name + ' (+' + price + ' Gold)', 'system');
   saveGame();
 }
 
@@ -2192,7 +2192,7 @@ function transmute(fromId, toId) {
   var to = ALL_REAGENTS[toId];
   if (!from || !to || to.tier !== from.tier + 1) { addLog('Invalid transmutation.', 'info'); return; }
   if ((Game.reagents[fromId]||0) < 10) { addLog('Need 10 ' + from.name + ' to transmute.', 'info'); return; }
-  if (Game.gold < 50) { addLog('Transmutation costs 50 gold.', 'info'); return; }
+  if (Game.gold < 50) { addLog('Transmutation costs 50 Gold.', 'info'); return; }
   Game.reagents[fromId] -= 10;
   Game.reagents[toId] = (Game.reagents[toId]||0) + 1;
   Game.gold -= 50;
@@ -2328,7 +2328,7 @@ function bazaarBuyPotion(potionId) {
   if (!pot || Game.gold < pot.bazaarPrice) return;
   Game.gold -= pot.bazaarPrice;
   Game.potions[potionId]++;
-  addLog('Bought ' + pot.name + ' for ' + pot.bazaarPrice + 'g', 'system');
+  addLog('Bought ' + pot.name + ' for ' + pot.bazaarPrice + ' Gold', 'system');
   saveGame();
 }
 
@@ -2435,7 +2435,7 @@ function craftingTick() {
         if (!Game.wizard.inventory.includes(gid) && Game.wizard.gear[GEAR[gid].slot] !== gid) {
           Game.wizard.inventory.push(gid);
           addLog('Crafted: ' + GEAR[gid].name + '! Check Wizard tab.', 'crit'); addHubLog('Crafted ' + GEAR[gid].name, 'crit');
-        } else { addLog('Crafted: ' + GEAR[gid].name + ' (already owned, +50g)', 'system'); Game.gold += 50; }
+        } else { addLog('Crafted: ' + GEAR[gid].name + ' (already owned, +50 Gold)', 'system'); Game.gold += 50; }
       }
       Game.crafting.xp += r.xp;
       while (Game.crafting.rank < CRAFTING_RANKS.length-1 && Game.crafting.xp >= CRAFT_RANK_XP[Game.crafting.rank+1]) {
@@ -2501,7 +2501,7 @@ function getSpellEnchantBonus(spellId, stat) {
 const EVENT_TYPES = [
   {id:'professor_summons',name:'Summons',desc:'A reward awaits you.',instant:true,effect:function(){
     var prof = getProfessorName();
-    var g = (getEffectiveWorldIndex()+1)*25; Game.gold += g; addLog(prof + ' gives you ' + g + ' gold!', 'crit');}},
+    var g = (getEffectiveWorldIndex()+1)*25; Game.gold += g; addLog(prof + ' gives you ' + g + ' Gold!', 'crit');}},
   {id:'magical_surge',name:'Magical Surge',desc:'Wild magic surges — +15% damage for 40s!',instant:false,buff:{damage:15},duration:50},
   {id:'accuracy_surge',name:'Clarity Wave',desc:'The air sharpens — +10% accuracy for 40s!',instant:false,buff:{accuracy:10},duration:50},
   {id:'treasure',name:'Treasure Discovery',desc:'You stumble upon a hidden cache!',instant:true,effect:function(){
@@ -2512,12 +2512,12 @@ const EVENT_TYPES = [
     addLog('Found ' + amt + ' ' + ALL_REAGENTS[t].name + '!', 'crit');}},
   {id:'traveling_merchant',name:'Traveling Merchant',desc:'A wandering vendor offers rare seeds at a discount.',instant:true,effect:function(){
     var cost = (getEffectiveWorldIndex()+1)*40;
-    if (Game.gold < cost) { addLog('Not enough gold. The merchant moves on.','info'); return; }
+    if (Game.gold < cost) { addLog('Not enough Gold. The merchant moves on.','info'); return; }
     Game.gold -= cost;
     var seeds = ['lazy_tuber','jade_lotus','magma_root','pearl_kelp','deep_kelp','echo_moss'];
     var pick = seeds[Math.min(getEffectiveWorldIndex()-1, seeds.length-1)] || 'dandelweed';
     Game.garden.seeds[pick] = (Game.garden.seeds[pick]||0) + 2;
-    addLog('Bought 2x ' + SEEDS[pick].name + ' seeds for ' + cost + 'g!', 'crit');}},
+    addLog('Bought 2x ' + SEEDS[pick].name + ' seeds for ' + cost + ' Gold!', 'crit');}},
   {id:'snack_bonus',name:'Kitchen Surplus',desc:'The Spindlewood kitchen had leftovers.',instant:true,effect:function(){
     migrateSnacks();
     var tierSnacks = ['breadcrumb','breadcrumb','herb_cake','honey_bun','iron_biscuit','crystal_treat','arcane_truffle','starfruit'];
@@ -2546,12 +2546,12 @@ const EVENT_TYPES = [
       Game.monstrology.animus[aKey] = (Game.monstrology.animus[aKey] || 0) + 1;
     }
     addLog('Animus Resonance: +2 creature animus!', 'crit');}},
-  {id:'dueling_challenge',name:'Dueling Challenge',desc:'A rival wizard challenges you! Win a duel for double gold.',instant:true,effect:function(){
+  {id:'dueling_challenge',name:'Dueling Challenge',desc:'A rival wizard challenges you! Win a duel for double Gold.',instant:true,effect:function(){
     var bonus = (getEffectiveWorldIndex() + 1) * 40;
     Game.gold += bonus;
     Game.stats.goldEarned = (Game.stats.goldEarned||0) + bonus;
     trackAssignment('goldEarned', null, bonus);
-    addLog('Dueling Challenge accepted! +' + bonus + 'g!', 'crit');}},
+    addLog('Dueling Challenge accepted! +' + bonus + ' Gold!', 'crit');}},
   {id:'familiar_gift',name:'Familiar\'s Gift',desc:'Your familiar found something while you weren\'t looking.',instant:true,effect:function(){
     if (!Game.pet) return;
     var gifts = ['reagent','gold','snack'];
@@ -2562,7 +2562,7 @@ const EVENT_TYPES = [
       addLog(Game.pet.name + ' found 3x ' + (ALL_REAGENTS[rr]?ALL_REAGENTS[rr].name:rr) + '!', 'crit');
     } else if (pick === 'gold') {
       var gg = (getEffectiveWorldIndex()+1)*30; Game.gold+=gg; Game.stats.goldEarned=(Game.stats.goldEarned||0)+gg;
-      addLog(Game.pet.name + ' found ' + gg + ' gold!', 'crit');
+      addLog(Game.pet.name + ' found ' + gg + ' Gold!', 'crit');
     } else {
       migrateSnacks(); var sIds = typeof SNACK_IDS!=='undefined'?SNACK_IDS:[];
       if (sIds.length>0){var si=sIds[Math.floor(Math.random()*sIds.length)]; addSnack(si,2);
@@ -2576,16 +2576,16 @@ const EVENT_TYPES = [
     addLog('"Keep this up and I\'ll have to find harder tests." — Headmaster Duskhollow (+' + xpBonus + ' XP)', 'crit');}},
   // === CHOICE EVENTS ===
   {id:'wandering_trader',name:'Wandering Trader',desc:'A hooded figure offers a deal.',instant:true,isChoice:true,
-   choiceA:'Trade gold for 8 reagents',choiceB:'Decline',
-   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*75;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;for(var i=0;i<8;i++){var wr=getReagentDropsForWorld(getEffectiveWorldIndex());var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}addLog('Traded '+cost+'g for 8 reagents!','crit');},
+   choiceA:'Trade Gold for 8 reagents',choiceB:'Decline',
+   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*75;if(Game.gold<cost){addLog('Not enough Gold ('+cost+' Gold).','info');return;}Game.gold-=cost;for(var i=0;i<8;i++){var wr=getReagentDropsForWorld(getEffectiveWorldIndex());var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}addLog('Traded '+cost+'g for 8 reagents!','crit');},
    effectB:function(){addLog('"Your loss." The figure vanishes.','info');}},
   {id:'risky_chest',name:'Suspicious Chest',desc:'A glowing chest sits in the path. It hums.',instant:true,isChoice:true,
    choiceA:'Open it (70% treasure, 30% trap)',choiceB:'Leave it',
-   effectA:function(){if(Math.random()<0.7){var g=(getEffectiveWorldIndex()+1)*80;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Treasure! +'+g+' gold!','crit');}else{var dmg=Math.floor(Game.wizard.maxHp*0.15);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);addLog('Trap! -'+dmg+' HP!','fizzle');}},
+   effectA:function(){if(Math.random()<0.7){var g=(getEffectiveWorldIndex()+1)*80;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Treasure! +'+g+' Gold!','crit');}else{var dmg=Math.floor(Game.wizard.maxHp*0.15);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);addLog('Trap! -'+dmg+' HP!','fizzle');}},
    effectB:function(){addLog('You walk past. Probably wise.','info');}},
   {id:'spell_gamble',name:'The Gambler\'s Quill',desc:'A enchanted quill offers to rewrite your fate.',instant:true,isChoice:true,
-   choiceA:'Gamble: 50% double XP, 50% lose half gold',choiceB:'Decline',
-   effectA:function(){if(Math.random()<0.5){var xp=(getEffectiveWorldIndex()+1)*20;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog('The quill writes fortune! +'+xp+' XP!','crit');}else{var lost=Math.floor(Game.gold*0.5);Game.gold-=lost;addLog('The quill writes misfortune! -'+lost+' gold!','fizzle');}},
+   choiceA:'Gamble: 50% double XP, 50% lose half Gold',choiceB:'Decline',
+   effectA:function(){if(Math.random()<0.5){var xp=(getEffectiveWorldIndex()+1)*20;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog('The quill writes fortune! +'+xp+' XP!','crit');}else{var lost=Math.floor(Game.gold*0.5);Game.gold-=lost;addLog('The quill writes misfortune! -'+lost+' Gold!','fizzle');}},
    effectB:function(){addLog('"Coward," the quill mutters, and fades.','info');}},
   {id:'familiar_choice',name:'Stray Creature',desc:'A lost creature approaches. It carries something.',instant:true,isChoice:true,
    choiceA:'Take the item (random reagents)',choiceB:'Feed it (familiar XP)',
@@ -2594,26 +2594,26 @@ const EVENT_TYPES = [
   {id:'professor_test',name:'Pop Quiz',desc:'An unexpected test.',instant:true,isChoice:true,
    choiceA:'Attempt (80% pass: +XP, 20% fail: -mana)',choiceB:'Admit unpreparedness (+gold consolation)',
    effectA:function(){if(Math.random()<0.8){var xp=(getEffectiveWorldIndex()+1)*15;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog(getProfessorQuote()+' — '+getProfessorName()+' (+'+xp+' XP)','crit');}else{var mLoss=Math.floor(Game.wizard.maxMana*0.3);Game.wizard.mana=Math.max(0,Game.wizard.mana-mLoss);addLog('"Disappointing." — '+getProfessorName()+' (-'+mLoss+' mana)','fizzle');}},
-   effectB:function(){var g=(getEffectiveWorldIndex()+1)*20;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('"At least you\'re honest." — '+getProfessorName()+' (+'+g+'g)','info');}},
+   effectB:function(){var g=(getEffectiveWorldIndex()+1)*20;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('"At least you\'re honest." — '+getProfessorName()+' (+'+g+' Gold)','info');}},
   {id:'thread_anomaly',name:'Thread Anomaly',desc:'A loose thread of reality flutters nearby.',instant:true,isChoice:true,
    choiceA:'Pull it (+damage buff, -HP)',choiceB:'Leave it (+resist buff)',
    effectA:function(){Game.wizard._eventDmgBuff=(Game.wizard._eventDmgBuff||0)+20;recalcStats();var dmg=Math.floor(Game.wizard.maxHp*0.1);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);addLog('The thread unravels into power! +20% damage, -'+dmg+' HP.','crit');},
    effectB:function(){Game.wizard._eventAccBuff=(Game.wizard._eventAccBuff||0)+8;recalcStats();addLog('The thread wraps around you protectively. +8% accuracy.','cast');}},
   {id:'merchants_dilemma',name:'Merchant\'s Dilemma',desc:'Two merchants argue. Each wants your business.',instant:true,isChoice:true,
    choiceA:'Buy wand core (gold)',choiceB:'Buy fish bait (gold)',
-   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*60;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;var schoolCores={storm:'arc_filament',fire:'ember_vein',ice:'rime_shard',life:'heartwood_thread',death:'marrow_strand',myth:'glyph_thread',balance:'loom_splinter'};var cid=schoolCores[Game.wizard.school]||'arc_filament';awardWandCore(cid);addLog('Bought a wand core for '+cost+'g!','crit');},
-   effectB:function(){var cost=(getEffectiveWorldIndex()+1)*30;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;initFishing();Game.fishing.energy=Math.min(Game.fishing.maxEnergy,Game.fishing.energy+20);addLog('Bought bait for '+cost+'g. +20 fishing energy!','crit');}},
+   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*60;if(Game.gold<cost){addLog('Not enough Gold ('+cost+' Gold).','info');return;}Game.gold-=cost;var schoolCores={storm:'arc_filament',fire:'ember_vein',ice:'rime_shard',life:'heartwood_thread',death:'marrow_strand',myth:'glyph_thread',balance:'loom_splinter'};var cid=schoolCores[Game.wizard.school]||'arc_filament';awardWandCore(cid);addLog('Bought a wand core for '+cost+' Gold!','crit');},
+   effectB:function(){var cost=(getEffectiveWorldIndex()+1)*30;if(Game.gold<cost){addLog('Not enough Gold ('+cost+' Gold).','info');return;}Game.gold-=cost;initFishing();Game.fishing.energy=Math.min(Game.fishing.maxEnergy,Game.fishing.energy+20);addLog('Bought bait for '+cost+'g. +20 fishing energy!','crit');}},
   // === WORLD-SPECIFIC EVENTS ===
   // W1 Spindlewood
   {id:'ws_ink_spill',name:'Ink Spill',desc:'A bottle of enchanted ink shatters on the library floor.',world:0,instant:true,effect:function(){
-    var g=25;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('You help clean up. Grimsworth pays you '+g+'g.','crit');}},
+    var g=25;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('You help clean up. Grimsworth pays you '+g+' Gold.','crit');}},
   {id:'ws_bell_chime',name:'Bell Tower Resonance',desc:'The bell tower rings with unusual clarity.',world:0,instant:false,buff:{accuracy:8},duration:40},
   {id:'ws_lost_page',name:'Lost Textbook Page',desc:'A page from an advanced spellbook flutters past.',world:0,instant:true,effect:function(){
     var xp=12;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog('You study the page. +'+xp+' XP!','crit');}},
   // W2 Solara
   {id:'ws_sandstorm',name:'Sandstorm',desc:'A sudden sandstorm sweeps the dunes.',world:1,instant:false,buff:{accuracy:-12},duration:30},
   {id:'ws_buried_cache',name:'Buried Cache',desc:'The wind uncovers something half-buried in the sand.',world:1,instant:true,effect:function(){
-    var g=60+Math.floor(Math.random()*40);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Ancient coins! +'+g+' gold!','crit');}},
+    var g=60+Math.floor(Math.random()*40);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Ancient coins! +'+g+' Gold!','crit');}},
   {id:'ws_scarab_swarm',name:'Scarab Swarm',desc:'Golden scarabs surge from the tombs — the Bazaar will pay well.',world:1,instant:true,effect:function(){
     Game.reagents.scarab_shell=(Game.reagents.scarab_shell||0)+5;addLog('Collected 5 Scarab Shells!','crit');}},
   // W3 Pendleton
@@ -2640,7 +2640,7 @@ const EVENT_TYPES = [
   {id:'ws_deep_pressure',name:'Deep Pressure',desc:'The crushing pressure of the deep strengthens your resolve.',world:5,instant:false,buff:{damage:10,accuracy:-5},duration:50},
   {id:'ws_pearl_deposit',name:'Pearl Deposit',desc:'Luminescent pearls embedded in the cave wall.',world:5,instant:true,effect:function(){
     var g=180+Math.floor(Math.random()*60);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);
-    addLog('Harvested pearls worth '+g+' gold!','crit');}},
+    addLog('Harvested pearls worth '+g+' Gold!','crit');}},
   // W7 Penumbra
   {id:'ws_reality_flicker',name:'Reality Flicker',desc:'Everything shifts sideways for a moment. When it settles, something is different.',world:6,instant:true,effect:function(){
     if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};
@@ -2659,7 +2659,7 @@ const EVENT_TYPES = [
   {id:'ws_loom_fragment',name:'Loom Fragment',desc:'A piece of the old Loom surfaces. It still hums with purpose.',world:7,instant:true,effect:function(){
     var g=300+Math.floor((Game.spiralCycle||1)*25);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;
     for(var i=0;i<5;i++){var r=REAGENT_IDS[Math.floor(Math.random()*REAGENT_IDS.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}
-    addLog('The Loom Fragment dissolves into +'+g+'g and 5 reagents.','crit');}},
+    addLog('The Loom Fragment dissolves into +'+g+' Gold and 5 reagents.','crit');}},
   {id:'ws_mote_whisper',name:'Mote\'s Whisper',desc:'Mote presses against you and glows faintly.',world:7,instant:true,effect:function(){
     Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;
     addLog('Mote glows. You feel whole again. Full HP and mana restored.','crit');}},
@@ -2671,7 +2671,7 @@ const EVENT_TYPES = [
   {id:'ws_thread_harvest',name:'Thread Harvest',desc:'Loose threads drift by. You gather what you can.',world:7,instant:true,isChoice:true,
    choiceA:'Weave into shards (small chance of Spiral Shard)',choiceB:'Sell as raw thread (+gold)',
    effectA:function(){if(Math.random()<0.2){awardSpiralShard();}else{var r=REAGENT_IDS[Math.floor(Math.random()*REAGENT_IDS.length)];Game.reagents[r]=(Game.reagents[r]||0)+3;addLog('The threads dissolve into 3 reagents. No shard this time.','info');}},
-   effectB:function(){var g=150+(Game.spiralCycle||1)*30;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('Sold raw thread for '+g+' gold.','crit');}},
+   effectB:function(){var g=150+(Game.spiralCycle||1)*30;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('Sold raw thread for '+g+' Gold.','crit');}},
   {id:'ws_duskhollow_memory',name:'Duskhollow\'s Memory',desc:'You find a memory that doesn\'t belong to you. It belongs to the headmaster.',world:7,instant:true,effect:function(){
     var quotes=['"I tried to hold it together once. The Spiral showed me I was already part of the weave." — Duskhollow','"The threads don\'t break. They just find new shapes. Remember that." — Duskhollow','"Mote found me first, you know. I wasn\'t ready. You might be." — Duskhollow','"Cycle 47. That\'s where I stopped. Not because I couldn\'t go further." — Duskhollow'];
     var q=quotes[Math.floor(Math.random()*quotes.length)];
@@ -2954,7 +2954,7 @@ function plantSeed(plotIndex, seedId) {
 function tendPlot(plotIndex) {
   var plot = Game.garden.plots[plotIndex];
   if (!plot || !plot.needsTending) return;
-  if (Game.gold < 3) { addLog('Need 3 gold to tend plant.', 'info'); return; }
+  if (Game.gold < 3) { addLog('Need 3 Gold to tend plant.', 'info'); return; }
   Game.gold -= 3;
   plot.needsTending = false; plot.needTicks = 0;
   if (plot.wilting) { plot.wilting = false; plot.wiltTicks = 0; addLog('Plant revived!', 'system'); }
@@ -2978,7 +2978,7 @@ function harvestPlot(plotIndex, asElder) {
   var rewards = [];
   if (asElder && plot.stage === 'elder') {
     var r = seed.elderReward();
-    if (r.gold) { Game.gold += r.gold; rewards.push('+' + r.gold + ' gold'); }
+    if (r.gold) { Game.gold += r.gold; rewards.push('+' + r.gold + ' Gold'); }
     if (r.snack_type) { migrateSnacks(); addSnack(r.snack_type, r.snack_qty||1); rewards.push('+' + (r.snack_qty||1) + ' ' + SNACKS[r.snack_type].name); }
     if (r.snacks) { migrateSnacks(); addSnack('breadcrumb', r.snacks); rewards.push('+' + r.snacks + ' Breadcrumb'); }
     collectReagents(r, rewards);
@@ -3000,7 +3000,7 @@ function harvestPlot(plotIndex, asElder) {
     plot.needsTending = false; plot.wilting = false;
   } else if (plot.stage === 'mature') {
     var r2 = seed.matureReward();
-    if (r2.gold) { Game.gold += r2.gold; rewards.push('+' + r2.gold + ' gold'); }
+    if (r2.gold) { Game.gold += r2.gold; rewards.push('+' + r2.gold + ' Gold'); }
     if (r2.snack_type) { migrateSnacks(); addSnack(r2.snack_type, r2.snack_qty||1); rewards.push('+' + (r2.snack_qty||1) + ' ' + SNACKS[r2.snack_type].name); }
     if (r2.snacks) { migrateSnacks(); addSnack('breadcrumb', r2.snacks); rewards.push('+' + r2.snacks + ' Breadcrumb'); }
     collectReagents(r2, rewards);
@@ -3028,7 +3028,7 @@ function buySeed(seedId) {
   if (Game.gold < seed.cost) return;
   Game.gold -= seed.cost;
   Game.garden.seeds[seedId] = (Game.garden.seeds[seedId]||0) + 1;
-  addLog('Bought ' + seed.name + ' seed for ' + seed.cost + ' gold.', 'system');
+  addLog('Bought ' + seed.name + ' seed for ' + seed.cost + ' Gold.', 'system');
   saveGame();
 }
 
@@ -3216,7 +3216,7 @@ const PET_TALENTS = {
   mana_gift:{id:'mana_gift',name:'Aether Well',type:'stat',effect:{mana:10},desc:'+10 mana'},
   storm_giver:{id:'storm_giver',name:'Tempest Fang',type:'stat',effect:{damage:10},desc:'+10% storm damage'},
   snack_finder:{id:'snack_finder',name:'Keen Nose',type:'passive',effect:{bonusSnacks:true},desc:'Chance of bonus snacks from combat'},
-  gold_finder:{id:'gold_finder',name:'Gilt Sense',type:'passive',effect:{bonusGold:true},desc:'Chance of bonus gold from combat'},
+  Gold_finder:{id:'gold_finder',name:'Gilt Sense',type:'passive',effect:{bonusGold:true},desc:'Chance of bonus Gold from combat'},
   tough:{id:'tough',name:'Steelhide',type:'stat',effect:{resist:12},desc:'+12% universal resist'},
   sharp_blade:{id:'sharp_blade',name:'Razorclaw',type:'stat',effect:{pierce:8},desc:'+8% pierce'},
   keen_eye:{id:'keen_eye',name:'Eagle Eye',type:'stat',effect:{crit:10},desc:'+10% crit rating'},
@@ -3279,7 +3279,7 @@ function hatchPet(parentAId, parentBId) {
   if (!parentA || !parentB || parentA.id === parentB.id) return;
   if (parentA.stageIndex < 2 || parentB.stageIndex < 2) { addLog('Both familiars must be Attuned or higher to hatch.', 'info'); return; }
   var cost = 100 * Math.max(1, Math.floor((parentA.stageIndex + parentB.stageIndex) / 2));
-  if (Game.gold < cost) { addLog('Need ' + cost + ' gold to hatch.', 'info'); return; }
+  if (Game.gold < cost) { addLog('Need ' + cost + ' Gold to hatch.', 'info'); return; }
   Game.gold -= cost;
   var speciesId = Math.random() < 0.5 ? parentA.speciesId : parentB.speciesId;
   var poolA = parentA.talentPool.slice(0, 5);
@@ -3303,7 +3303,7 @@ function hatchPet(parentAId, parentBId) {
   Game.petRoster.push(newPet);
   addLog('', 'info');
   addLog('★ Hatched a new ' + species.name + '! (Innate: ' + newPet.innate + ')', 'crit');
-  addLog('  Pool mixed from ' + parentA.name + ' + ' + parentB.name + ' | Cost: ' + cost + 'g', 'system');
+  addLog('  Pool mixed from ' + parentA.name + ' + ' + parentB.name + ' | Cost: ' + cost + ' Gold', 'system');
   saveGame();
   return newPet;
 }
@@ -3567,7 +3567,7 @@ function buyGear(gearId) {
   if (Game.wizard.inventory.includes(gearId) || Object.values(Game.wizard.gear).includes(gearId)) return;
   Game.gold -= item.cost;
   Game.wizard.inventory.push(gearId);
-  addLog('Bought ' + item.name + ' for ' + item.cost + ' gold', 'system'); addHubLog('Bought ' + item.name + ' (-' + item.cost + 'g)', 'system'); saveGame();
+  addLog('Bought ' + item.name + ' for ' + item.cost + ' Gold', 'system'); addHubLog('Bought ' + item.name + ' (-' + item.cost + ' Gold)', 'system'); saveGame();
 }
 
 function sellGear(gearId) {
@@ -3578,8 +3578,8 @@ function sellGear(gearId) {
   var price = Math.max(5, Math.floor((item.cost||20) * 0.3));
   Game.wizard.inventory.splice(idx, 1);
   Game.gold += price;
-  addLog('Sold ' + item.name + ' for ' + price + ' gold', 'system');
-  addHubLog('Sold ' + item.name + ' (+' + price + 'g)', 'system');
+  addLog('Sold ' + item.name + ' for ' + price + ' Gold', 'system');
+  addHubLog('Sold ' + item.name + ' (+' + price + ' Gold)', 'system');
   saveGame();
 }
 
@@ -3602,7 +3602,7 @@ function sellAllGear() {
   Game.gold += total;
   Game.stats.goldEarned = (Game.stats.goldEarned||0) + total;
   addLog('Sold ' + count + ' items for ' + total + 'g.' + (keep.length > 0 ? ' (' + keep.length + ' locked kept)' : ''), 'system');
-  addHubLog('Sold ' + count + ' gear (+' + total + 'g)', 'system');
+  addHubLog('Sold ' + count + ' gear (+' + total + ' Gold)', 'system');
   saveGame();
 }
 
@@ -3663,7 +3663,7 @@ function gearScore(stats, gs) {
 function skipRest() {
   if (Game.state !== 'resting') return;
   var cost = Math.floor(Game.wizard.maxHp * 0.05);
-  if (Game.gold < cost) { addLog('Not enough gold to skip rest (' + cost + 'g).', 'info'); return; }
+  if (Game.gold < cost) { addLog('Not enough Gold to skip rest (' + cost + 'g).', 'info'); return; }
   Game.gold -= cost;
   Game.wizard.hp = Game.wizard.maxHp;
   Game.wizard.mana = Game.wizard.maxMana;
@@ -3960,12 +3960,12 @@ function castSpell(spell, targetIndex) {
           trackAssignment('schoolKills', tgt.school, 1);
           if (tgt.boss) trackAssignment('bossKills', null, 1);
           var worldMult = getEffectiveWorldIndex() + 1;
-          var goldScale = Math.floor(worldMult * worldMult * 2.5) + worldMult * 5;
-          var killGold = Math.floor(Math.random() * goldScale) + goldScale;
+          var GoldScale = Math.floor(worldMult * worldMult * 2.5) + worldMult * 5;
+          var killGold = Math.floor(Math.random() * GoldScale) + GoldScale;
           Game.gold += killGold;
           Game.stats.goldEarned = (Game.stats.goldEarned||0) + killGold;
           trackAssignment('goldEarned', null, killGold);
-          if (typeof goldFlash === 'function') goldFlash();
+          if (typeof GoldFlash === 'function') GoldFlash();
           if (typeof SFX !== 'undefined') SFX.gold();
           Game.wizard.xp += worldMult * 4 + 3;
           // Inline level-up check
@@ -4012,11 +4012,11 @@ function castSpell(spell, targetIndex) {
             var schoolCores = schoolCoreMap[tgt.school];
             if (schoolCores) { var scPick = schoolCores[Math.floor(Math.random()*schoolCores.length)]; awardWandCore(scPick); }
           }
-          // Pet passive: bonus gold/snacks
+          // Pet passive: bonus Gold/snacks
           if (Game.pet) {
             for (var pi = 0; pi < Game.pet.manifested.length; pi++) {
               var pt = PET_TALENTS[Game.pet.manifested[pi]];
-              if (pt && pt.effect.bonusGold && Math.random() < 0.2) { Game.gold += worldMult*3; addLog('  Familiar finds extra gold!', 'info'); }
+              if (pt && pt.effect.bonusGold && Math.random() < 0.2) { Game.gold += worldMult*3; addLog('  Familiar finds extra Gold!', 'info'); }
               if (pt && pt.effect.bonusSnacks && Math.random() < 0.15) { migrateSnacks(); addSnack('breadcrumb',1); addLog('  Familiar finds a Breadcrumb!', 'info'); }
             }
           }
@@ -5132,7 +5132,7 @@ function advanceEncounter() {
       Game.gold += pracGold;
       if (!Game.stats) Game.stats = {};
       Game.stats.goldEarned = (Game.stats.goldEarned || 0) + pracGold;
-      addLog('  +' + pracGold + ' gold', 'crit');
+      addLog('  +' + pracGold + ' Gold', 'crit');
       if (pracZone >= 3) {
         var pracReagents = 1 + Math.floor(pracZone / 2);
         for (var pri = 0; pri < pracReagents; pri++) {
@@ -5234,11 +5234,11 @@ function advanceEncounter() {
         addLog('★ CYCLE ' + Game.spiralCycle + ' COMPLETE ★', 'crit');
         addHubLog('Spiral Cycle ' + Game.spiralCycle + ' complete!', 'crit');
 
-        // Scaling gold reward
+        // Scaling Gold reward
         var spiralGold = Math.floor(200 * Game.spiralCycle + 100);
         Game.gold += spiralGold;
         if (!Game.stats) Game.stats = {}; Game.stats.goldEarned = (Game.stats.goldEarned||0) + spiralGold;
-        addLog('  +' + spiralGold + ' gold', 'system');
+        addLog('  +' + spiralGold + ' Gold', 'system');
 
         // Reagent bonus every cycle
         var spiralReagentCount = 1 + Math.floor(Game.spiralCycle / 5);
@@ -5410,7 +5410,7 @@ function gameTick() {
 function saveGame() {
   localStorage.setItem('spiralbound_save', JSON.stringify({
     wizard:Game.wizard, currentWorld:Game.currentWorld, currentZone:Game.currentZone,
-    currentEncounter:Game.currentEncounter, gold:Game.gold, rules:Game.rules,
+    currentEncounter:Game.currentEncounter, Gold:Game.gold, rules:Game.rules,
     deck:Game.deck, deckBuild:Game.deckBuild, mode:Game.mode, state:Game.state, round:Game.round,
     garden:Game.garden, snacks:Game.snacks, potions:Game.potions, reagents:Game.reagents,
     autoUnlocked:Game.autoUnlocked, pet:Game.pet, petRoster:Game.petRoster,
@@ -5591,7 +5591,7 @@ function resetGame() {
   Game.logMode = 'verbose';
   Game.graduatedSchools = []; Game.masteryAuras = {}; Game.enrollmentCount = 0;
   Game.achievements = {};
-  Game.stats = {encountersCleared:0, enemiesDefeated:0, bossesDefeated:0, spellsCast:0, fizzles:0, crits:0, goldEarned:0, deathCount:0};
+  Game.stats = {encountersCleared:0, enemiesDefeated:0, bossesDefeated:0, spellsCast:0, fizzles:0, crits:0, GoldEarned:0, deathCount:0};
   Game.bestiary = {};
   Game.fishing = null; Game.monstrology = {animus:{},summonCards:[],treasureCards:[]};
   Game.spire = null; Game.assignments = null; Game.tcSlots = [];
@@ -5660,7 +5660,7 @@ function processOfflineProgress() {
 
     var summary = {gold:0, motes:0, potions:0, snacks:0, gardenHarvests:0, craftsCompleted:0};
 
-    // Offline rewards — gold and consumables only, no XP
+    // Offline rewards — Gold and consumables only, no XP
     if (Game.state === 'fighting' || Game.state === 'resting') {
       var zone = getCurrentZone();
       var world = getCurrentWorld();
@@ -5679,9 +5679,9 @@ function processOfflineProgress() {
         var worldMult = getEffectiveWorldIndex() + 1;
         for (var enc = 0; enc < encountersSim; enc++) {
           var offGoldScale = Math.floor(worldMult * worldMult * 2.5) + worldMult * 5;
-          var goldEarned = Math.floor((Math.random()*offGoldScale + offGoldScale) * enemyIds.length);
-          Game.gold += goldEarned;
-          summary.gold += goldEarned;
+          var GoldEarned = Math.floor((Math.random()*offGoldScale + offGoldScale) * enemyIds.length);
+          Game.gold += GoldEarned;
+          summary.gold += GoldEarned;
           for (var ri = 0; ri < enemyIds.length; ri++) {
             if (Math.random() < 0.12) {
               var worldReagents = getReagentDropsForWorld(getEffectiveWorldIndex());
@@ -5754,7 +5754,7 @@ function processOfflineProgress() {
     var timeStr = mins >= 60 ? Math.floor(mins/60) + 'h ' + (mins%60) + 'm' : mins + 'm';
     var msg = 'Welcome back! (' + timeStr + ' away)';
     var details = [];
-    if (summary.gold > 0) details.push('+' + summary.gold + ' gold');
+    if (summary.gold > 0) details.push('+' + summary.gold + ' Gold');
     if (summary.motes > 0) details.push('+' + summary.motes + ' reagents');
     if (summary.snacks > 0) details.push('+' + summary.snacks + ' familiar snacks');
     if (summary.potions > 0) details.push('+' + summary.potions + ' potions');
@@ -6132,7 +6132,7 @@ function fishingTick() {
         Game.gold += soldGold;
         Game.stats.goldEarned = (Game.stats.goldEarned || 0) + soldGold;
         trackAssignment('goldEarned', null, soldGold);
-        addLog('Auto-sold ' + soldCount + ' common fish for ' + soldGold + 'g', 'info');
+        addLog('Auto-sold ' + soldCount + ' common fish for ' + soldGold + ' Gold', 'info');
       }
     }
   }
@@ -6287,7 +6287,7 @@ function sellFish(fishId) {
   Game.gold += sellPrice;
   Game.stats.goldEarned = (Game.stats.goldEarned || 0) + sellPrice;
   trackAssignment('goldEarned', null, sellPrice);
-  addLog('Sold ' + fish.name + ' for ' + sellPrice + 'g', 'info');
+  addLog('Sold ' + fish.name + ' for ' + sellPrice + ' Gold', 'info');
   saveGame();
 }
 
@@ -6308,7 +6308,7 @@ function sellAllFish() {
   Game.stats.goldEarned = (Game.stats.goldEarned || 0) + total;
   trackAssignment('goldEarned', null, total);
   Game.fishing.catches = {};
-  addLog('Sold ' + count + ' fish for ' + total + 'g!', 'cast');
+  addLog('Sold ' + count + ' fish for ' + total + ' Gold!', 'cast');
   saveGame();
 }
 
@@ -6873,11 +6873,11 @@ function spireFloorCleared() {
   }
 
   // Gold reward
-  var goldReward = 50 + floor * 30 + Math.floor(Math.pow(floor, 1.5) * 10);
-  Game.gold += goldReward;
-  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + goldReward;
-  trackAssignment('goldEarned', null, goldReward);
-  addLog('  +' + goldReward + ' gold', 'info');
+  var GoldReward = 50 + floor * 30 + Math.floor(Math.pow(floor, 1.5) * 10);
+  Game.gold += GoldReward;
+  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + GoldReward;
+  trackAssignment('goldEarned', null, GoldReward);
+  addLog('  +' + GoldReward + ' Gold', 'info');
 
   // Heal between floors: 20% HP, 15% mana
   var healAmt = Math.floor(Game.wizard.maxHp * 0.2);
@@ -6965,7 +6965,7 @@ const ASSIGNMENT_TEMPLATES = [
   {id:'harvest_plants',type:'garden',label:'Harvest {n} plants',gen:function(w){var n=2+Math.floor(w/2);return{target:n,desc:'Harvest '+n+' plants',stat:'plantsHarvested'};}},
   {id:'tend_garden',type:'garden',label:'Tend {n} plants',gen:function(w){var n=3+w;return{target:n,desc:'Tend '+n+' plants',stat:'plantsTended'};}},
   // Gold
-  {id:'earn_gold',type:'gold',label:'Earn {n} gold',gen:function(w){var n=(50+w*80)*Math.floor(1+w*0.5);return{target:n,desc:'Earn '+n+' gold',stat:'goldEarned'};}},
+  {id:'earn_gold',type:'gold',label:'Earn {n} Gold',gen:function(w){var n=(50+w*80)*Math.floor(1+w*0.5);return{target:n,desc:'Earn '+n+' Gold',stat:'goldEarned'};}},
   // Bestiary
   {id:'discover_enemies',type:'bestiary',label:'Discover {n} new species',gen:function(){return{target:2,desc:'Discover 2 new enemy species',stat:'newEnemies'};}},
   // Spire
@@ -6977,7 +6977,7 @@ const ASSIGNMENT_TEMPLATES = [
 ];
 
 const ASSIGNMENT_REWARDS = {
-  gold:function(w){return 40+w*60+Math.floor(Math.pow(w,1.5)*20);},
+  Gold:function(w){return 40+w*60+Math.floor(Math.pow(w,1.5)*20);},
   xp:function(w){return 5+w*8;},
   reagents:function(w){return 1+Math.floor(w/2);},
 };
@@ -7053,7 +7053,7 @@ function generateAssignments() {
       progress: 0,
       done: false,
       claimed: false,
-      goldReward: ASSIGNMENT_REWARDS.gold(w),
+      GoldReward: ASSIGNMENT_REWARDS.gold(w),
       xpReward: ASSIGNMENT_REWARDS.xp(w),
       reagentReward: ASSIGNMENT_REWARDS.reagents(w),
     });
@@ -7319,15 +7319,15 @@ function duelWon() {
   else if (duelist.winQuote) addLog('  ' + duelist.winQuote + ' — ' + duelist.name, 'info');
 
   // Rewards
-  var goldMult = 1 + Math.min(Game.dueling.streak - 1, 4) * 0.25;
-  var goldReward = Math.floor(duelist.reward.gold * goldMult);
+  var GoldMult = 1 + Math.min(Game.dueling.streak - 1, 4) * 0.25;
+  var GoldReward = Math.floor(duelist.reward.gold * GoldMult);
   var xpReward = duelist.reward.xp;
-  Game.gold += goldReward;
-  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + goldReward;
-  trackAssignment('goldEarned', null, goldReward);
+  Game.gold += GoldReward;
+  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + GoldReward;
+  trackAssignment('goldEarned', null, GoldReward);
   Game.wizard.xp = (Game.wizard.xp || 0) + xpReward;
   checkLevelUp();
-  addLog('  +' + goldReward + 'g' + (goldMult > 1 ? ' (streak x' + goldMult.toFixed(2) + ')' : '') + ' · +' + xpReward + ' XP', 'cast');
+  addLog('  +' + GoldReward + ' Gold' + (goldMult > 1 ? ' (streak x' + GoldMult.toFixed(2) + ')' : '') + ' · +' + xpReward + ' XP', 'cast');
 
   if (Game.dueling.streak >= 3) {
     addLog('  Win streak: ' + Game.dueling.streak + '!', 'crit');
@@ -7343,7 +7343,7 @@ function duelWon() {
     addLog('  First win bonus: +' + rCount + ' reagents!', 'cast');
   }
 
-  addHubLog('Duel won vs ' + duelist.name + ' (+' + goldReward + 'g)', 'crit');
+  addHubLog('Duel won vs ' + duelist.name + ' (+' + GoldReward + ' Gold)', 'crit');
   leaveDuel(false);
 }
 
@@ -7540,11 +7540,11 @@ function completeExpedition(index) {
   var details = [];
 
   // Gold
-  var goldEarned = Math.floor((rewards.gold[0] + Math.random() * (rewards.gold[1] - rewards.gold[0])) * rewardMult);
-  Game.gold += goldEarned;
-  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + goldEarned;
-  trackAssignment('goldEarned', null, goldEarned);
-  details.push('+' + goldEarned + 'g');
+  var GoldEarned = Math.floor((rewards.gold[0] + Math.random() * (rewards.gold[1] - rewards.gold[0])) * rewardMult);
+  Game.gold += GoldEarned;
+  Game.stats.goldEarned = (Game.stats.goldEarned || 0) + GoldEarned;
+  trackAssignment('goldEarned', null, GoldEarned);
+  details.push('+' + GoldEarned + ' Gold');
 
   // Reagents
   var reagentCount = Math.floor(rewards.reagents * rewardMult);
@@ -7975,7 +7975,7 @@ function getRivalDuelistData() {
     winQuote: getRivalQuote('duel_win'),
     lossQuote: getRivalQuote('duel_loss'),
     reward: {
-      gold: 80 + worldScale * 100,
+      Gold: 80 + worldScale * 100,
       xp: 20 + worldScale * 15,
     },
     isRival: true,
