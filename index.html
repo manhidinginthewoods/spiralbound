@@ -48,28 +48,28 @@
         <div class="ss-card" data-school="storm" onclick="selectSchool('storm')">
           <div class="ss-card-inner">
             <div class="school-name">Storm</div>
-            <div class="school-desc">Raw power and recklessness. Storm wizards live on the edge — volatile, unpredictable, and drawn to chaos. Nothing hits harder, and nothing falls apart faster.</div>
+            <div class="school-desc">Raw power and recklessness. Storm wizards live on the edge. Volatile, unpredictable, and drawn to chaos. Nothing hits harder, and nothing falls apart faster.</div>
             <div class="school-meta">Stormcaller · Prof. Galesworth</div>
           </div>
         </div>
         <div class="ss-card" data-school="fire" onclick="selectSchool('fire')">
           <div class="ss-card-inner">
             <div class="school-name">Fire</div>
-            <div class="school-desc">Relentless and consuming. Fire wizards don't stop once they start — they burn through everything in their path and feed off the wreckage. Patience isn't in the vocabulary.</div>
+            <div class="school-desc">Relentless and consuming. Fire wizards don't stop once they start. They burn through everything in their path and feed off the wreckage. Patience isn't in the vocabulary.</div>
             <div class="school-meta">Pyromancer · Prof. Ashveil</div>
           </div>
         </div>
         <div class="ss-card" data-school="ice" onclick="selectSchool('ice')">
           <div class="ss-card-inner">
             <div class="school-name">Ice</div>
-            <div class="school-desc">Still and immovable. Ice wizards endure what others can't — slow to act, impossible to break. The kind of person who wins by simply refusing to lose.</div>
+            <div class="school-desc">Still and immovable. Ice wizards endure what others can't. Slow to act, impossible to break. The kind of person who wins by simply refusing to lose.</div>
             <div class="school-meta">Frostbinder · Prof. Rimward</div>
           </div>
         </div>
         <div class="ss-card" data-school="life" onclick="selectSchool('life')">
           <div class="ss-card-inner">
             <div class="school-name">Life</div>
-            <div class="school-desc">Quiet strength and fierce compassion. Life wizards grow things — including themselves. Underestimate them and they'll outlast you with a smile.</div>
+            <div class="school-desc">Quiet strength and fierce compassion. Life wizards grow things, including themselves. Underestimate them and they'll outlast you with a smile.</div>
             <div class="school-meta">Verdancer · Prof. Fernsby</div>
           </div>
         </div>
@@ -96,7 +96,7 @@
         <div style="font-size:11px;color:#555;line-height:1.5">The Spiral. Every spell. Every aura. The endgame.</div>
       </div>
 
-      <div class="ss-version">Spiralbound v2.0</div>
+      <div class="ss-version">Spiralbound v1.0</div>
     </div>
   </div>
 
@@ -192,16 +192,12 @@
       <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px">Fluctuating prices. Stock refreshes periodically. Sell what you don't need, buy what you do.</p>
 
       <div id="bazaar-tabs" style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
-        <button class="btn bazaar-tab active" onclick="switchBazaarTab('reagents')" data-tab="reagents">Reagents</button>
-        <button class="btn bazaar-tab" onclick="switchBazaarTab('gear')" data-tab="gear">Gear</button>
+        <button class="btn bazaar-tab active" onclick="switchBazaarTab('gear')" data-tab="gear">Gear</button>
         <button class="btn bazaar-tab" onclick="switchBazaarTab('consumables')" data-tab="consumables">Consumables</button>
-        <button class="btn bazaar-tab" onclick="switchBazaarTab('seeds')" data-tab="seeds">Seeds</button>
       </div>
 
-      <div id="bazaar-reagents" class="bazaar-panel"></div>
-      <div id="bazaar-gear" class="bazaar-panel" style="display:none"></div>
+      <div id="bazaar-gear" class="bazaar-panel"></div>
       <div id="bazaar-consumables" class="bazaar-panel" style="display:none"></div>
-      <div id="bazaar-seeds" class="bazaar-panel" style="display:none"></div>
     </details>
   </div>
 
@@ -238,21 +234,19 @@
 
   <!-- ===== OPTIONS TAB ===== -->
   <div class="tab-content" id="tab-options">
-    <div class="section-head">Options</div>
-
     <details class="status-box" style="margin-bottom:8px">
       <summary><span class="tri"></span> Combat & Speed</summary>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Controls how much detail the Quill shows during combat.">
           <span>Combat Log</span>
-          <select onchange="Game.logMode=this.value;saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-logmode" onchange="Game.logMode=this.value;saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="verbose" selected>Verbose</option>
             <option value="summary">Summary</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Controls how fast the game ticks. Affects combat speed, garden growth, and all timers.">
           <span>Game Speed</span>
-          <select onchange="Game.TICK_MS=parseInt(this.value);if(Game.tickInterval){clearInterval(Game.tickInterval);Game.tickInterval=setInterval(gameTick,Game.TICK_MS);}saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-speed" onchange="Game.TICK_MS=parseInt(this.value);if(Game.tickInterval){clearInterval(Game.tickInterval);Game.tickInterval=setInterval(gameTick,Game.TICK_MS);}saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="1200">Slow</option>
             <option value="800" selected>Normal</option>
             <option value="500">Fast</option>
@@ -267,35 +261,35 @@
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically use potions when HP or mana drops below 25% during auto-combat.">
           <span>Auto-Potion</span>
-          <select onchange="Game.autoPotions=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-autopotion" onchange="Game.autoPotions=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on" selected>On</option>
             <option value="off">Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically reshuffle your deck when the draw pile is empty during auto-combat.">
           <span>Auto-Reshuffle</span>
-          <select onchange="Game.autoReshuffle=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-autoreshuffle" onchange="Game.autoReshuffle=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on" selected>On</option>
             <option value="off">Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically harvest mature garden plants. Elder plants still require manual harvest for bonus rewards.">
           <span>Auto-Harvest Garden</span>
-          <select onchange="Game.autoHarvest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-autoharvest" onchange="Game.autoHarvest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on">On</option>
             <option value="off" selected>Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically sell common-rarity fish when your bucket accumulates 10+. Rare, Epic, and Legendary fish are kept.">
           <span>Auto-Sell Common Fish</span>
-          <select onchange="Game.autoSellFish=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-autosellfish" onchange="Game.autoSellFish=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on">On</option>
             <option value="off" selected>Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically pay gold to skip rest and resume combat. Costs 5% of max HP in gold each time.">
           <span>Auto-Skip Rest</span>
-          <select onchange="Game.autoSkipRest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-autoskiprest" onchange="Game.autoSkipRest=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on">On</option>
             <option value="off" selected>Off</option>
           </select>
@@ -308,28 +302,28 @@
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Show colored notification dots on tabs when actions are available.">
           <span>Tab Notifications</span>
-          <select onchange="Game.showTabDots=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-tabdots" onchange="Game.showTabDots=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on" selected>On</option>
             <option value="off">Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Switch between 12-hour and 24-hour time format in the Quill log.">
           <span>Time Format</span>
-          <select onchange="Game.use24Hour=this.value==='24';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-timeformat" onchange="Game.use24Hour=this.value==='24';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="12" selected>12-hour</option>
             <option value="24">24-hour</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Toggle sound effects for combat, level ups, achievements, and other events.">
           <span>Sound Effects</span>
-          <select onchange="_soundEnabled=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
+          <select id="opt-sound" onchange="_soundEnabled=this.value==='on';saveGame();" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:3px 6px;font-family:inherit;font-size:11px">
             <option value="on" selected>On</option>
             <option value="off">Off</option>
           </select>
         </label>
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Adjust sound effect volume.">
           <span>Sound Volume</span>
-          <input type="range" min="0" max="100" value="30" oninput="_soundVolume=this.value/100;" style="width:80px;accent-color:var(--cast)">
+          <input id="opt-volume" type="range" min="0" max="100" value="30" oninput="_soundVolume=this.value/100;" style="width:80px;accent-color:var(--cast)">
         </label>
       </div>
     </details>
@@ -463,9 +457,9 @@
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Crafting & Gear</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn" onclick="Game.crafting.rank=CRAFTING_RANKS.length-1;addLog('DEV: Max crafting rank','system');saveGame();updateUI();">Max Craft</button>
-          <button class="btn" onclick="Game.crafting.inventory.enchantments.push('keen_edge','sharp_edge','brilliant_edge','precision','greater_precision','efficiency');addLog('DEV: +enchantments','system');saveGame();updateUI();">+Enchants</button>
-          <button class="btn" onclick="Game.crafting.inventory.jewels.push('ruby','sapphire','emerald','citrine','opal');addLog('DEV: +jewels','system');saveGame();updateUI();">+Jewels</button>
-          <button class="btn" onclick="initWandCraft();awardWandCore('arc_filament');awardWandCore('ember_vein');awardWandCore('rime_shard');awardWandCore('heartwood_thread');awardWandCore('marrow_strand');awardWandCore('glyph_thread');awardWandCore('loom_splinter');awardWandWood('thornwick_oak');awardWandWood('cogwood');awardWandWood('jade_bamboo');awardWandWood('obsidian_branch');awardWandWood('void_ash');awardWandWood('threadwood');_gearDirty=true;updateUI();">+All Wand Parts</button>
+          <button class="btn" onclick="Game.crafting.inventory.enchantments.push('keen_edge','sharp_edge','brilliant_edge','precision','greater_precision','efficiency','puncture','deep_puncture','sharpened_focus','ruthless_focus');addLog('DEV: +enchantments','system');saveGame();updateUI();">+Enchants</button>
+          <button class="btn" onclick="Game.crafting.inventory.jewels.push('ruby','sapphire','emerald','citrine','opal','diamond','onyx','garnet','topaz','moonstone','pearl');addLog('DEV: +jewels','system');saveGame();updateUI();">+Jewels</button>
+          <button class="btn" onclick="initWandCraft();awardWandCore('arc_filament');awardWandCore('ember_vein');awardWandCore('rime_shard');awardWandCore('heartwood_thread');awardWandCore('marrow_strand');awardWandCore('glyph_thread');awardWandCore('loom_splinter');awardWandCore('culmination_shard');awardWandWood('thornwick_oak');awardWandWood('cogwood');awardWandWood('jade_bamboo');awardWandWood('obsidian_branch');awardWandWood('void_ash');awardWandWood('threadwood');awardWandWood('gauntlet_heartwood');_gearDirty=true;updateUI();">+All Wand Parts</button>
         </div>
 
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Familiar</div>
@@ -528,7 +522,7 @@
 
     <div class="status-box">
       <div style="font-size:11px;color:var(--text-dim);line-height:1.6">
-        <strong style="color:var(--text-bright)">Spiralbound</strong> v2.0<br>
+        <strong style="color:var(--text-bright)">Spiralbound</strong> v1.0<br>
         Vanilla HTML/CSS/JS · localStorage saves
       </div>
     </div>
@@ -606,6 +600,21 @@
       }
     }
 
+    function syncOptionsUI() {
+      function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v;}
+      setVal('opt-logmode', Game.logMode||'verbose');
+      setVal('opt-speed', String(Game.TICK_MS||800));
+      setVal('opt-autopotion', Game.autoPotions!==false?'on':'off');
+      setVal('opt-autoreshuffle', Game.autoReshuffle!==false?'on':'off');
+      setVal('opt-autoharvest', Game.autoHarvest?'on':'off');
+      setVal('opt-autosellfish', Game.autoSellFish?'on':'off');
+      setVal('opt-autoskiprest', Game.autoSkipRest?'on':'off');
+      setVal('opt-tabdots', Game.showTabDots!==false?'on':'off');
+      setVal('opt-timeformat', Game.use24Hour?'24':'12');
+      setVal('opt-sound', typeof _soundEnabled!=='undefined'&&!_soundEnabled?'off':'on');
+      var vol=document.getElementById('opt-volume');if(vol)vol.value=Math.round((typeof _soundVolume!=='undefined'?_soundVolume:0.3)*100);
+    }
+
     // Boot
     window.addEventListener('load', () => {
       try {
@@ -629,6 +638,7 @@
             }
           }
           updateUI();
+          syncOptionsUI();
         }
       } catch(e) {
         console.error('Boot error:', e);

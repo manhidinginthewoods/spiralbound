@@ -367,10 +367,10 @@ details.status-box {
 .log-entry.fizzle { color: var(--fizzle); }
 .log-entry.crit { color: var(--crit); }
 .log-entry.heal { color: var(--heal); }
-.log-entry.info { color: var(--text-dim); }
+.log-entry.info { color: #9a9490; }
 .log-entry.kill { color: var(--text-bright); }
 .log-entry.death { color: var(--fizzle); font-weight: normal; }
-.log-entry.system { color: var(--cast); }
+.log-entry.system { color: var(--text-bright); }
 
 .combat-controls {
   display: flex;

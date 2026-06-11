@@ -1,4 +1,4 @@
-/* SPIRALBOUND UI v2.0 */
+/* SPIRALBOUND UI v1.0 */
 
 let selectedTargetIndex = 0;
 
@@ -440,6 +440,7 @@ function renderHub() {
   var recent = combined.slice(-120);
   var lh = '';
   for (var li = 0; li < recent.length; li++) {
+    if (!recent[li].text) continue;
     var ts = recent[li].ts ? '<span style="color:var(--border-light);font-size:10px">' + new Date(recent[li].ts).toLocaleTimeString([], Game.use24Hour ? {hour:'2-digit',minute:'2-digit',hour12:false} : {hour:'numeric',minute:'2-digit'}) + '</span> ' : '';
     var rivalStyle = '';
     if (recent[li].type === 'rival' && Game.rival) rivalStyle = ' style="color:var(--' + Game.rival.school + ')"';
@@ -586,12 +587,12 @@ function renderCombat() {
     _lastPhase = pk; _lastMode = Game.mode;
     var mb = document.getElementById('mode-btn');
     if (Game.autoUnlocked) {
-      mb.textContent = Game.mode === 'auto' ? '⚙ AUTO' : '✋ MANUAL';
+      mb.textContent = Game.mode === 'auto' ? 'AUTO' : 'MANUAL';
       mb.title = Game.mode === 'auto' ? 'Auto-combat: spells cast by priority rules. Click to switch to Manual.' : 'Manual combat: you choose each spell. Click to switch to Auto.';
       mb.className = Game.mode === 'auto' ? 'btn active' : 'btn';
       mb.disabled = false;
     } else {
-      mb.textContent = '✋ MANUAL (Auto locked)';
+      mb.textContent = 'MANUAL (Auto locked)';
       mb.title = 'Clear the Training Grounds (W1 Zone 2) to unlock auto-combat.';
       mb.className = 'btn';
       mb.disabled = true;
@@ -599,14 +600,8 @@ function renderCombat() {
 
     var pe = document.getElementById('phase-display');
     if (pe) {
-      var labels = {round_start:'New round...',player_turn:'Your turn',waiting_input:'⬇ Choose a spell or pass ⬇',player_pause:'...',enemy_turn:'Enemy turn',enemy_pause:'...',round_end:''};
+      var labels = {round_start:'New round...',player_turn:'Your turn',waiting_input:'Choose a spell or pass',player_pause:'...',enemy_turn:'Enemy turn',enemy_pause:'...',round_end:''};
       var phaseText = Game.state === 'fighting' ? (labels[Game.phase]||'') : '';
-      if (Game.combat && Game.state === 'fighting') {
-        var dc = Game.combat.drawPile ? Game.combat.drawPile.length : 0;
-        var hc = Game.combat.hand ? Game.combat.hand.length : 0;
-        var xc = Game.combat.discardPile ? Game.combat.discardPile.length : 0;
-        phaseText += (phaseText ? ' | ' : '') + 'Deck: ' + dc + ' | Hand: ' + hc + ' | Discard: ' + xc;
-      }
       pe.textContent = phaseText;
       pe.style.color = Game.phase === 'waiting_input' ? 'var(--cast)' : 'var(--text-dim)';
     }
@@ -643,7 +638,7 @@ function renderCombat() {
       var hh = '<div style="width:100%;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-dim);margin-bottom:6px">';
       hh += '<span>Hand: ' + hand.length + '/' + getHandSize() + ' | Draw pile: ' + drawCount + ' | Discarded: ' + discardCount + '</span>';
       var totalDeckCards = drawCount + hand.length + discardCount;
-      hh += '<button class="btn" onclick="manualReshuffle()" style="font-size:10px;padding:2px 8px" title="Costs your turn. All played and discarded spells return to your draw pile.">♻ Reshuffle (' + discardCount + '/' + totalDeckCards + ' played)</button>';
+      hh += '<button class="btn" onclick="manualReshuffle()" style="font-size:10px;padding:2px 8px" title="Costs your turn. All played and discarded spells return to your draw pile.">Reshuffle (' + discardCount + '/' + totalDeckCards + ' played)</button>';
       hh += '</div>';
       for (var k = 0; k < hand.length; k++) {
         var cardId = hand[k];
@@ -880,12 +875,6 @@ function renderDeck() {
   h += '<details><summary style="cursor:pointer;list-style:none"><div class="section-head" style="margin:0"><span class="tri"></span> Deck Builder — ' + totalCards + '/' + maxDeck + ' cards</div></summary><div style="padding-top:8px">';
   h += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Set how many copies of each spell go in your deck. Hand size: ' + getHandSize() + ' cards drawn per round.</p>';
   h += '<button class="btn" onclick="clearDeck();_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px;margin-bottom:8px;color:var(--fizzle)">Clear Deck</button>';
-  if (Game.combat) {
-    var drawLeft = Game.combat.drawPile ? Game.combat.drawPile.length : 0;
-    var discarded = Game.combat.discardPile ? Game.combat.discardPile.length : 0;
-    var inHand = Game.combat.hand ? Game.combat.hand.length : 0;
-    h += '<div style="font-size:11px;color:var(--cast);margin-bottom:8px">In combat — Draw: ' + drawLeft + ' | Hand: ' + inHand + ' | Discard: ' + discarded + '</div>';
-  }
 
   var allSpells = w.learnedSpells || [];
   var inDeckSpells = [];
@@ -1098,9 +1087,15 @@ function renderDeck() {
       }
       h += '</select><button class="rule-delete" onclick="deleteRule('+i+')">×</button></div>';
     }
-    h += '<div style="display:flex;gap:6px;margin-top:8px">';
+    h += '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">';
     h += '<button class="btn" onclick="addRule()">+ Add Rule</button>';
     h += '<button class="btn" onclick="Game.rules=getDefaultRules(Game.wizard.school,Game.wizard.learnedSpells);Game._customRules=false;_deckDirty=true;saveGame();updateUI();" style="font-size:10px;color:var(--text-dim)">Reset to Defaults</button>';
+    h += '</div>';
+    h += '<div style="margin-top:8px;font-size:10px;color:var(--text-dim)">Presets:</div>';
+    h += '<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">';
+    h += '<button class="btn" onclick="Game.rules=getPresetRules(\'balanced\');Game._customRules=false;_deckDirty=true;saveGame();updateUI();" style="font-size:10px;padding:2px 8px">Balanced</button>';
+    h += '<button class="btn" onclick="Game.rules=getPresetRules(\'aggressive\');Game._customRules=false;_deckDirty=true;saveGame();updateUI();" style="font-size:10px;padding:2px 8px">Aggressive</button>';
+    h += '<button class="btn" onclick="Game.rules=getPresetRules(\'defensive\');Game._customRules=false;_deckDirty=true;saveGame();updateUI();" style="font-size:10px;padding:2px 8px">Defensive</button>';
     h += '</div>';
 
     // Deck saving
@@ -1444,7 +1439,7 @@ function renderGear() {
     }
     // School mechanic
     var _mechDescs = {
-      storm: 'Voltage — each spell cast adds +5% damage to Storm spells, stacking up to +50%. Resets on fizzle.',
+      storm: 'Voltage — each spell cast adds +5% damage to Storm spells, stacking up to +50%. Resets on miscast.',
       fire: 'Burndown — each hit on a burning enemy adds +3% damage, stacking up to +30%. Resets between encounters.',
       ice: 'Glacial Momentum — each round in combat adds +2% damage, stacking indefinitely. Patience wins.',
       life: 'Overheal — healing above max HP converts excess into +damage% for your next attack.',
@@ -1455,6 +1450,8 @@ function renderGear() {
     if (_mechDescs[w.school]) {
       ph += '<div style="margin-top:8px;font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + _mechDescs[w.school] + '</div>';
     }
+    // School matchups — moved to damage preview
+
     // Training Points + Rival
     ph += '<div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;font-family:Courier New,monospace;border-top:1px solid var(--border);padding-top:6px">';
     ph += '<span style="color:var(--text-dim)">Training Points: <span style="color:var(--cast)">' + (w.trainingPoints || 0) + '</span></span>';
@@ -1509,6 +1506,21 @@ function renderGear() {
     }
     if (_previewSpells.length === 0) ph += '<div style="color:var(--text-dim)">No damage spells in deck.</div>';
     ph += '<div style="color:var(--text-dim);margin-top:4px">Multiplier: x' + _dmgMult.toFixed(2) + ' | Crit: x' + _critMult + '</div>';
+    var _mu = SCHOOL_MATCHUPS[w.school];
+    if (_mu && _mu.boosts.length > 0) {
+      var _strongVs = _mu.boosts.map(function(s){return '<span style="color:var(--'+s+')">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>';}).join(', ');
+      var _weakTo = [];
+      var _allSchools = ['storm','fire','ice','life','death','myth','balance'];
+      for (var _msi = 0; _msi < _allSchools.length; _msi++) {
+        var _ms = _allSchools[_msi];
+        if (_ms === w.school) continue;
+        var _mmu = SCHOOL_MATCHUPS[_ms];
+        if (_mmu && _mmu.boosts.indexOf(w.school) !== -1) _weakTo.push('<span style="color:var(--'+_ms+')">'+_ms.charAt(0).toUpperCase()+_ms.slice(1)+'</span>');
+      }
+      ph += '<div style="color:var(--text-dim);margin-top:4px">+' + SCHOOL_BOOST_PERCENT + '% vs ' + _strongVs;
+      if (_weakTo.length > 0) ph += ' · ' + _weakTo.join(', ') + ' +' + SCHOOL_BOOST_PERCENT + '% vs you';
+      ph += '</div>';
+    }
     ph += '</div></details>';
 
     // Lifetime Stats
@@ -2063,7 +2075,7 @@ function renderCraft() {
   for (var _cri = 0; _cri < _craftDetNew.length && _cri < _craftOpen.length; _cri++) {
     if (_craftOpen[_cri]) _craftDetNew[_cri].open = true;
   }
-}var _activeBazaarTab = 'reagents';
+}var _activeBazaarTab = 'gear';
 function switchBazaarTab(tab) {
   _activeBazaarTab = tab;
   var panels = document.querySelectorAll('.bazaar-panel');
@@ -2152,48 +2164,6 @@ function renderShop() {
   if (!Game.bazaar) return;
   startBazaarTimer();
 
-  // --- Reagents panel ---
-  if (_activeBazaarTab === 'reagents') {
-    var rEl = document.getElementById('bazaar-reagents');
-    if (rEl) {
-      var fw = Game.furthestWorld || 0;
-      var rh = '<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;color:var(--text-dim)"><span>Gold: <span style="color:var(--gold)">' + Game.gold + '</span></span></div>';
-      var lastTier = 0;
-      for (var ri = 0; ri < REAGENT_IDS.length; ri++) {
-        var rid = REAGENT_IDS[ri];
-        var reagent = ALL_REAGENTS[rid];
-        // Gate: only show reagents from worlds you've reached
-        var unlocked = false;
-        for (var rwi = 0; rwi < reagent.worlds.length; rwi++) { if (reagent.worlds[rwi] <= fw) unlocked = true; }
-        if (!unlocked) continue;
-        var buyPrice = Game.bazaar.reagentPrices[rid] || 10;
-        var sellPrice = Math.max(1, Math.floor(buyPrice * 0.6));
-        var stock = Game.bazaar.reagentStock[rid] || 0;
-        var ownedR = Game.reagents[rid] || 0;
-        var baseP = BAZAAR_REAGENT_BASE_PRICES[rid] || 10;
-        var priceDiff = buyPrice - baseP;
-        var priceClass = priceDiff > 2 ? 'price-up' : (priceDiff < -2 ? 'price-down' : 'price-normal');
-        var arrow = priceDiff > 2 ? '▲' : (priceDiff < -2 ? '▼' : '');
-
-        if (reagent.tier !== lastTier) {
-          lastTier = reagent.tier;
-          rh += '<div class="bazaar-section-head">' + REAGENT_TIER_NAMES[lastTier] + ' Reagents</div>';
-        }
-
-        rh += '<div class="bazaar-row">';
-        rh += '<div class="item-info"><span class="item-name" style="color:'+reagent.color+'">' + reagent.name + '</span>';
-        rh += ' <span class="item-meta">×' + ownedR + '</span></div>';
-        rh += '<div class="item-actions">';
-        rh += '<span class="price-tag ' + priceClass + '">' + arrow + ' ' + buyPrice + 'g</span>';
-        rh += '<span class="stock-tag">' + stock + ' in stock</span>';
-        rh += ' <button class="btn" onclick="bazaarBuyReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(Game.gold >= buyPrice && stock > 0 ? '' : 'disabled')+'>Buy</button>';
-        rh += ' <button class="btn" onclick="bazaarSellReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(ownedR > 0 ? '' : 'disabled')+'>Sell (' + sellPrice + 'g)</button>';
-        rh += '</div></div>';
-      }
-      rEl.innerHTML = rh;
-    }
-  }
-
   // --- Gear panel ---
   if (_activeBazaarTab === 'gear') {
     var gEl = document.getElementById('bazaar-gear');
@@ -2212,10 +2182,12 @@ function renderShop() {
           var nItem = GEAR[nListing.id];
           if (!nItem) continue;
           var nOwned = w.inventory.indexOf(nItem.id) !== -1 || w.gear[nItem.slot] === nItem.id;
-          var nCanBuy = Game.gold >= nListing.price && !nOwned;
+          var nLocked = nListing.locked || (nItem.world > (Game.furthestWorld||0));
+          var nCanBuy = Game.gold >= nListing.price && !nOwned && !nLocked;
           var nRealIdx = listings.indexOf(nListing);
-          gh += '<div class="bazaar-row" title="'+gearCompareTooltip(nItem)+'" style="cursor:help;'+(nOwned?'opacity:0.5':'')+'"><div class="item-info"><span class="item-name">'+nItem.name+'</span> <span class="item-meta">('+nItem.slot+') '+getScaledGearDesc(nItem)+'</span>';
-          gh += '<br><span style="color:var(--text-dim);font-size:10px">Seller: '+nListing.seller+'</span></div>';
+          gh += '<div class="bazaar-row" title="'+gearCompareTooltip(nItem)+'" style="cursor:help;'+((nOwned||nLocked)?'opacity:0.5':'')+'"><div class="item-info"><span class="item-name">'+nItem.name+'</span> <span class="item-meta">('+nItem.slot+') '+getScaledGearDesc(nItem)+'</span>';
+          if (nLocked) gh += '<br><span style="color:var(--text-dim);font-size:9px">[Requires ' + (WORLDS[nItem.world]?WORLDS[nItem.world].name:'?') + ']</span></div>';
+          else gh += '<br><span style="color:var(--text-dim);font-size:10px">Seller: '+nListing.seller+'</span></div>';
           gh += '<div class="item-actions">';
           if (nOwned) gh += '<span style="color:var(--text-dim);font-size:10px">Owned</span>';
           else gh += '<button class="btn" onclick="bazaarBuyGear('+nRealIdx+');_shopDirty=true;_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 8px" '+(nCanBuy?'':'disabled')+'>'+nListing.price+'g</button>';
@@ -2267,77 +2239,97 @@ function renderShop() {
     }
   }
 
-  // --- Consumables panel ---
-  if (_activeBazaarTab === 'consumables') {
+  // --- Consumables panel (reagents, potions, snacks, seeds) ---
+  if (_activeBazaarTab === 'consumables' || _activeBazaarTab === 'reagents' || _activeBazaarTab === 'seeds') {
+    _activeBazaarTab = 'consumables';
     var cEl = document.getElementById('bazaar-consumables');
     if (cEl) {
       var ch2 = '<div style="margin-bottom:8px;font-size:11px;color:var(--text-dim)">Gold: <span style="color:var(--gold)">' + Game.gold + '</span></div>';
 
-      // Potions first
-      migratePotions();
-      var POTION_WORLD_REQ = {mana_potion:0,health_potion:0,mana_elixir:2,health_elixir:2,restorative:3,wisps_brew:5};
-      var fwp = Game.furthestWorld || 0;
-      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none;margin-bottom:6px"><span class="tri"></span> Potions</summary><div>';
-      for (var cpi = 0; cpi < POTION_IDS.length; cpi++) {
-        var cpId = POTION_IDS[cpi];
-        if ((POTION_WORLD_REQ[cpId]||0) > fwp) continue;
-        var cpId = POTION_IDS[cpi];
-        var cpPot = POTIONS[cpId];
-        var cpOwned = Game.potions[cpId] || 0;
-        ch2 += '<div class="bazaar-row"><div class="item-info"><span class="item-name" style="color:'+cpPot.color+'">' + cpPot.name + '</span> <span class="item-meta">x' + cpOwned + ' — ' + cpPot.desc + '</span></div>';
-        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + cpPot.bazaarPrice + 'g</span>';
-        ch2 += ' <button class="btn" onclick="bazaarBuyPotion(\''+cpId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(Game.gold >= cpPot.bazaarPrice ? '' : 'disabled')+'>Buy</button>';
+      // Reagents
+      var fwR = Game.furthestWorld || 0;
+      ch2 += '<details><summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Reagents</summary><div>';
+      var lastTier = 0;
+      for (var ri = 0; ri < REAGENT_IDS.length; ri++) {
+        var rid = REAGENT_IDS[ri]; var reagent = ALL_REAGENTS[rid];
+        var rUnlocked = false;
+        for (var rwi = 0; rwi < reagent.worlds.length; rwi++) { if (reagent.worlds[rwi] <= fwR) rUnlocked = true; }
+        var buyPrice = Game.bazaar.reagentPrices[rid] || 10;
+        var sellPrice = Math.max(1, Math.floor(buyPrice * 0.6));
+        var stock = Game.bazaar.reagentStock[rid] || 0;
+        var ownedR = Game.reagents[rid] || 0;
+        var baseP = BAZAAR_REAGENT_BASE_PRICES[rid] || 10;
+        var priceDiff = buyPrice - baseP;
+        var priceClass = priceDiff > 2 ? 'price-up' : (priceDiff < -2 ? 'price-down' : 'price-normal');
+        var arrow = priceDiff > 2 ? '▲' : (priceDiff < -2 ? '▼' : '');
+        if (reagent.tier !== lastTier) { lastTier = reagent.tier; ch2 += '<div class="bazaar-section-head">' + REAGENT_TIER_NAMES[lastTier] + '</div>'; }
+        ch2 += '<div class="bazaar-row" style="' + (rUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+reagent.color+'">' + reagent.name + '</span>';
+        if (!rUnlocked) ch2 += ' <span style="color:var(--text-dim);font-size:9px">[' + reagent.worlds.map(function(w){return WORLDS[w]?WORLDS[w].name:'?';}).join('/') + ']</span>';
+        ch2 += ' <span class="item-meta">×' + ownedR + '</span></div>';
+        ch2 += '<div class="item-actions"><span class="price-tag ' + priceClass + '">' + arrow + ' ' + buyPrice + 'g</span><span class="stock-tag">' + stock + '</span>';
+        ch2 += ' <button class="btn" onclick="bazaarBuyReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(rUnlocked && Game.gold >= buyPrice && stock > 0 ? '' : 'disabled')+'>Buy</button>';
+        ch2 += ' <button class="btn" onclick="bazaarSellReagent(\''+rid+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(ownedR > 0 ? '' : 'disabled')+'>Sell (' + sellPrice + 'g)</button>';
         ch2 += '</div></div>';
       }
       ch2 += '</div></details>';
 
-      // Snacks second
+      // Potions
+      migratePotions();
+      var POTION_WORLD_REQ = {mana_potion:0,health_potion:0,mana_elixir:2,health_elixir:2,restorative:3,wisps_brew:5};
+      var fwp = Game.furthestWorld || 0;
+      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Potions</summary><div>';
+      for (var cpi = 0; cpi < POTION_IDS.length; cpi++) {
+        var cpId = POTION_IDS[cpi];
+        var cpUnlocked = (POTION_WORLD_REQ[cpId]||0) <= fwp;
+        var cpPot = POTIONS[cpId];
+        var cpOwned = Game.potions[cpId] || 0;
+        ch2 += '<div class="bazaar-row" style="' + (cpUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+cpPot.color+'">' + cpPot.name + '</span> <span class="item-meta">x' + cpOwned + ' — ' + cpPot.desc + '</span></div>';
+        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + cpPot.bazaarPrice + 'g</span>';
+        ch2 += ' <button class="btn" onclick="bazaarBuyPotion(\''+cpId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(cpUnlocked && Game.gold >= cpPot.bazaarPrice ? '' : 'disabled')+'>Buy</button>';
+        ch2 += '</div></div>';
+      }
+      ch2 += '</div></details>';
+
+      // Snacks
       migrateSnacks();
-      ch2 += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none;margin-bottom:6px"><span class="tri"></span> Familiar Snacks</summary><div>';
+      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Familiar Snacks</summary><div>';
       var SNACK_SELL_UI = {breadcrumb:3,herb_cake:8,honey_bun:20,iron_biscuit:35,crystal_treat:80,arcane_truffle:160,starfruit:320,spiral_morsel:700};
       var SNACK_WORLD_REQ = {breadcrumb:0,herb_cake:0,honey_bun:1,iron_biscuit:2,crystal_treat:3,arcane_truffle:4,starfruit:5,spiral_morsel:6};
       var fwc = Game.furthestWorld || 0;
       for (var csi = 0; csi < SNACK_IDS.length; csi++) {
         var csId = SNACK_IDS[csi];
-        if ((SNACK_WORLD_REQ[csId]||0) > fwc) continue;
+        var csUnlocked = (SNACK_WORLD_REQ[csId]||0) <= fwc;
         var csSnack = SNACKS[csId];
         var csOwned = Game.snacks[csId] || 0;
         var csBuyPrice = (Game.bazaar.snackPrices && Game.bazaar.snackPrices[csId]) || 10;
         var csSellPrice = SNACK_SELL_UI[csId] || Math.max(1, Math.floor(csSnack.xp * 2));
         var csStock = (Game.bazaar.snackStock && Game.bazaar.snackStock[csId]) || 0;
-        ch2 += '<div class="bazaar-row"><div class="item-info"><span class="item-name" style="color:'+csSnack.color+'">' + csSnack.name + '</span> <span class="item-meta">x' + csOwned + ' — ' + csSnack.xp + ' XP | ' + csSnack.desc + '</span></div>';
+        ch2 += '<div class="bazaar-row" style="' + (csUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:'+csSnack.color+'">' + csSnack.name + '</span> <span class="item-meta">x' + csOwned + ' — ' + csSnack.xp + ' XP</span></div>';
         ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + csBuyPrice + 'g</span><span class="stock-tag">' + csStock + '</span>';
-        ch2 += ' <button class="btn" onclick="bazaarBuySnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(Game.gold >= csBuyPrice && csStock > 0 ? '' : 'disabled')+'>Buy</button>';
+        ch2 += ' <button class="btn" onclick="bazaarBuySnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(csUnlocked && Game.gold >= csBuyPrice && csStock > 0 ? '' : 'disabled')+'>Buy</button>';
         ch2 += ' <button class="btn" onclick="bazaarSellSnack(\''+csId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px;color:var(--fizzle)" '+(csOwned > 0 ? '' : 'disabled')+'>Sell ('+csSellPrice+'g)</button>';
         ch2 += '</div></div>';
       }
       ch2 += '</div></details>';
-      cEl.innerHTML = ch2;
-    }
-  }
 
-  // --- Seeds panel ---
-  if (_activeBazaarTab === 'seeds') {
-    var sEl = document.getElementById('bazaar-seeds');
-    if (sEl) {
-      var sh = '<div style="margin-bottom:8px;font-size:11px;color:var(--text-dim)">Gold: <span style="color:var(--gold)">' + Game.gold + '</span></div>';
-      sh += '<div class="bazaar-section-head">Seeds for Sale</div>';
+      // Seeds
+      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Seeds</summary><div>';
       var seedKeys = Object.keys(BAZAAR_SEED_PRICES);
       var fws = Game.furthestWorld || 0;
       for (var ski = 0; ski < seedKeys.length; ski++) {
-        var seedId = seedKeys[ski];
-        var seed = SEEDS[seedId];
+        var seedId = seedKeys[ski]; var seed = SEEDS[seedId];
         if (!seed) continue;
-        if ((seed.rank||1) - 1 > fws) continue;
+        var seedUnlocked = (seed.rank||1) - 1 <= fws;
         var seedPrice = BAZAAR_SEED_PRICES[seedId];
         var seedOwned = (Game.garden && Game.garden.seeds[seedId]) || 0;
-        sh += '<div class="bazaar-row"><div class="item-info"><span class="item-name" style="color:var(--heal)">' + seed.name + '</span> <span class="item-meta">x' + seedOwned + ' — ' + seed.desc + '</span></div>';
-        sh += '<div class="item-actions"><span class="price-tag price-normal">' + seedPrice + 'g</span>';
-        sh += ' <button class="btn" onclick="bazaarBuySeed(\''+seedId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(Game.gold >= seedPrice ? '' : 'disabled')+'>Buy</button>';
-        sh += '</div></div>';
+        ch2 += '<div class="bazaar-row" style="' + (seedUnlocked ? '' : 'opacity:0.5') + '"><div class="item-info"><span class="item-name" style="color:var(--heal)">' + seed.name + '</span> <span class="item-meta">x' + seedOwned + ' — ' + seed.desc + '</span></div>';
+        ch2 += '<div class="item-actions"><span class="price-tag price-normal">' + seedPrice + 'g</span>';
+        ch2 += ' <button class="btn" onclick="bazaarBuySeed(\''+seedId+'\');_shopDirty=true;updateUI();" style="font-size:10px;padding:2px 6px" '+(seedUnlocked && Game.gold >= seedPrice ? '' : 'disabled')+'>Buy</button>';
+        ch2 += '</div></div>';
       }
+      ch2 += '</div></details>';
 
-      sEl.innerHTML = sh;
+      cEl.innerHTML = ch2;
     }
   }
 }

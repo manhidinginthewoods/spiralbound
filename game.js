@@ -1,4 +1,4 @@
-/* SPIRALBOUND — Game Engine v2.0
+/* SPIRALBOUND — Game Engine v1.0
    7 schools, 8 worlds, deck building, Bazaar, crafting,
    potions, pets, garden, Grand Enrollment, The Spiral */
 
@@ -510,7 +510,7 @@ const SPELLS = {
   // Initiate
   meteor_shower:{id:'meteor_shower',name:'Meteor Shower',school:'fire',pips:4,type:'damage',accuracy:75,mana:4,effect:{damage:[305,365],aoe:true},desc:'305-365 AoE Fire damage'},
   self_ignite:{id:'self_ignite',name:'Self-Ignite',school:'fire',pips:4,type:'damage',accuracy:100,mana:4,effect:{damage:[650,750],selfDamagePercent:20},desc:'650-750 dmg, costs 20% of your HP'},
-  hellhound:{id:'hellhound',name:'Hellhound',school:'fire',pips:'X',type:'damage',accuracy:75,mana:0,effect:{dot:{dmgPerPip:55,rounds:3},dynamicMana:true},desc:'55 DoT/pip/round for 3 rounds'},
+  hellhound:{id:'hellhound',name:'Hellhound',school:'fire',pips:'X',type:'damage',accuracy:75,mana:0,effect:{dot:{dmgPerPip:55,rounds:3},dynamicMana:true},desc:'55 DoT/sigil/round for 3 rounds'},
   // Journeyman
   salamander:{id:'salamander',name:'Salamander',school:'fire',pips:5,type:'damage',accuracy:75,mana:5,effect:{damage:[550,620]},desc:'550-620 Fire damage'},
   kindling:{id:'kindling',name:'Kindling',school:'fire',pips:2,type:'trap',accuracy:100,mana:2,effect:{trapPercent:25,tripleStack:true},desc:'+25% trap ×3 (stacks 3 traps)'},
@@ -1043,7 +1043,7 @@ function generateSpiralCycle(cycleNum) {
     } else {
       var encCount = 3 + Math.floor(Math.random() * 3);
       for (var e = 0; e < encCount; e++) {
-        var enemyCount = 1 + Math.floor(Math.random() * (cycleNum >= 15 ? 3 : 2));
+        var enemyCount = 1 + Math.floor(Math.random() * (cycleNum >= 30 ? 4 : cycleNum >= 15 ? 3 : 2));
         var enc = [];
         for (var ec = 0; ec < enemyCount; ec++) {
           var eSchool = baseTier.schools[Math.floor(Math.random() * baseTier.schools.length)];
@@ -1641,6 +1641,48 @@ function getDefaultRules(school, learnedSpells) {
   return rules;
 }
 
+function getPresetRules(preset) {
+  var school = Game.wizard.school;
+  var ls = Game.wizard.learnedSpells;
+  if (preset === 'balanced') return getDefaultRules(school, ls);
+  var has = function(id) { return ls.indexOf(id) !== -1; };
+  var rules = [];
+  var schoolDmgSpells = (SCHOOL_SPELLS[school] || []).flat().filter(function(id) { var sp = SPELLS[id]; return sp && has(id) && (sp.type === 'damage' || sp.type === 'drain'); });
+  schoolDmgSpells.sort(function(a,b){ return (SPELLS[b].pips === 'X' ? 99 : SPELLS[b].pips) - (SPELLS[a].pips === 'X' ? 99 : SPELLS[a].pips); });
+  var schoolBuffSpells = (SCHOOL_SPELLS[school] || []).flat().filter(function(id) { var sp = SPELLS[id]; return sp && has(id) && (sp.type === 'blade' || sp.type === 'trap' || sp.type === 'shield' || sp.type === 'charm' || sp.type === 'heal' || sp.type === 'absorb'); });
+
+  if (preset === 'aggressive') {
+    var aoeSpells = schoolDmgSpells.filter(function(id){ return SPELLS[id].effect && SPELLS[id].effect.aoe; });
+    if (aoeSpells.length > 0) rules.push({conditionId:'enemy_count_above_1',spellId:aoeSpells[0]});
+    for (var ai = 0; ai < Math.min(4, schoolDmgSpells.length); ai++) {
+      var asp = SPELLS[schoolDmgSpells[ai]];
+      var minSigils = asp.pips === 'X' ? 3 : Math.max(1, asp.pips);
+      rules.push({conditionId:'pips_above_' + Math.min(minSigils, 10), spellId:schoolDmgSpells[ai]});
+    }
+    if (schoolDmgSpells.length > 0) rules.push({conditionId:'always',spellId:schoolDmgSpells[schoolDmgSpells.length-1]});
+  }
+
+  if (preset === 'defensive') {
+    var heals = schoolBuffSpells.filter(function(id){ return SPELLS[id].type === 'heal'; });
+    var shields = schoolBuffSpells.filter(function(id){ return SPELLS[id].type === 'shield' || SPELLS[id].type === 'absorb'; });
+    var blades = schoolBuffSpells.filter(function(id){ return SPELLS[id].type === 'blade'; });
+    var traps = schoolBuffSpells.filter(function(id){ return SPELLS[id].type === 'trap'; });
+    if (heals.length > 0) rules.push({conditionId:'hp_below_50',spellId:heals[heals.length-1]});
+    if (shields.length > 0) rules.push({conditionId:'no_shield',spellId:shields[0]});
+    if (blades.length > 0) rules.push({conditionId:'no_blade',spellId:blades[0]});
+    if (traps.length > 0) rules.push({conditionId:'no_trap',spellId:traps[0]});
+    for (var di = 0; di < Math.min(3, schoolDmgSpells.length); di++) {
+      var dsp = SPELLS[schoolDmgSpells[di]];
+      var dSigils = dsp.pips === 'X' ? 3 : Math.max(1, dsp.pips);
+      rules.push({conditionId:'pips_above_' + Math.min(dSigils, 10), spellId:schoolDmgSpells[di]});
+    }
+    if (schoolDmgSpells.length > 0) rules.push({conditionId:'always',spellId:schoolDmgSpells[schoolDmgSpells.length-1]});
+  }
+
+  if (rules.length === 0) return getDefaultRules(school, ls);
+  return rules;
+}
+
 // ===== GEAR =====
 const GEAR_SLOTS = ['hat','robe','boots','wand','amulet','ring'];
 const GEAR = {
@@ -1754,7 +1796,7 @@ const BAZAAR_REAGENT_BASE_PRICES = {
 };
 const BAZAAR_SNACK_PRICE = 12;
 const BAZAAR_SEED_PRICES = {dandelweed:20,sunsprout:30,gear_sprout:60,jade_lotus:100,magma_root:180,pearl_kelp:300,deep_kelp:450,echo_moss:700};
-const BAZAAR_REFRESH_TICKS = 250;
+const BAZAAR_REFRESH_TICKS = 2250;
 
 const BAZAAR_NPC_NAMES = [
   'Finley Ashglow','Wren Kettleworth','Sibyl Duskmantle','Orin Copperleaf',
@@ -1780,12 +1822,12 @@ function pickNPCName() {
 }
 
 function generateNPCListings() {
-  var maxWorld = Math.min(Game.furthestWorld, 6);
   var count = 3 + Math.floor(Math.random() * 4);
   var gearKeys = Object.keys(GEAR);
+  var fw = Game.furthestWorld || 0;
   var eligible = gearKeys.filter(function(k) {
     var g = GEAR[k];
-    return g.world <= maxWorld && !g.crafted && !g.dropOnly && g.cost > 0;
+    return !g.crafted && !g.dropOnly && g.cost > 0;
   });
   if (eligible.length === 0) return;
   var used = {};
@@ -1802,7 +1844,8 @@ function generateNPCListings() {
       price: npcPrice,
       listed: Game.tick,
       seller: pickNPCName(),
-      npc: true
+      npc: true,
+      locked: item.world > fw
     });
   }
 }
@@ -2167,6 +2210,10 @@ const ENCHANTMENTS = {
   precision:{name:'Precision',bonus:{accuracy:5},desc:'+5% spell accuracy'},
   greater_precision:{name:'Greater Precision',bonus:{accuracy:10},desc:'+10% spell accuracy'},
   efficiency:{name:'Efficiency',bonus:{manaCost:-1},desc:'-1 mana cost (min 0)'},
+  puncture:{name:'Puncture',bonus:{pierce:5},desc:'+5% armor pierce'},
+  deep_puncture:{name:'Deep Puncture',bonus:{pierce:10},desc:'+10% armor pierce'},
+  sharpened_focus:{name:'Sharpened Focus',bonus:{crit:8},desc:'+8% critical chance'},
+  ruthless_focus:{name:'Ruthless Focus',bonus:{crit:15},desc:'+15% critical chance'},
 };
 
 const PET_JEWELS = {
@@ -2175,6 +2222,12 @@ const PET_JEWELS = {
   emerald:{name:'Emerald',stats:{accuracy:8},desc:'+8% accuracy'},
   citrine:{name:'Citrine',stats:{powerPip:12},desc:'+12% power sigil'},
   opal:{name:'Opal',stats:{hp:350},desc:'+350 HP'},
+  diamond:{name:'Diamond',stats:{crit:10},desc:'+10% crit'},
+  onyx:{name:'Onyx',stats:{pierce:8},desc:'+8% pierce'},
+  garnet:{name:'Garnet',stats:{damage:8,crit:4},desc:'+8% damage, +4% crit'},
+  topaz:{name:'Topaz',stats:{hp:200,resist:6},desc:'+200 HP, +6% resist'},
+  moonstone:{name:'Moonstone',stats:{critBlock:6,hp:200},desc:'+6% crit block, +200 HP'},
+  pearl:{name:'Pearl',stats:{accuracy:6,powerPip:8},desc:'+6% accuracy, +8% power sigil'},
 };
 
 // ===== POTIONS =====
@@ -2284,12 +2337,22 @@ const RECIPES = {
   precision_r:{name:'Precision',type:'enchantment',cost:{spring_water:2,iron_ore:1},result:{enchantment:'precision'},time:8,xp:12,rankReq:1},
   greater_precision_r:{name:'Greater Precision',type:'enchantment',cost:{black_pearl:1,sunstone:1},result:{enchantment:'greater_precision'},time:14,xp:22,rankReq:2},
   efficiency_r:{name:'Efficiency',type:'enchantment',cost:{black_pearl:2,blood_moss:1},result:{enchantment:'efficiency'},time:18,xp:35,rankReq:3},
+  puncture_r:{name:'Puncture',type:'enchantment',cost:{iron_ore:3,sunstone:1},result:{enchantment:'puncture'},time:12,xp:18,rankReq:2},
+  deep_puncture_r:{name:'Deep Puncture',type:'enchantment',cost:{sunstone:2,black_pearl:1,iron_ore:2},result:{enchantment:'deep_puncture'},time:20,xp:32,rankReq:3},
+  sharpened_focus_r:{name:'Sharpened Focus',type:'enchantment',cost:{amber_dust:1,blood_moss:1},result:{enchantment:'sharpened_focus'},time:16,xp:25,rankReq:3},
+  ruthless_focus_r:{name:'Ruthless Focus',type:'enchantment',cost:{amber_dust:2,blood_moss:2,sunstone:1},result:{enchantment:'ruthless_focus'},time:24,xp:40,rankReq:4},
   // Pet Jewels
   ruby_r:{name:'Ruby Jewel',type:'jewel',cost:{sunstone:2,blood_moss:1},result:{jewel:'ruby'},time:20,xp:30,rankReq:3},
   sapphire_r:{name:'Sapphire Jewel',type:'jewel',cost:{black_pearl:2,spring_water:3},result:{jewel:'sapphire'},time:20,xp:30,rankReq:3},
   emerald_r:{name:'Emerald Jewel',type:'jewel',cost:{sunstone:1,spring_water:2,iron_ore:2},result:{jewel:'emerald'},time:20,xp:30,rankReq:3},
   citrine_r:{name:'Citrine Jewel',type:'jewel',cost:{sunstone:2,amber_dust:1},result:{jewel:'citrine'},time:22,xp:35,rankReq:3},
   opal_r:{name:'Opal Jewel',type:'jewel',cost:{blood_moss:1,amber_dust:1},result:{jewel:'opal'},time:25,xp:40,rankReq:4},
+  diamond_r:{name:'Diamond Jewel',type:'jewel',cost:{amber_dust:3,sunstone:2},result:{jewel:'diamond'},time:28,xp:45,rankReq:4},
+  onyx_r:{name:'Onyx Jewel',type:'jewel',cost:{black_pearl:3,blood_moss:2},result:{jewel:'onyx'},time:25,xp:40,rankReq:4},
+  garnet_r:{name:'Garnet Jewel',type:'jewel',cost:{sunstone:3,amber_dust:2,blood_moss:1},result:{jewel:'garnet'},time:30,xp:50,rankReq:5},
+  topaz_r:{name:'Topaz Jewel',type:'jewel',cost:{spring_water:4,black_pearl:2,iron_ore:2},result:{jewel:'topaz'},time:30,xp:50,rankReq:5},
+  moonstone_r:{name:'Moonstone Jewel',type:'jewel',cost:{black_pearl:3,spring_water:3,amber_dust:1},result:{jewel:'moonstone'},time:32,xp:55,rankReq:5},
+  pearl_r:{name:'Pearl Jewel',type:'jewel',cost:{spring_water:4,sunstone:2,amber_dust:1},result:{jewel:'pearl'},time:30,xp:50,rankReq:5},
   // T2 Gear — Early (Mist Wood, Cat Tail)
   c_hat_e_r:{name:'Woven Storm Cap',type:'gear',cost:{mist_wood:6,cat_tail:4},result:{gear:'c_hat_e'},time:12,xp:15,rankReq:0},
   c_robe_e_r:{name:'Threaded Vestment',type:'gear',cost:{mist_wood:8,cat_tail:6},result:{gear:'c_robe_e'},time:15,xp:20,rankReq:0},
@@ -2430,10 +2493,13 @@ const EVENT_TYPES = [
     Game.reagents[t] = (Game.reagents[t]||0) + amt;
     addLog('Found ' + amt + ' ' + ALL_REAGENTS[t].name + '!', 'crit');}},
   {id:'traveling_merchant',name:'Traveling Merchant',desc:'A wandering vendor offers rare seeds at a discount.',instant:true,effect:function(){
+    var cost = (getEffectiveWorldIndex()+1)*40;
+    if (Game.gold < cost) { addLog('Not enough gold. The merchant moves on.','info'); return; }
+    Game.gold -= cost;
     var seeds = ['lazy_tuber','jade_lotus','magma_root','pearl_kelp','deep_kelp','echo_moss'];
     var pick = seeds[Math.min(getEffectiveWorldIndex()-1, seeds.length-1)] || 'dandelweed';
     Game.garden.seeds[pick] = (Game.garden.seeds[pick]||0) + 2;
-    addLog('Merchant gives you 2x ' + SEEDS[pick].name + ' seeds!', 'crit');}},
+    addLog('Bought 2x ' + SEEDS[pick].name + ' seeds for ' + cost + 'g!', 'crit');}},
   {id:'snack_bonus',name:'Kitchen Surplus',desc:'The Spindlewood kitchen had leftovers.',instant:true,effect:function(){
     migrateSnacks();
     var tierSnacks = ['breadcrumb','breadcrumb','herb_cake','honey_bun','iron_biscuit','crystal_treat','arcane_truffle','starfruit'];
@@ -2492,8 +2558,8 @@ const EVENT_TYPES = [
     addLog('"Keep this up and I\'ll have to find harder tests." — Headmaster Duskhollow (+' + xpBonus + ' XP)', 'crit');}},
   // === CHOICE EVENTS ===
   {id:'wandering_trader',name:'Wandering Trader',desc:'A hooded figure offers a deal.',instant:true,isChoice:true,
-   choiceA:'Trade 150g for 8 reagents',choiceB:'Decline',
-   effectA:function(){if(Game.gold<150){addLog('Not enough gold.','info');return;}Game.gold-=150;for(var i=0;i<8;i++){var wr=getReagentDropsForWorld(getEffectiveWorldIndex());var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}addLog('Traded 150g for 8 reagents!','crit');},
+   choiceA:'Trade gold for 8 reagents',choiceB:'Decline',
+   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*75;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;for(var i=0;i<8;i++){var wr=getReagentDropsForWorld(getEffectiveWorldIndex());var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}addLog('Traded '+cost+'g for 8 reagents!','crit');},
    effectB:function(){addLog('"Your loss." The figure vanishes.','info');}},
   {id:'risky_chest',name:'Suspicious Chest',desc:'A glowing chest sits in the path. It hums.',instant:true,isChoice:true,
    choiceA:'Open it (70% treasure, 30% trap)',choiceB:'Leave it',
@@ -2516,9 +2582,9 @@ const EVENT_TYPES = [
    effectA:function(){Game.wizard._eventDmgBuff=(Game.wizard._eventDmgBuff||0)+20;recalcStats();var dmg=Math.floor(Game.wizard.maxHp*0.1);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);addLog('The thread unravels into power! +20% damage, -'+dmg+' HP.','crit');},
    effectB:function(){Game.wizard._eventAccBuff=(Game.wizard._eventAccBuff||0)+8;recalcStats();addLog('The thread wraps around you protectively. +8% accuracy.','cast');}},
   {id:'merchants_dilemma',name:'Merchant\'s Dilemma',desc:'Two merchants argue. Each wants your business.',instant:true,isChoice:true,
-   choiceA:'Buy cores (wand core)',choiceB:'Buy fish bait (+20 fishing energy)',
-   effectA:function(){var schoolCores={storm:'arc_filament',fire:'ember_vein',ice:'rime_shard',life:'heartwood_thread',death:'marrow_strand',myth:'glyph_thread',balance:'loom_splinter'};var cid=schoolCores[Game.wizard.school]||'arc_filament';awardWandCore(cid);},
-   effectB:function(){initFishing();Game.fishing.energy=Math.min(Game.fishing.maxEnergy,Game.fishing.energy+20);addLog('The bait merchant grins. +20 fishing energy!','crit');}},
+   choiceA:'Buy wand core (gold)',choiceB:'Buy fish bait (gold)',
+   effectA:function(){var cost=(getEffectiveWorldIndex()+1)*60;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;var schoolCores={storm:'arc_filament',fire:'ember_vein',ice:'rime_shard',life:'heartwood_thread',death:'marrow_strand',myth:'glyph_thread',balance:'loom_splinter'};var cid=schoolCores[Game.wizard.school]||'arc_filament';awardWandCore(cid);addLog('Bought a wand core for '+cost+'g!','crit');},
+   effectB:function(){var cost=(getEffectiveWorldIndex()+1)*30;if(Game.gold<cost){addLog('Not enough gold ('+cost+'g).','info');return;}Game.gold-=cost;initFishing();Game.fishing.energy=Math.min(Game.fishing.maxEnergy,Game.fishing.energy+20);addLog('Bought bait for '+cost+'g. +20 fishing energy!','crit');}},
   // === WORLD-SPECIFIC EVENTS ===
   // W1 Spindlewood
   {id:'ws_ink_spill',name:'Ink Spill',desc:'A bottle of enchanted ink shatters on the library floor.',world:0,instant:true,effect:function(){
@@ -2684,8 +2750,8 @@ function eventTick() {
     }
   }
 
-  // Generate events every ~200 ticks
-  if (Game.tick - Game.events.lastEventTick > 200 + Math.floor(Math.random()*100)) {
+  // Generate events every ~10-15 minutes
+  if (Game.tick - Game.events.lastEventTick > 750 + Math.floor(Math.random()*375)) {
     if (Game.state === 'fighting' || Game.state === 'resting') {
       generateEvent();
       Game.events.lastEventTick = Game.tick;
@@ -3770,13 +3836,15 @@ function castSpell(spell, targetIndex) {
         var _boosted = false;
         if (schoolBoost > 0) { dmg = Math.floor(dmg * (1 + schoolBoost/100)); _boosted = true; }
         // School type resist — same-school damage is resisted
+        var enchPierceBonus = getSpellEnchantBonus(spell.id, 'pierce');
+        var enchCritBonus = getSpellEnchantBonus(spell.id, 'crit');
         var schoolRes = getSchoolResist(dmgSchool, tgt.school);
         var _resisted = false;
         if (schoolRes > 0) {
-          var effectiveSchoolRes = Math.max(0, schoolRes - (Game.wizard.pierce||0));
+          var effectiveSchoolRes = Math.max(0, schoolRes - (Game.wizard.pierce||0) - enchPierceBonus);
           if (effectiveSchoolRes > 0) { dmg = Math.floor(dmg * (1 - effectiveSchoolRes/100)); _resisted = true; }
         }
-        var critChance = (Game.wizard.crit || 5) / 100;
+        var critChance = ((Game.wizard.crit || 5) + enchCritBonus) / 100;
         var isCrit = Math.random() < critChance;
         if (isCrit) {
           var critMult = Game.masteryAuras && Game.masteryAuras.storm ? 2.5 : 2;
@@ -3786,9 +3854,9 @@ function castSpell(spell, targetIndex) {
           trackAssignment('critsLanded', null, 1);
         }
 
-        // Enemy resist (reduced by pierce)
+        // Enemy resist (reduced by pierce + enchant pierce)
         if (tgt.resistSchool && tgt.resistSchool === dmgSchool) {
-          var effectiveResist = Math.max(0, (tgt.resistPercent||0) - (Game.wizard.pierce||0));
+          var effectiveResist = Math.max(0, (tgt.resistPercent||0) - (Game.wizard.pierce||0) - enchPierceBonus);
           dmg = Math.floor(dmg * (1 - effectiveResist/100));
         }
         // Boss shield (Magnus Prime)
@@ -4195,7 +4263,7 @@ function handleBossDrop(target) {
     'Pyrrhus the Architect':['salamander_tongue','pyrrhus_cinder'],
     'The Tidebound Chorus':['glacier_tooth','permafrost_crystal'],
     'Your Echo':['tempest_nerve','fossil_nerve'],
-    'The Culmination':['fable_nerve','worldroot_fiber'],
+    'The Culmination':['culmination_shard','fable_nerve','worldroot_fiber'],
   };
   var bCores = bossCores[target.name];
   if (bCores && Math.random() < 0.25) {
@@ -4212,7 +4280,7 @@ function handleBossDrop(target) {
     'Pyrrhus the Architect':['obsidian_branch','forge_ironwood'],
     'The Tidebound Chorus':['pearl_driftwood','pressure_teak'],
     'Your Echo':['void_ash','memory_yew'],
-    'The Culmination':['void_ash','memory_yew'],
+    'The Culmination':['gauntlet_heartwood','void_ash','memory_yew'],
   };
   var bWoods = bossWoods[target.name];
   if (bWoods && Math.random() < 0.20) {
@@ -4607,7 +4675,7 @@ function enemyTurn() {
       addLog('  ' + enemy.name + ' is stunned!', 'info');
       continue;
     }
-    if (!rollAccuracy(enemy.accuracy, null)) { addLog('  ' + enemy.name + ' → fizzle', 'info'); continue; }
+    if (!rollAccuracy(enemy.accuracy, null)) { addLog('  ' + enemy.name + ' → miscast', 'info'); continue; }
     let dmg = rollDamage(enemy.damage);
     if (enemy.weakness) { dmg = Math.floor(dmg * (1 - enemy.weakness/100)); enemy.weakness = 0; }
     // School type advantage — enemy school vs player school
@@ -4683,6 +4751,18 @@ function evaluateRules() {
     if (!cond || !spell) continue;
     if (hand.indexOf(spell.id) === -1) continue;
     if (cond.check() && canAffordSpell(spell)) return spell;
+  }
+  // Fallback: cast any affordable damage spell in hand
+  for (var fi = 0; fi < hand.length; fi++) {
+    var fid = isTcId(hand[fi]) ? getTcSpellId(hand[fi]) : hand[fi];
+    var fs = SPELLS[fid];
+    if (fs && (fs.type === 'damage' || fs.type === 'drain') && canAffordSpell(fs)) return fs;
+  }
+  // Last resort: cast any affordable spell in hand
+  for (var li = 0; li < hand.length; li++) {
+    var lid = isTcId(hand[li]) ? getTcSpellId(hand[li]) : hand[li];
+    var ls = SPELLS[lid];
+    if (ls && canAffordSpell(ls)) return ls;
   }
   return null;
 }
@@ -4908,8 +4988,9 @@ function combatTick() {
       if (getAliveEnemies().length===0) { Game.phase = 'round_end'; }
       break;
     case 'player_pause':
-      Game.phase = 'enemy_turn';
-      if (Game.mode === 'auto') { enemyTurn(); if (Game.wizard.hp <= 0) { handleDeath(); return; } Game.phase = 'round_end'; }
+      enemyTurn();
+      if (Game.wizard.hp <= 0) { handleDeath(); return; }
+      Game.phase = 'round_end';
       break;
     case 'enemy_turn':
       enemyTurn();
@@ -4946,7 +5027,7 @@ function manualCast(spellId) {
   if (!spell||!canAffordSpell(spell)) return;
   if (Game.combat && Game.combat.hand.indexOf(spellId) === -1) return;
   useCardFromHand(spellId);
-  castSpell(spell, window._selectedTarget||0);
+  try { castSpell(spell, window._selectedTarget||0); } catch(e) { console.error('Cast error:', e); }
   Game.phase = getAliveEnemies().length===0 ? 'round_end' : 'player_pause';
   updateUI();
 }
@@ -7579,6 +7660,8 @@ const WAND_CORES = {
   // Balance cores (Spiral-only)
   loom_splinter:{id:'loom_splinter',name:'Loom Splinter',school:'balance',desc:'A fragment of the Spiral\'s own loom.',stats:{damage:12,accuracy:4,pierce:4},source:'The Spiral'},
   convergence_thread:{id:'convergence_thread',name:'Convergence Thread',school:'balance',desc:'Woven from every school at once.',stats:{damage:18,pierce:8,crit:6,accuracy:4},source:'The Convergence'},
+  // Practicum core (carries over between enrollments)
+  culmination_shard:{id:'culmination_shard',name:'Culmination Shard',school:'balance',desc:'A fragment of everything you\'ve ever fought, compressed into one edge.',stats:{damage:16,pierce:6,crit:5,accuracy:3},source:'The Culmination'},
 };
 
 const WAND_WOODS = {
@@ -7605,6 +7688,8 @@ const WAND_WOODS = {
   memory_yew:{id:'memory_yew',name:'Memory Yew',world:6,desc:'Remembers every spell ever cast through it.',stats:{accuracy:8,powerPip:8,mana:15},source:'Echo Field expedition'},
   // Spiral
   threadwood:{id:'threadwood',name:'Threadwood',world:7,desc:'Not wood. Not thread. Something between.',stats:{damage:14,resist:8,crit:8,pierce:6,accuracy:4},source:'Thread Garden expedition'},
+  // Practicum
+  gauntlet_heartwood:{id:'gauntlet_heartwood',name:'Gauntlet Heartwood',world:7,desc:'Forged from the Practicum floor itself. It absorbed every spell cast there.',stats:{resist:10,hp:250,accuracy:6,critBlock:6},source:'The Grand Practicum'},
 };
 
 function initWandCraft() {
@@ -7887,7 +7972,7 @@ function rivalGraduation() {
 
 // ===== EXPORTS =====
 window.Game=Game; window.SPELLS=SPELLS; window.WORLDS=WORLDS; window.CONDITIONS=CONDITIONS;
-window.GEAR=GEAR; window.GEAR_SLOTS=GEAR_SLOTS; window.SHOPS=SHOPS; window.RANKS=RANKS; window.LEVEL_XP=LEVEL_XP; window.SCHOOL_SPELL_LEVELS=SCHOOL_SPELL_LEVELS; window.checkLevelUp=checkLevelUp; window.getDefaultRules=getDefaultRules;
+window.GEAR=GEAR; window.GEAR_SLOTS=GEAR_SLOTS; window.SHOPS=SHOPS; window.RANKS=RANKS; window.LEVEL_XP=LEVEL_XP; window.SCHOOL_SPELL_LEVELS=SCHOOL_SPELL_LEVELS; window.checkLevelUp=checkLevelUp; window.getDefaultRules=getDefaultRules; window.getPresetRules=getPresetRules;
 window.SCHOOL_STATS=SCHOOL_STATS; window.SCHOOL_GEAR_SCALING=SCHOOL_GEAR_SCALING; window.SCHOOL_MATCHUPS=SCHOOL_MATCHUPS; window.SCHOOL_SPELLS=SCHOOL_SPELLS; window.getWizardTitle=getWizardTitle; window.getProfessorName=getProfessorName; window.getProfessorQuote=getProfessorQuote;
 window.ENEMIES=ENEMIES; window.getBazaarItems=getBazaarItems;
 window.initGame=initGame; window.loadGame=loadGame; window.saveGame=saveGame; window.resetGame=resetGame;
@@ -7908,7 +7993,7 @@ window.setActivePet=setActivePet; window.findPet=findPet;
 window.startBossFight=startBossFight; window.expandGarden=expandGarden; window.handleDeath=handleDeath; window.rankUp=rankUp;
 window.devSkipZone=devSkipZone; window.devSkipWorld=devSkipWorld;
 window.devUnlockAll=devUnlockAll; window.devAddSeeds=devAddSeeds; window.devKillEnemies=devKillEnemies;
-// v2.0 systems
+// v1.0 systems
 window.ALL_REAGENTS=ALL_REAGENTS; window.REAGENT_IDS=REAGENT_IDS; window.REAGENT_TIER_NAMES=REAGENT_TIER_NAMES; window.REAGENT_TIER_COLORS=REAGENT_TIER_COLORS;
 window.transmute=transmute; window.collectReagents=collectReagents; window.getDefaultReagents=getDefaultReagents; window.getReagentDropsForWorld=getReagentDropsForWorld;
 window.CRAFTING_RANKS=CRAFTING_RANKS; window.CRAFT_RANK_XP=CRAFT_RANK_XP;
