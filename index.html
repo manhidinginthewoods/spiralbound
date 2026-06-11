@@ -12,7 +12,6 @@
   <div class="game-header">
     <div class="game-title">SPIRAL<span>BOUND</span></div>
     <div class="header-stats">
-      <span title="Gold — earned from combat, fish sales, events, and assignments. Spent on gear, seeds, bazaar items, and garden tending.">Gold: <span class="stat-val" id="header-gold">0</span></span>
       <span id="header-location" style="color:var(--text-dim)"></span>
     </div>
   </div>
@@ -33,59 +32,71 @@
   </div>
 
   <!-- SCHOOL SELECTION OVERLAY -->
-  <div id="school-select" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0e0e10;z-index:100;overflow-y:auto">
-    <div style="max-width:560px;margin:0 auto;padding:40px 20px;text-align:center">
-      <div style="font-size:32px;color:#fff;letter-spacing:6px;margin-bottom:6px;font-family:'Courier New',monospace">SPIRAL<span style="color:#c0b8a0">BOUND</span></div>
-      <div style="width:60px;height:1px;background:#c0b8a0;margin:0 auto 20px"></div>
-      <div style="font-size:13px;color:#887;margin-bottom:8px;font-style:italic;line-height:1.6">"Welcome to Spindlewood. You'll find it confusing at first.<br>That's by design."</div>
-      <div style="font-size:11px;color:#665;margin-bottom:40px">— Headmaster Harlan Duskhollow</div>
+  <div id="school-select" style="display:none">
+    <div class="ss-container">
+      <div class="ss-title">SPIRAL<span>BOUND</span></div>
+      <div class="ss-divider"></div>
 
-      <div style="font-size:11px;color:#999;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase">Name Your Wizard</div>
-      <input type="text" id="wizard-name-input" placeholder="Enter name..." maxlength="24" style="background:#1a1a1c;border:1px solid #c0b8a040;border-radius:6px;padding:10px 16px;font-family:'Courier New',monospace;font-size:14px;color:#fff;text-align:center;width:260px;margin-bottom:24px;outline:none" onfocus="this.style.borderColor='#c0b8a0'" onblur="this.style.borderColor='#c0b8a040'">
+      <div class="ss-label">Name Your Wizard</div>
+      <div style="margin-bottom:32px">
+        <input type="text" id="wizard-name-input" class="ss-name-input" placeholder="Enter name..." maxlength="24">
+      </div>
 
-      <div style="font-size:11px;color:#999;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">Choose Your School</div>
+      <div class="ss-label" style="margin-bottom:16px">Choose Your School</div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-        <div class="school-card" onclick="selectSchool('storm')" style="background:#12122a;border:1px solid #9c7cf240;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#9c7cf2';this.style.background='#1a1a35'" onmouseout="this.style.borderColor='#9c7cf240';this.style.background='#12122a'">
-          <div style="font-size:18px;color:#9c7cf2;margin-bottom:6px">Storm</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Stormcallers deal devastating damage but have the lowest health and their spells fizzle more than any other school. When a storm spell lands, the fight is usually over.</div>
-          <div style="font-size:10px;color:#9c7cf280;margin-top:8px">Stormcaller · Prof. Galesworth</div>
+      <div class="ss-grid">
+        <div class="ss-card" data-school="storm" onclick="selectSchool('storm')">
+          <div class="ss-card-inner">
+            <div class="school-name">Storm</div>
+            <div class="school-desc">Raw power and recklessness. Storm wizards live on the edge — volatile, unpredictable, and drawn to chaos. Nothing hits harder, and nothing falls apart faster.</div>
+            <div class="school-meta">Stormcaller · Prof. Galesworth</div>
+          </div>
         </div>
-        <div class="school-card" onclick="selectSchool('fire')" style="background:#1a1210;border:1px solid #f0604040;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#f06040';this.style.background='#241a14'" onmouseout="this.style.borderColor='#f0604040';this.style.background='#1a1210'">
-          <div style="font-size:18px;color:#f06040;margin-bottom:6px">Fire</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Pyromancers specialize in damage that burns over time. Their spells keep dealing damage round after round, and some even heal the caster while burning the enemy.</div>
-          <div style="font-size:10px;color:#f0604080;margin-top:8px">Pyromancer · Prof. Ashveil</div>
+        <div class="ss-card" data-school="fire" onclick="selectSchool('fire')">
+          <div class="ss-card-inner">
+            <div class="school-name">Fire</div>
+            <div class="school-desc">Relentless and consuming. Fire wizards don't stop once they start — they burn through everything in their path and feed off the wreckage. Patience isn't in the vocabulary.</div>
+            <div class="school-meta">Pyromancer · Prof. Ashveil</div>
+          </div>
         </div>
-        <div class="school-card" onclick="selectSchool('ice')" style="background:#0e1620;border:1px solid #4fc3f740;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#4fc3f7';this.style.background='#142230'" onmouseout="this.style.borderColor='#4fc3f740';this.style.background='#0e1620'">
-          <div style="font-size:18px;color:#4fc3f7;margin-bottom:6px">Ice</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Frostbinders have the highest health and resistance in the game. Their damage is lower, but they can absorb hits and build up power the longer a fight lasts.</div>
-          <div style="font-size:10px;color:#4fc3f780;margin-top:8px">Frostbinder · Prof. Rimward</div>
+        <div class="ss-card" data-school="ice" onclick="selectSchool('ice')">
+          <div class="ss-card-inner">
+            <div class="school-name">Ice</div>
+            <div class="school-desc">Still and immovable. Ice wizards endure what others can't — slow to act, impossible to break. The kind of person who wins by simply refusing to lose.</div>
+            <div class="school-meta">Frostbinder · Prof. Rimward</div>
+          </div>
         </div>
-        <div class="school-card" onclick="selectSchool('life')" style="background:#101a12;border:1px solid #66bb6a40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#66bb6a';this.style.background='#182818'" onmouseout="this.style.borderColor='#66bb6a40';this.style.background='#101a12'">
-          <div style="font-size:18px;color:#66bb6a;margin-bottom:6px">Life</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Verdancers have the most reliable spells of any school and powerful healing magic. When they heal more than they need, the excess turns into damage.</div>
-          <div style="font-size:10px;color:#66bb6a80;margin-top:8px">Verdancer · Prof. Fernsby</div>
+        <div class="ss-card" data-school="life" onclick="selectSchool('life')">
+          <div class="ss-card-inner">
+            <div class="school-name">Life</div>
+            <div class="school-desc">Quiet strength and fierce compassion. Life wizards grow things — including themselves. Underestimate them and they'll outlast you with a smile.</div>
+            <div class="school-meta">Verdancer · Prof. Fernsby</div>
+          </div>
         </div>
-        <div class="school-card" onclick="selectSchool('death')" style="background:#121214;border:1px solid #8a8a9a40;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#8a8a9a';this.style.background='#1a1a1e'" onmouseout="this.style.borderColor='#8a8a9a40';this.style.background='#121214'">
-          <div style="font-size:18px;color:#8a8a9a;margin-bottom:6px">Death</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Wraiths steal life from their enemies. Many of their attacks heal the caster for a portion of the damage dealt, making them incredibly hard to take down.</div>
-          <div style="font-size:10px;color:#8a8a9a80;margin-top:8px">Wraith · Prof. Marrowick</div>
+        <div class="ss-card" data-school="death" onclick="selectSchool('death')">
+          <div class="ss-card-inner">
+            <div class="school-name">Death</div>
+            <div class="school-desc">Pragmatic and self-serving. Death wizards take what they need from whoever has it. Comfortable in the dark, unbothered by what others find unsettling.</div>
+            <div class="school-meta">Wraith · Prof. Marrowick</div>
+          </div>
         </div>
-        <div class="school-card" onclick="selectSchool('myth')" style="background:#161410;border:1px solid #e8b83040;border-radius:8px;padding:20px 16px;cursor:pointer;transition:all 0.3s;text-align:left" onmouseover="this.style.borderColor='#e8b830';this.style.background='#242018'" onmouseout="this.style.borderColor='#e8b83040';this.style.background='#161410'">
-          <div style="font-size:18px;color:#e8b830;margin-bottom:6px">Myth</div>
-          <div style="font-size:11px;color:#888;line-height:1.5">Fabulists summon minions to fight alongside them and take hits in their place. They also have spells that hit multiple times, punching through enemy shields.</div>
-          <div style="font-size:10px;color:#e8b83080;margin-top:8px">Fabulist · Prof. Thornscribe</div>
+        <div class="ss-card" data-school="myth" onclick="selectSchool('myth')">
+          <div class="ss-card-inner">
+            <div class="school-name">Myth</div>
+            <div class="school-desc">Clever and theatrical. Myth wizards deal in stories, trickery, and things that shouldn't exist. They'd rather outsmart you than overpower you.</div>
+            <div class="school-meta">Fabulist · Prof. Thornscribe</div>
+          </div>
         </div>
       </div>
 
-      <div style="width:40px;height:1px;background:#333;margin:20px auto"></div>
-      <div style="font-size:10px;color:#665;margin-bottom:10px">Balance unlocks after graduating all six schools.</div>
-      <div onclick="selectSchool('balance')" style="background:#161514;border:1px solid #d4b89640;border-radius:8px;padding:14px 20px;cursor:pointer;transition:all 0.3s;max-width:280px;margin:0 auto;text-align:left" onmouseover="this.style.borderColor='#d4b896';this.style.background='#1e1d1a'" onmouseout="this.style.borderColor='#d4b89640';this.style.background='#161514'">
-        <div style="font-size:16px;color:#d4b896;margin-bottom:4px">★ Balance</div>
+      <div class="ss-divider-sm"></div>
+      <div class="ss-balance-note">Balance unlocks after graduating all six schools.</div>
+      <div class="ss-card-balance" onclick="selectSchool('balance')">
+        <div style="font-size:16px;color:#e8c840;margin-bottom:4px;font-family:Georgia,serif">★ Balance</div>
         <div style="font-size:11px;color:#888;line-height:1.5">The Spiral. Every spell. Every aura. The endgame.</div>
       </div>
 
-      <div style="font-size:9px;color:#444;margin-top:30px">Spiralbound v2.0 — vanilla HTML/CSS/JS</div>
+      <div class="ss-version">Spiralbound v2.0</div>
     </div>
   </div>
 
@@ -127,12 +138,12 @@
     <div id="wizard-profile"></div>
     <div id="wizard-assignments"></div>
     <details style="margin-top:12px">
-      <summary class="section-head" style="cursor:pointer;list-style:none"><span class="tri"></span> Equipped Gear</summary>
+      <summary class="section-head"><span class="tri"></span> Equipped Gear</summary>
       <div id="gear-equipped"></div>
       <div id="wand-craft-panel"></div>
     </details>
     <details style="margin-top:12px">
-      <summary class="section-head" style="cursor:pointer;list-style:none"><span class="tri"></span> Inventory</summary>
+      <summary class="section-head"><span class="tri"></span> Inventory</summary>
       <div id="gear-inventory"></div>
     </details>
   </div>
@@ -169,12 +180,12 @@
   <!-- ===== SHOP TAB ===== -->
   <div class="tab-content" id="tab-shop">
     <details id="shop-vendor-section">
-      <summary class="section-head" id="shop-title" style="cursor:pointer;list-style:none"><span class="tri"></span> Shop</summary>
+      <summary class="section-head" id="shop-title"><span class="tri"></span> Shop</summary>
       <div id="shop-vendor"></div>
     </details>
 
-    <details id="bazaar-section" style="margin-top:20px">
-      <summary style="cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);margin-bottom:8px">
+    <details id="bazaar-section" style="margin-top:12px">
+      <summary>
         <span><span class="tri"></span> The Bazaar</span>
         <span id="bazaar-refresh-timer" style="font-size:11px;color:var(--text-dim);font-weight:normal"></span>
       </summary>
@@ -230,7 +241,7 @@
     <div class="section-head">Options</div>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Combat & Speed</h3></summary>
+      <summary><span class="tri"></span> Combat & Speed</summary>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Controls how much detail the Quill shows during combat.">
           <span>Combat Log</span>
@@ -252,7 +263,7 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Automation</h3></summary>
+      <summary><span class="tri"></span> Automation</summary>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Automatically use potions when HP or mana drops below 25% during auto-combat.">
           <span>Auto-Potion</span>
@@ -293,7 +304,7 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Display</h3></summary>
+      <summary><span class="tri"></span> Display</summary>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding-top:8px">
         <label style="display:flex;justify-content:space-between;align-items:center;color:var(--text-dim)" title="Show colored notification dots on tabs when actions are available.">
           <span>Tab Notifications</span>
@@ -324,7 +335,7 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Save Data</h3></summary>
+      <summary><span class="tri"></span> Save Data</summary>
       <div style="padding-top:8px">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
           <button class="btn primary" onclick="saveGame();addHubLog('Game saved.','system');updateUI();">Save Now</button>
@@ -383,7 +394,7 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Help & Info</h3></summary>
+      <summary><span class="tri"></span> Help & Info</summary>
       <div style="padding-top:8px">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
           <button class="btn" onclick="localStorage.removeItem('spiralbound_tutorial_done');showTutorial();">Replay Tutorial</button>
@@ -409,7 +420,7 @@
     </details>
 
     <details class="status-box" style="margin-bottom:8px">
-      <summary style="cursor:pointer;list-style:none"><h3 style="display:inline;margin:0"><span class="tri"></span> Dev Menu</h3></summary>
+      <summary><span class="tri"></span> Dev Menu</summary>
       <div style="padding-top:8px">
 
         <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:2px">Resources</div>

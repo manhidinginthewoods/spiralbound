@@ -75,6 +75,42 @@ function _showNextAchToast() {
 }
 window.showAchievementToast = showAchievementToast;
 
+// ===== OFFLINE PROGRESS POPUP =====
+function showOfflinePopup(timeStr, summary) {
+  var el = document.createElement('div');
+  el.id = 'offline-overlay';
+  el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:200;display:flex;align-items:center;justify-content:center';
+  var box = '<div style="background:var(--bg-surface);border:1px solid var(--cast);border-radius:8px;padding:24px 32px;max-width:380px;text-align:center">';
+  box += '<div style="font-size:16px;color:var(--text-bright);margin-bottom:4px">Welcome Back</div>';
+  box += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:16px">You were away for ' + timeStr + '</div>';
+  box += '<div style="text-align:left;font-size:12px;line-height:1.8;margin-bottom:16px">';
+  if (summary.gold > 0) box += '<div style="color:var(--gold)">+' + summary.gold.toLocaleString() + ' gold</div>';
+  if (summary.xp > 0) box += '<div style="color:var(--xp-bar)">+' + summary.xp.toLocaleString() + ' XP</div>';
+  if (summary.motes > 0) box += '<div style="color:var(--cast)">+' + summary.motes + ' reagents</div>';
+  if (summary.petXp > 0) box += '<div style="color:var(--myth)">+' + summary.petXp + ' familiar XP</div>';
+  if (summary.gardenHarvests > 0) box += '<div style="color:var(--heal)">Garden plots advanced</div>';
+  if (summary.craftsCompleted > 0) box += '<div style="color:var(--ice)">Crafting completed</div>';
+  if (summary.snacks > 0) box += '<div style="color:var(--text)">+' + summary.snacks + ' snacks</div>';
+  box += '</div>';
+  box += '<button class="btn primary" style="font-size:13px;padding:6px 24px" onclick="document.getElementById(\'offline-overlay\').remove();">Continue</button>';
+  box += '</div>';
+  el.innerHTML = box;
+  document.body.appendChild(el);
+}
+window.showOfflinePopup = showOfflinePopup;
+
+// ===== LIVE EVENT TIMERS =====
+setInterval(function() {
+  var timers = document.querySelectorAll('.event-timer[data-expire]');
+  for (var i = 0; i < timers.length; i++) {
+    var exp = parseInt(timers[i].getAttribute('data-expire'));
+    if (exp > 0) {
+      var secs = Math.max(0, Math.ceil((exp - Date.now()) / 1000));
+      timers[i].textContent = secs + 's';
+    }
+  }
+}, 1000);
+
 // ===== ANIMATION HELPERS =====
 function showFloatNumber(enemyIndex, text, type) {
   var cards = document.querySelectorAll('#enemy-panel .enemy-card');
@@ -242,6 +278,7 @@ let _deckDirty = true;
 let _gearDirty = true;
 let _shopDirty = true;
 let _lastGold = -1;
+let _lastXp = -1;
 let _lastEventCount = -1;
 let _mapDirty = true;
 let _craftDirty = true;
@@ -358,6 +395,8 @@ function updateUI() {
   if (_deckDirty) { renderDeck(); _deckDirty = false; }
   var _evtCount = Game.events ? Game.events.active.filter(function(e){return !e.background;}).length : 0;
   if (_evtCount !== _lastEventCount) { _gearDirty = true; _lastEventCount = _evtCount; }
+  var _curXp = Game.wizard ? (Game.wizard.xp||0) : 0;
+  if (_curXp !== _lastXp) { _gearDirty = true; _lastXp = _curXp; }
   if (_gearDirty || Game.gold !== _lastGold) { _gearDirty = false; renderGear(); }
   if (_shopDirty || Game.gold !== _lastGold) { _shopDirty = false; _lastGold = Game.gold; renderShop(); }
   var craftState = Game.crafting.rank + ',' + (Game.crafting.queue?Game.crafting.queue.ticksLeft:'') + ',' + JSON.stringify(Game.reagents) + ',' + Game.gold;
@@ -402,7 +441,9 @@ function renderHub() {
   var lh = '';
   for (var li = 0; li < recent.length; li++) {
     var ts = recent[li].ts ? '<span style="color:var(--border-light);font-size:10px">' + new Date(recent[li].ts).toLocaleTimeString([], Game.use24Hour ? {hour:'2-digit',minute:'2-digit',hour12:false} : {hour:'numeric',minute:'2-digit'}) + '</span> ' : '';
-    lh += '<div class="log-entry ' + recent[li].type + '">' + ts + recent[li].text + '</div>';
+    var rivalStyle = '';
+    if (recent[li].type === 'rival' && Game.rival) rivalStyle = ' style="color:var(--' + Game.rival.school + ')"';
+    lh += '<div class="log-entry ' + recent[li].type + '"' + rivalStyle + '>' + ts + recent[li].text + '</div>';
   }
   logEl.innerHTML = lh;
   logEl.scrollTop = logEl.scrollHeight;
@@ -802,6 +843,27 @@ function renderDuelPanel() {
   dp.innerHTML = h;
 }
 
+function _deckSpellRow(spellId, totalCards, maxDeck) {
+  var dsp = SPELLS[spellId];
+  if (!dsp) return '';
+  var w = Game.wizard;
+  var count = (Game.deckBuild && Game.deckBuild[spellId]) || 0;
+  var dpip = dsp.pips === 'X' ? 'Xp' : dsp.pips + 'p';
+  var dtags = dsp.type + (dsp.effect && dsp.effect.aoe ? ' AoE' : '');
+  var dcolor = 'var(--' + dsp.school + ', var(--cast))';
+  var encs = (w.enchantments && w.enchantments[dsp.id]) || [];
+  var r = '<div title="' + dsp.desc + ' | ' + dpip + ' | ' + dsp.accuracy + '% accuracy | ' + dsp.mana + ' mana" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:2px;background:'+(count>0?'var(--bg-card)':'var(--bg)')+';border:1px solid '+(count>0?dcolor:'var(--border)')+';border-radius:3px;font-size:11px;cursor:help">';
+  r += '<span style="flex:1"><span style="color:'+dcolor+'">' + dsp.name + '</span> <span style="color:var(--text-dim)">' + dpip + ' ' + dtags + '</span>';
+  if (encs.length > 0) { r += ' <span style="color:#80cbc4">['; for (var ei = 0; ei < encs.length; ei++) { var ec = ENCHANTMENTS[encs[ei]]; r += (ec?ec.name:'?'); if (ei<encs.length-1) r += ','; } r += ']</span>'; }
+  r += '</span>';
+  r += '<span style="display:flex;align-items:center;gap:4px">';
+  r += '<button onclick="setDeckSpellCount(\''+dsp.id+'\',' + (count-1) + ');_deckDirty=true;updateUI();" style="background:none;border:1px solid var(--border);color:var(--fizzle);cursor:pointer;width:20px;height:20px;border-radius:3px;font-size:13px;line-height:1" '+(count<=0?'disabled':'')+'>−</button>';
+  r += '<span style="color:var(--text-bright);min-width:16px;text-align:center">' + count + '</span>';
+  r += '<button onclick="setDeckSpellCount(\''+dsp.id+'\',' + (count+1) + ');_deckDirty=true;updateUI();" style="background:none;border:1px solid var(--border);color:var(--cast);cursor:pointer;width:20px;height:20px;border-radius:3px;font-size:13px;line-height:1" '+(totalCards>=maxDeck||count>=6?'disabled':'')+'>+</button>';
+  r += '</span></div>';
+  return r;
+}
+
 function renderDeck() {
   var el = document.getElementById('spellbook-content');
   if (!el) return;
@@ -817,6 +879,7 @@ function renderDeck() {
   var totalCards = getDeckCardCount();
   h += '<details><summary style="cursor:pointer;list-style:none"><div class="section-head" style="margin:0"><span class="tri"></span> Deck Builder — ' + totalCards + '/' + maxDeck + ' cards</div></summary><div style="padding-top:8px">';
   h += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Set how many copies of each spell go in your deck. Hand size: ' + getHandSize() + ' cards drawn per round.</p>';
+  h += '<button class="btn" onclick="clearDeck();_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px;margin-bottom:8px;color:var(--fizzle)">Clear Deck</button>';
   if (Game.combat) {
     var drawLeft = Game.combat.drawPile ? Game.combat.drawPile.length : 0;
     var discarded = Game.combat.discardPile ? Game.combat.discardPile.length : 0;
@@ -825,29 +888,52 @@ function renderDeck() {
   }
 
   var allSpells = w.learnedSpells || [];
-  h += '<div style="margin-bottom:16px">';
+  var inDeckSpells = [];
+  var availBySchool = {};
+  var _schoolOrder = ['storm','fire','ice','life','death','myth','balance'];
   for (var di = 0; di < allSpells.length; di++) {
     var dsp = SPELLS[allSpells[di]];
     if (!dsp) continue;
     var count = (Game.deckBuild && Game.deckBuild[allSpells[di]]) || 0;
-    var dpip = dsp.pips === 'X' ? 'Xp' : dsp.pips + 'p';
-    var dtags = dsp.type + (dsp.effect && dsp.effect.aoe ? ' AoE' : '');
-    var dcolor = 'var(--' + dsp.school + ', var(--cast))';
-    var encs = (w.enchantments && w.enchantments[dsp.id]) || [];
-
-    h += '<div title="' + dsp.desc + ' | ' + dpip + ' | ' + dsp.accuracy + '% accuracy | ' + dsp.mana + ' mana" style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:2px;background:'+(count>0?'var(--bg-card)':'var(--bg)')+';border:1px solid '+(count>0?'var(--cast)':'var(--border)')+';border-radius:3px;font-size:11px;cursor:help">';
-    h += '<span style="flex:1"><span style="color:'+dcolor+'">' + dsp.name + '</span> <span style="color:var(--text-dim)">' + dpip + ' ' + dtags + '</span>';
-    if (encs.length > 0) { h += ' <span style="color:#80cbc4">['; for (var ei = 0; ei < encs.length; ei++) { var ec = ENCHANTMENTS[encs[ei]]; h += (ec?ec.name:'?'); if (ei<encs.length-1) h += ','; } h += ']</span>'; }
-    h += '</span>';
-    h += '<span style="display:flex;align-items:center;gap:4px">';
-    h += '<button onclick="setDeckSpellCount(\''+dsp.id+'\',' + (count-1) + ');_deckDirty=true;updateUI();" style="background:none;border:1px solid var(--border);color:var(--fizzle);cursor:pointer;width:20px;height:20px;border-radius:3px;font-size:13px;line-height:1" '+(count<=0?'disabled':'')+'>−</button>';
-    h += '<span style="color:var(--text-bright);min-width:16px;text-align:center">' + count + '</span>';
-    h += '<button onclick="setDeckSpellCount(\''+dsp.id+'\',' + (count+1) + ');_deckDirty=true;updateUI();" style="background:none;border:1px solid var(--border);color:var(--cast);cursor:pointer;width:20px;height:20px;border-radius:3px;font-size:13px;line-height:1" '+(totalCards>=maxDeck||count>=6?'disabled':'')+'>+</button>';
-    h += '</span></div>';
+    if (count > 0) {
+      inDeckSpells.push(allSpells[di]);
+    } else {
+      var dsch = dsp.school || 'balance';
+      if (!availBySchool[dsch]) availBySchool[dsch] = [];
+      availBySchool[dsch].push(allSpells[di]);
+    }
   }
-  h += '</div>';
 
-  // Spell reference removed — deck builder now shows all info inline
+  h += '<div style="font-size:10px;color:var(--cast);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">In Deck — ' + inDeckSpells.length + ' spells, ' + totalCards + ' cards</div>';
+  if (inDeckSpells.length === 0) {
+    h += '<div style="font-size:11px;color:var(--text-dim);padding:8px 0;margin-bottom:8px">No spells in deck. Add from Available below.</div>';
+  } else {
+    for (var ii = 0; ii < inDeckSpells.length; ii++) {
+      h += _deckSpellRow(inDeckSpells[ii], totalCards, maxDeck);
+    }
+  }
+
+  var _hasAvail = false;
+  for (var _si = 0; _si < _schoolOrder.length; _si++) {
+    if (availBySchool[_schoolOrder[_si]] && availBySchool[_schoolOrder[_si]].length > 0) { _hasAvail = true; break; }
+  }
+  if (_hasAvail) {
+    h += '<div style="font-size:10px;color:var(--text-dim);margin:12px 0 6px;text-transform:uppercase;letter-spacing:1px">Available Spells</div>';
+    for (var _si2 = 0; _si2 < _schoolOrder.length; _si2++) {
+      var _sch = _schoolOrder[_si2];
+      var _schSpells = availBySchool[_sch];
+      if (!_schSpells || _schSpells.length === 0) continue;
+      var _schColor = 'var(--' + _sch + ')';
+      h += '<details style="margin-bottom:4px"><summary style="cursor:pointer;list-style:none;padding:5px 8px;background:var(--bg-card);border:1px solid var(--border);border-left:2px solid ' + _schColor + ';border-radius:3px;font-size:11px;color:' + _schColor + ';text-transform:capitalize;display:flex;justify-content:space-between;align-items:center">';
+      h += '<span><span class="tri"></span> ' + _sch + '</span>';
+      h += '<span style="color:var(--text-dim);font-size:10px">' + _schSpells.length + '</span>';
+      h += '</summary><div style="padding:2px 0 2px 0;margin-top:2px">';
+      for (var _ssi = 0; _ssi < _schSpells.length; _ssi++) {
+        h += _deckSpellRow(_schSpells[_ssi], totalCards, maxDeck);
+      }
+      h += '</div></details>';
+    }
+  }
 
   h += '</div></details>';
 
@@ -911,34 +997,51 @@ function renderDeck() {
   // ---- ENCHANTMENTS ----
   h += '<details style="margin-top:12px"><summary style="cursor:pointer;list-style:none"><div class="section-head" style="margin:0"><span class="tri"></span> Enchantments</div></summary><div style="padding-top:8px">';
   var availEnch = Game.crafting.inventory.enchantments;
-  var hasDmgSpells = false;
+  var enchBySchool = {};
+  var _eschoolOrder = ['storm','fire','ice','life','death','myth','balance'];
   for (var di = 0; di < allSpells.length; di++) {
     var dsp = SPELLS[allSpells[di]];
     if (!dsp || dsp.type !== 'damage') continue;
+    var esch = dsp.school || 'balance';
+    if (!enchBySchool[esch]) enchBySchool[esch] = [];
+    enchBySchool[esch].push(allSpells[di]);
+  }
+  var hasDmgSpells = false;
+  for (var _esi = 0; _esi < _eschoolOrder.length; _esi++) {
+    var _es = _eschoolOrder[_esi];
+    var _esSpells = enchBySchool[_es];
+    if (!_esSpells || _esSpells.length === 0) continue;
     hasDmgSpells = true;
-    var dencs = (w.enchantments && w.enchantments[dsp.id]) || [];
-    h += '<div style="padding:4px 8px;margin-bottom:3px;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;font-size:11px">';
-    h += '<span style="color:var(--cast)">' + dsp.name + '</span>';
-    if (dencs.length > 0) {
-      h += ' — ';
-      for (var dei = 0; dei < dencs.length; dei++) {
-        var dec = ENCHANTMENTS[dencs[dei]];
-        h += '<span style="color:#80cbc4">' + (dec?dec.name:'?') + '</span>';
-        h += '<button onclick="removeEnchant(\''+dsp.id+'\','+dei+');_deckDirty=true;updateUI();" style="background:none;border:none;color:var(--fizzle);cursor:pointer;font-size:10px;padding:0 4px">×</button>';
-        if (dei < dencs.length-1) h += ', ';
+    var _esColor = 'var(--' + _es + ')';
+    h += '<details style="margin-bottom:4px"><summary style="cursor:pointer;list-style:none;font-size:12px;color:' + _esColor + ';text-transform:capitalize"><span class="tri"></span> ' + _es + ' (' + _esSpells.length + ')</summary><div style="padding-top:4px">';
+    for (var _esi2 = 0; _esi2 < _esSpells.length; _esi2++) {
+      var _esp = SPELLS[_esSpells[_esi2]];
+      if (!_esp) continue;
+      var dencs = (w.enchantments && w.enchantments[_esp.id]) || [];
+      h += '<div style="padding:4px 8px;margin-bottom:3px;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;font-size:11px">';
+      h += '<span style="color:' + _esColor + '">' + _esp.name + '</span>';
+      if (dencs.length > 0) {
+        h += ' — ';
+        for (var dei = 0; dei < dencs.length; dei++) {
+          var dec = ENCHANTMENTS[dencs[dei]];
+          h += '<span style="color:#80cbc4">' + (dec?dec.name:'?') + '</span>';
+          h += '<button onclick="removeEnchant(\''+_esp.id+'\','+dei+');_deckDirty=true;updateUI();" style="background:none;border:none;color:var(--fizzle);cursor:pointer;font-size:10px;padding:0 4px">×</button>';
+          if (dei < dencs.length-1) h += ', ';
+        }
       }
-    }
-    if (dencs.length < 3 && availEnch.length > 0) {
-      h += ' <select onchange="if(this.value){enchantSpell(\''+dsp.id+'\',this.value);_deckDirty=true;updateUI();}" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:2px 4px;font-family:inherit;font-size:10px;margin-left:4px">';
-      h += '<option value="">+ enchant</option>';
-      var seen = {};
-      for (var ae = 0; ae < availEnch.length; ae++) {
-        if (!seen[availEnch[ae]]) { var enc2 = ENCHANTMENTS[availEnch[ae]]; h += '<option value="'+availEnch[ae]+'">'+(enc2?enc2.name:availEnch[ae])+'</option>'; seen[availEnch[ae]] = true; }
+      if (dencs.length < 3 && availEnch.length > 0) {
+        h += ' <select onchange="if(this.value){enchantSpell(\''+_esp.id+'\',this.value);_deckDirty=true;updateUI();}" style="background:var(--bg-input);color:var(--text);border:1px solid var(--border-light);border-radius:3px;padding:2px 4px;font-family:inherit;font-size:10px;margin-left:4px">';
+        h += '<option value="">+ enchant</option>';
+        var seen = {};
+        for (var ae = 0; ae < availEnch.length; ae++) {
+          if (!seen[availEnch[ae]]) { var enc2 = ENCHANTMENTS[availEnch[ae]]; h += '<option value="'+availEnch[ae]+'">'+(enc2?enc2.name:availEnch[ae])+'</option>'; seen[availEnch[ae]] = true; }
+        }
+        h += '</select>';
       }
-      h += '</select>';
+      h += ' <span style="color:var(--text-dim);font-size:10px">(' + dencs.length + '/3)</span>';
+      h += '</div>';
     }
-    h += ' <span style="color:var(--text-dim);font-size:10px">(' + dencs.length + '/3)</span>';
-    h += '</div>';
+    h += '</div></details>';
   }
   if (!hasDmgSpells) h += '<div style="font-size:11px;color:var(--text-dim)">No damage spells to enchant.</div>';
   if (availEnch.length === 0 && hasDmgSpells) h += '<div style="font-size:11px;color:var(--text-dim);margin-top:4px">No enchantments in inventory. Craft them in the Workshop tab.</div>';
@@ -1010,6 +1113,7 @@ function renderDeck() {
       if (saved) {
         h += '<span style="color:var(--text-bright)">' + saved.name + '</span>';
         h += '<span><button class="btn" onclick="loadDeckSlot('+dsi+');_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px;margin-right:4px">Load</button>';
+        h += '<button class="btn" onclick="renameDeckSlot('+dsi+');_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px;margin-right:4px">Rename</button>';
         h += '<button class="btn" onclick="saveDeckSlot('+dsi+');_deckDirty=true;updateUI();" style="font-size:10px;padding:2px 8px">Overwrite</button></span>';
       } else {
         h += '<span style="color:var(--text-dim)">Slot ' + (dsi+1) + ' — empty</span>';
@@ -1030,7 +1134,7 @@ function renderDeck() {
   for (var ak2 = 0; ak2 < animKeys2.length; ak2++) totalAnimus2 += mon.animus[animKeys2[ak2]];
 
   if (tcsAvail.length > 0 || tcSlotted.length > 0 || totalAnimus2 > 0) {
-    h += '<details style="margin-top:12px"><summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Treasure Cards (' + tcSlotted.length + '/' + tcMax + ' slotted, ' + tcsAvail.length + ' available)</summary><div style="padding-top:6px">';
+    h += '<details style="margin-top:12px"><summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px"><span class="tri"></span> Treasure Cards (' + tcSlotted.length + '/' + tcMax + ' slotted, ' + tcsAvail.length + ' available)</summary><div style="padding-top:6px">';
     h += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">One-use spell cards crafted from creature animus. Slotted TCs shuffle into your draw pile and burn after one use.</div>';
 
     // Slotted TCs
@@ -1126,11 +1230,13 @@ function renderGear() {
           if (evt.buff.accuracy) buffParts2.push((evt.buff.accuracy>0?'+':'') + evt.buff.accuracy + '% accuracy');
           if (buffParts2.length > 0) evtDetail = buffParts2.join(', ') + ' for ' + Math.ceil(evt.duration * Game.TICK_MS / 1000) + 's';
         }
-        var expireSecs = evt.expireTicks > 0 ? Math.ceil(evt.expireTicks * Game.TICK_MS / 1000) : 0;
+        var expireSecs = 0;
+        if (evt._expireAt) expireSecs = Math.max(0, Math.ceil((evt._expireAt - Date.now()) / 1000));
+        else if (evt.expireTicks > 0) expireSecs = Math.ceil(evt.expireTicks * Game.TICK_MS / 1000);
 
         sh += '<div class="event-banner">';
         sh += '<div class="event-header"><span class="event-title">' + evt.name + '</span>';
-        if (expireSecs > 0) sh += '<span class="event-timer">' + expireSecs + 's</span>';
+        if (expireSecs > 0) sh += '<span class="event-timer" data-expire="' + (evt._expireAt || 0) + '">' + expireSecs + 's</span>';
         sh += '</div>';
         sh += '<div class="event-desc">' + evt.desc + '</div>';
         if (evtDetail) sh += '<div class="event-detail">' + evtDetail + '</div>';
@@ -1235,8 +1341,8 @@ function renderGear() {
       var _existingAssignDetails = assignEl.querySelector('details');
       if (_existingAssignDetails) _assignOpen = _existingAssignDetails.open;
       var assignLabel = Game.wizard.school === 'balance' ? "Headmaster's Assignments" : "Professor's Assignments";
-      ah += '<details' + (_assignOpen ? ' open' : '') + ' style="margin-bottom:8px">';
-      ah += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> ' + assignLabel + ' <span style="color:var(--text-dim);font-size:10px">(' + Game.assignments.completed + ' completed)</span></summary>';
+      ah += '<details' + (_assignOpen ? ' open' : '') + ' style="margin-bottom:12px;margin-top:12px">';
+      ah += '<summary style="cursor:pointer;list-style:none;font-size:14px;color:var(--text-bright);padding-bottom:4px;letter-spacing:0.5px"><span class="tri"></span> ' + assignLabel + ' <span style="color:var(--text-dim);font-size:10px">(' + Game.assignments.completed + ' completed)</span></summary>';
       ah += '<div style="padding-top:6px">';
       for (var ai = 0; ai < assigns.length; ai++) {
         var a = assigns[ai];
@@ -1246,7 +1352,7 @@ function renderGear() {
         var typeColors = {combat:'var(--fizzle)',fishing:'var(--ice)',crafting:'var(--myth)',garden:'var(--heal)',gold:'var(--gold)',bestiary:'var(--cast)',spire:'var(--gold)',dueling:'var(--storm)',expedition:'var(--balance)'};
         var typeColor = typeColors[a.type] || 'var(--text-dim)';
 
-        ah += '<div style="padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid ' + (isDone && !isClaimed ? 'var(--gold)' : 'var(--border)') + ';border-radius:4px;border-left:3px solid ' + typeColor + (isClaimed ? ';opacity:0.4' : '') + '">';
+        ah += '<div style="padding:8px 10px;margin-bottom:4px;background:var(--bg-card);border:1px solid ' + (isDone && !isClaimed ? 'var(--gold)' : 'var(--border)') + ';border-radius:2px;border-left:3px solid ' + typeColor + (isClaimed ? ';opacity:0.4' : '') + ';box-shadow:0 1px 3px rgba(0,0,0,0.2)">';
         ah += '<div style="display:flex;justify-content:space-between;align-items:center">';
         ah += '<span style="font-size:11px;color:' + (isDone ? 'var(--cast)' : 'var(--text)') + '">' + (isClaimed ? '✓ ' : isDone ? '★ ' : '') + a.desc + '</span>';
         if (isDone && !isClaimed) {
@@ -1276,16 +1382,17 @@ function renderGear() {
   // Wizard profile
   var prof = document.getElementById('wizard-profile');
   if (prof) {
-    var ph = '<div style="background:var(--bg-card);border:1px solid var(--cast);border-radius:4px;padding:14px;margin-bottom:4px">';
-    ph += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+    var world = getCurrentWorld();
     var schoolColor = 'var(--' + w.school + ', var(--cast))';
+    var _gs = SCHOOL_GEAR_SCALING[w.school] || SCHOOL_GEAR_SCALING.balance;
+    var ph = '<div style="background:var(--bg-card);border:1px solid var(--cast);border-radius:2px;padding:14px;margin-bottom:4px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.3)">';
+    ph += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
     ph += '<div><div style="font-size:16px;color:var(--text-bright)">' + (w.name || 'Wizard') + '</div>';
     ph += '<div style="font-size:11px;color:var(--text-dim)">' + getWizardTitle() + ' · <span style="color:'+schoolColor+'">' + w.school.charAt(0).toUpperCase()+w.school.slice(1) + '</span> | ' + (world?world.name:'') + '</div></div>';
-    ph += '<div style="text-align:right;font-size:12px"><span style="color:var(--gold)">Gold: ' + Game.gold + '</span>';
+    ph += '<div style="text-align:right;font-size:12px;font-family:Courier New,monospace"><span style="color:var(--gold)">' + Game.gold + 'g</span>';
     if (Game.enrollmentCount > 0) ph += '<br><span style="color:var(--text-dim);font-size:10px">Run ' + (Game.enrollmentCount+1) + '</span>';
-    ph += '</div>';
-    ph += '</div>';
-    // XP progress bar — compute level fresh from XP every render
+    ph += '</div></div>';
+    // XP bar
     var _LVXP = [0,15,40,75,120,180,260,360,480,620,800,1020,1280,1580,1920,2300,2750,3250,3800,4400,5100,5900,6800,7800,9000,10300,11800,13400,15200,17200,18500,19500,20500,21500,22500,23500,24500,25500,26500,28000];
     var curXP = w.xp || 0;
     var computedLevel = 1;
@@ -1294,257 +1401,200 @@ function renderGear() {
     var nextLvlXP = computedLevel < _LVXP.length ? _LVXP[computedLevel] : null;
     var prevLvlXP = computedLevel > 1 ? _LVXP[computedLevel - 1] : 0;
     if (nextLvlXP) {
-      var xpInLevel = curXP - prevLvlXP;
-      var xpForLevel = nextLvlXP - prevLvlXP;
-      var xpPct = Math.min(100, (xpInLevel / xpForLevel * 100)).toFixed(0);
-      ph += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:2px">Level ' + computedLevel + ' &nbsp;·&nbsp; ' + curXP + ' / ' + nextLvlXP + ' XP</div>';
-      ph += '<div class="bar-track" style="margin-bottom:8px"><div class="bar-fill xp" style="width:'+xpPct+'%"></div></div>';
+      var xpPct = Math.min(100, ((curXP - prevLvlXP) / (nextLvlXP - prevLvlXP) * 100)).toFixed(0);
+      ph += '<div style="font-size:11px;color:var(--text);margin-bottom:2px;font-family:Courier New,monospace">Level ' + computedLevel + ' — ' + curXP + ' / ' + nextLvlXP + ' XP</div>';
+      ph += '<div style="height:8px;background:#0a0908;border-radius:2px;overflow:hidden;margin-bottom:8px"><div style="width:'+xpPct+'%;height:100%;background:#5aaa50;border-radius:2px;transition:width 0.3s"></div></div>';
     } else {
-      ph += '<div style="font-size:10px;color:var(--gold);margin-bottom:8px">Level ' + computedLevel + ' — MAX</div>';
+      ph += '<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-family:Courier New,monospace">Level ' + computedLevel + ' — MAX</div>';
     }
-    // Calculate stat breakdowns for tooltips
-    var _gs = (typeof SCHOOL_GEAR_SCALING !== 'undefined' && SCHOOL_GEAR_SCALING[w.school]) ? SCHOOL_GEAR_SCALING[w.school] : {damage:1,hp:1,resist:1,pierce:1,crit:1,critBlock:1,mana:1,accuracy:1,powerPip:1};
-    var gearBonuses = {hp:0,mana:0,damage:0,accuracy:0,resist:0,powerPip:0,crit:0,pierce:0,critBlock:0};
-    for (var gbi = 0; gbi < GEAR_SLOTS.length; gbi++) {
-      var gbId = w.gear[GEAR_SLOTS[gbi]];
-      if (!gbId) continue;
-      var gbItem = GEAR[gbId];
-      if (!gbItem || !gbItem.stats) continue;
-      var gbs = gbItem.stats;
-      if (gbs.hp) gearBonuses.hp += Math.round(gbs.hp * _gs.hp);
-      if (gbs.mana) gearBonuses.mana += Math.round(gbs.mana * _gs.mana);
-      if (gbs.damage) gearBonuses.damage += Math.round(gbs.damage * _gs.damage);
-      if (gbs.accuracy) gearBonuses.accuracy += Math.round(gbs.accuracy * _gs.accuracy);
-      if (gbs.resist) gearBonuses.resist += Math.round(gbs.resist * _gs.resist);
-      if (gbs.powerPip) gearBonuses.powerPip += Math.round(gbs.powerPip * _gs.powerPip);
-      if (gbs.crit) gearBonuses.crit += Math.round(gbs.crit * _gs.crit);
-      if (gbs.pierce) gearBonuses.pierce += Math.round(gbs.pierce * _gs.pierce);
-      if (gbs.critBlock) gearBonuses.critBlock += Math.round(gbs.critBlock * _gs.critBlock);
-    }
-    var petBonuses = {hp:0,mana:0,damage:0,accuracy:0,resist:0,powerPip:0,pierce:0};
-    if (Game.pet && Game.pet.manifested) {
-      for (var pbi = 0; pbi < Game.pet.manifested.length; pbi++) {
-        var pbt = PET_TALENTS[Game.pet.manifested[pbi]];
-        if (pbt && pbt.type === 'stat') { for (var ps in pbt.effect) petBonuses[ps] = (petBonuses[ps]||0) + pbt.effect[ps]; }
-      }
-      if (Game.pet.jewel && PET_JEWELS[Game.pet.jewel]) {
-        var pjs = PET_JEWELS[Game.pet.jewel].stats;
-        for (var pjk in pjs) petBonuses[pjk] = (petBonuses[pjk]||0) + pjs[pjk];
-      }
-    }
-    var shardBonuses = {hp:0,damage:w._shardDmg||0,resist:w._shardRes||0,accuracy:w._shardAcc||0,crit:w._shardCrit||0,powerPip:w._shardPip||0};
-    var wandBonuses = {hp:0,mana:0,damage:0,accuracy:0,resist:0,powerPip:0,crit:0,pierce:0,critBlock:0};
-    var wbKeys = ['hp','mana','damage','accuracy','resist','powerPip','crit','pierce','critBlock'];
-    for (var wbi=0;wbi<wbKeys.length;wbi++){wandBonuses[wbKeys[wbi]]=getWandCoreBonus(wbKeys[wbi])+getWandWoodBonus(wbKeys[wbi]);}
+    // Stats grid
+    var gearB = {hp:0,mana:0,damage:0,accuracy:0,resist:0,powerPip:0,crit:0,pierce:0,critBlock:0};
+    for (var gbi = 0; gbi < GEAR_SLOTS.length; gbi++) { var gbId=w.gear[GEAR_SLOTS[gbi]]; if(!gbId)continue; var gbI=GEAR[gbId]; if(!gbI||!gbI.stats)continue; var s=gbI.stats; if(s.hp)gearB.hp+=Math.round(s.hp*_gs.hp);if(s.mana)gearB.mana+=Math.round(s.mana*_gs.mana);if(s.damage)gearB.damage+=Math.round(s.damage*_gs.damage);if(s.accuracy)gearB.accuracy+=Math.round(s.accuracy*_gs.accuracy);if(s.resist)gearB.resist+=Math.round(s.resist*_gs.resist);if(s.powerPip)gearB.powerPip+=Math.round(s.powerPip*_gs.powerPip);if(s.crit)gearB.crit+=Math.round(s.crit*_gs.crit);if(s.pierce)gearB.pierce+=Math.round(s.pierce*_gs.pierce);if(s.critBlock)gearB.critBlock+=Math.round(s.critBlock*_gs.critBlock); }
     var schoolAcc = (SCHOOL_STATS[w.school]||SCHOOL_STATS.storm).baseAccuracy;
     var rank = RANKS[w.rankIndex]||RANKS[0];
-
-    function statTip(label, parts) {
-      var lines = [label + ' Breakdown:'];
-      for (var ti = 0; ti < parts.length; ti++) { if (parts[ti][1] && parts[ti][1] !== '+0' && parts[ti][1] !== '+0%' && parts[ti][1] !== '0%') lines.push(parts[ti][0] + ': ' + parts[ti][1]); }
-      return lines.join('&#10;');
-    }
-    function statBreakdown(parts) {
-      var out = [];
-      for (var si = 0; si < parts.length; si++) {
-        var val = parts[si][1];
-        if (!val || val === '+0' || val === '+0%' || val === '0' || val === '0%') continue;
-        out.push('<span style="color:var(--text-dim)">' + parts[si][0] + ' ' + val + '</span>');
-      }
-      return out.join(' + ');
-    }
-
-    // Stats grid with inline breakdowns
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px">';
-
-    var hpParts = [['Base',w.baseHp],['Gear','+'+gearBonuses.hp],['Familiar','+'+petBonuses.hp],['Wand','+'+(wandBonuses.hp||0)],['Shards','+'+(shardBonuses.hp||0)]];
-    ph += '<div title="' + statTip('HP',hpParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">HP</div><div style="color:#e53935;font-size:14px">' + w.maxHp + '</div></div>';
-
-    var manaParts = [['Base',w.baseMana],['Gear','+'+gearBonuses.mana],['Familiar','+'+petBonuses.mana],['Wand','+'+(wandBonuses.mana||0)]];
-    ph += '<div title="' + statTip('Mana',manaParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Mana</div><div style="color:#2196f3;font-size:14px">' + w.maxMana + '</div></div>';
-
-    var dmgParts = [['Gear','+'+gearBonuses.damage+'%'],['Familiar','+'+petBonuses.damage+'%'],['Wand','+'+(wandBonuses.damage||0)+'%'],['Shards','+'+shardBonuses.damage+'%']];
-    ph += '<div title="' + statTip('Damage',dmgParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Damage</div><div style="color:#ff6d00;font-size:14px">+' + w.damage + '%</div></div>';
-
-    var resParts = [['Gear','+'+gearBonuses.resist+'%'],['Familiar','+'+petBonuses.resist+'%'],['Wand','+'+(wandBonuses.resist||0)+'%'],['Shards','+'+shardBonuses.resist+'%']];
-    ph += '<div title="' + statTip('Resist',resParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Resist</div><div style="color:#26a69a;font-size:14px">' + w.resist + '%</div></div>';
-
-    var accParts = [['School',schoolAcc+'%'],['Gear','+'+gearBonuses.accuracy+'%'],['Familiar','+'+petBonuses.accuracy+'%'],['Wand','+'+(wandBonuses.accuracy||0)+'%'],['Shards','+'+shardBonuses.accuracy+'%']];
-    ph += '<div title="' + statTip('Accuracy',accParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Accuracy</div><div style="color:#e0e0e0;font-size:14px">' + w.accuracy + '%</div></div>';
-
-    var pipParts = [['Rank',rank.powerPipBase+'%'],['Gear','+'+gearBonuses.powerPip+'%'],['Familiar','+'+petBonuses.powerPip+'%'],['Wand','+'+(wandBonuses.powerPip||0)+'%'],['Shards','+'+shardBonuses.powerPip+'%']];
-    ph += '<div title="' + statTip('Power Pip',pipParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Power Pip</div><div style="color:#fdd835;font-size:14px">' + w.powerPipChance + '%</div></div>';
-
-    var critParts = [['Base','5%'],['Gear','+'+gearBonuses.crit+'%'],['Wand','+'+(wandBonuses.crit||0)+'%'],['Shards','+'+shardBonuses.crit+'%']];
-    ph += '<div title="' + statTip('Critical',critParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Critical</div><div style="color:#ffab00;font-size:14px">' + (w.crit||5) + '%</div></div>';
-
-    var pierceParts = [['Gear','+'+gearBonuses.pierce+'%'],['Familiar','+'+(petBonuses.pierce||0)+'%'],['Wand','+'+(wandBonuses.pierce||0)+'%']];
-    ph += '<div title="' + statTip('Pierce',pierceParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Pierce</div><div style="color:#ab47bc;font-size:14px">' + (w.pierce||0) + '%</div></div>';
-
-    var cbParts = [['Gear','+'+gearBonuses.critBlock+'%'],['Wand','+'+(wandBonuses.critBlock||0)+'%']];
-    ph += '<div title="' + statTip('Crit Block',cbParts) + '" style="background:var(--bg);padding:6px 8px;border-radius:3px;cursor:help"><div style="color:var(--text-dim);font-size:10px">Crit Block</div><div style="color:#78909c;font-size:14px">' + (w.critBlock||0) + '%</div></div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;font-family:Courier New,monospace">';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">HP</div><div style="color:#c04030;font-size:14px">'+w.maxHp+'</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Mana</div><div style="color:#4090c0;font-size:14px">'+w.maxMana+'</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Damage</div><div style="color:#ff6d00;font-size:14px">+'+w.damage+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Resist</div><div style="color:#26a69a;font-size:14px">'+w.resist+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Accuracy</div><div style="color:var(--text-bright);font-size:14px">'+w.accuracy+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Power Pip</div><div style="color:#c8a84e;font-size:14px">'+w.powerPipChance+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Critical</div><div style="color:#ffab00;font-size:14px">'+(w.crit||5)+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Pierce</div><div style="color:#ab47bc;font-size:14px">'+(w.pierce||0)+'%</div></div>';
+    ph += '<div style="background:var(--bg);padding:6px 8px;border-radius:2px"><div style="color:var(--text-dim);font-size:10px">Crit Block</div><div style="color:#78909c;font-size:14px">'+(w.critBlock||0)+'%</div></div>';
     ph += '</div>';
-
-    // Stat breakdown panel (click to expand)
-    ph += '<details style="margin-top:8px"><summary style="cursor:pointer;list-style:none;font-size:11px;color:var(--text-dim)"><span class="tri"></span> Stat Sources</summary>';
-    ph += '<div style="padding-top:6px;font-size:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px">';
-    ph += '<div><span style="color:var(--text-bright)">HP ' + w.maxHp + '</span><br>' + statBreakdown(hpParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Damage +' + w.damage + '%</span><br>' + statBreakdown(dmgParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Resist ' + w.resist + '%</span><br>' + statBreakdown(resParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Accuracy ' + w.accuracy + '%</span><br>' + statBreakdown(accParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Critical ' + (w.crit||5) + '%</span><br>' + statBreakdown(critParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Pierce ' + (w.pierce||0) + '%</span><br>' + statBreakdown(pierceParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Power Pip ' + w.powerPipChance + '%</span><br>' + statBreakdown(pipParts) + '</div>';
-    ph += '<div><span style="color:var(--text-bright)">Mana ' + w.maxMana + '</span><br>' + statBreakdown(manaParts) + '</div>';
-    ph += '</div></details>';
-
-    // Damage calculator
-    ph += '<details style="margin-top:4px"><summary style="cursor:pointer;list-style:none;font-size:11px;color:var(--text-dim)"><span class="tri"></span> Damage Preview</summary>';
-    ph += '<div style="padding-top:6px;font-size:10px">';
-    var topSpells = w.learnedSpells.filter(function(sid){ var sp=SPELLS[sid]; return sp && sp.type==='damage' && typeof sp.pips==='number'; }).sort(function(a,b){ var sa=SPELLS[a],sb=SPELLS[b]; return sb.pips-sa.pips; }).slice(0,4);
-    if (topSpells.length > 0) {
-      var dmgMult = 1 + w.damage/100;
-      var bladeMult = w.blade ? (1+w.blade.percent/100) : 1;
-      var critM = Game.masteryAuras && Game.masteryAuras.storm ? 2.5 : 2;
-      ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">';
-      for (var dpi = 0; dpi < topSpells.length; dpi++) {
-        var dsp = SPELLS[topSpells[dpi]];
-        var baseLow = dsp.effect.damage[0], baseHigh = dsp.effect.damage[1];
-        var normLow = Math.floor(baseLow * dmgMult * bladeMult);
-        var normHigh = Math.floor(baseHigh * dmgMult * bladeMult);
-        var critLow = Math.floor(normLow * critM);
-        var critHigh = Math.floor(normHigh * critM);
-        ph += '<div style="background:var(--bg);padding:4px 6px;border-radius:3px;border-left:2px solid var(--'+dsp.school+')">';
-        ph += '<div style="color:var(--'+dsp.school+');font-size:10px">' + dsp.name + ' (' + dsp.pips + ' pips)</div>';
-        ph += '<div style="color:var(--text-bright)">' + normLow + '-' + normHigh + '</div>';
-        ph += '<div style="color:var(--gold);font-size:9px">Crit: ' + critLow + '-' + critHigh + '</div>';
-        if (w.blade) ph += '<div style="color:var(--text-dim);font-size:9px">Includes blade +' + w.blade.percent + '%</div>';
-        ph += '</div>';
-      }
-      ph += '</div>';
-      ph += '<div style="color:var(--text-dim);margin-top:4px">Multiplier: x' + dmgMult.toFixed(2) + (bladeMult > 1 ? ' x' + bladeMult.toFixed(2) + ' (blade)' : '') + ' | Crit: x' + critM + '</div>';
-    } else {
-      ph += '<div style="color:var(--text-dim)">No damage spells learned yet.</div>';
-    }
-    ph += '</div></details>';
-    // Active buffs inline
+    // Active buffs
     var b = [];
     if (w.blade) b.push('Blade +' + w.blade.percent + '%');
-    if (w.shield) { var sl = w.shield.schools ? w.shield.schools.join('/') : 'all'; b.push('Shield -' + w.shield.percent + '% (' + sl + ')'); }
-    if (w.accuracyCharm) b.push('Charm +' + w.accuracyCharm.percent + '%');
-    if (Game.combat && Game.combat.global && Game.combat.global.stormDmgBonus) b.push('Global +' + Game.combat.global.stormDmgBonus + '%');
-    if (w._eventDmgBuff) b.push('+' + w._eventDmgBuff + '% Dmg');
-    if (w._eventAccBuff) b.push('' + (w._eventAccBuff>0?'+':'') + w._eventAccBuff + '% Acc');
+    if (w.shield) b.push('Shield -' + w.shield.percent + '%');
     if (w.absorb) b.push('Absorb ' + w.absorb);
     if (w._glacialMomentum) b.push('Glacial +' + w._glacialMomentum + '%');
+    if (w._voltage) b.push('Voltage +' + w._voltage + '%');
+    if (w._burndown) b.push('Burndown +' + w._burndown + '%');
+    if (w._livingStory) b.push('Living Story +' + w._livingStory + '%');
+    if (w._convergenceSchools && w._convergenceSchools.length > 0) b.push('Convergence +' + (w._convergenceSchools.length * 5) + '%');
     if (w._overhealBuff) b.push('Overheal +' + w._overhealBuff + '%');
-    if (w.healBoost) b.push('Heal +' + w.healBoost + '%');
     if (w._selfTrap) b.push('[!] Self-trap +' + w._selfTrap + '%');
-    if (b.length > 0) {
-      ph += '<div style="margin-top:8px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + b.join('  |  ') + '</div>';
-    }
-    // Mastery auras detail panel
+    if (b.length > 0) ph += '<div style="margin-top:8px;font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + b.join(' | ') + '</div>';
+    // Mastery auras
     if (Game.graduatedSchools && Game.graduatedSchools.length > 0) {
       ph += '<div style="margin-top:8px;font-size:11px;border-top:1px solid var(--border);padding-top:6px">';
-      ph += '<div style="color:var(--text-bright);margin-bottom:4px">Mastery Auras (' + Game.graduatedSchools.length + '/6)</div>';
-      for (var aui = 0; aui < Game.graduatedSchools.length; aui++) {
-        var auraD = MASTERY_AURAS[Game.graduatedSchools[aui]];
-        if (auraD) ph += '<div style="padding:1px 0"><span style="color:var(--' + Game.graduatedSchools[aui] + ')">◆ ' + auraD.name + '</span> <span style="color:var(--text-dim)">— ' + auraD.desc + '</span></div>';
-      }
+      for (var aui = 0; aui < Game.graduatedSchools.length; aui++) { var auraD = MASTERY_AURAS[Game.graduatedSchools[aui]]; if (auraD) ph += '<span title="' + auraD.desc + '" style="cursor:help;color:var(--' + Game.graduatedSchools[aui] + ');margin-right:8px">◆ ' + auraD.name + '</span>'; }
       ph += '</div>';
     }
-    // Enrollment info
-    if (Game.enrollmentCount > 0) {
-      ph += '<div style="margin-top:4px;font-size:10px;color:var(--text-dim)">Enrollment #' + (Game.enrollmentCount+1) + ' | Graduated: ' + Game.graduatedSchools.map(function(s){return s.charAt(0).toUpperCase()+s.slice(1);}).join(', ') + '</div>';
+    // School mechanic
+    var _mechDescs = {
+      storm: 'Voltage — each spell cast adds +5% damage to Storm spells, stacking up to +50%. Resets on fizzle.',
+      fire: 'Burndown — each hit on a burning enemy adds +3% damage, stacking up to +30%. Resets between encounters.',
+      ice: 'Glacial Momentum — each round in combat adds +2% damage, stacking indefinitely. Patience wins.',
+      life: 'Overheal — healing above max HP converts excess into +damage% for your next attack.',
+      death: 'Siphon Shield — drain heals generate an absorb shield equal to 25% of HP restored.',
+      myth: 'Living Story — each unique spell type cast adds +4% damage, stacking up to +28%. Variety rewarded.',
+      balance: 'Convergence — casting spells from different schools adds +5% damage per unique school used.',
+    };
+    if (_mechDescs[w.school]) {
+      ph += '<div style="margin-top:8px;font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:6px">' + _mechDescs[w.school] + '</div>';
     }
-    // Gameplay stats
-    var st = Game.stats || {};
-    var fishStats = Game.fishing || {};
-    var monStats = Game.monstrology || {animus:{},summonCards:[],treasureCards:[]};
-    var duelStats = Game.dueling || {};
-    var spireStats = Game.spire || {};
-    var expStats = Game.expeditions || {};
-    var assignStats = Game.assignments || {};
-    var totalAnimus = 0; var aKeys = Object.keys(monStats.animus||{}); for(var tak=0;tak<aKeys.length;tak++) totalAnimus+=(monStats.animus[aKeys[tak]]||0);
-    var tomeCount = fishStats.tome ? Object.keys(fishStats.tome).length : 0;
-    var totalFishSpecies = Object.keys(typeof FISH !== 'undefined' ? FISH : {}).length;
-    var bestiaryCount = Game.bestiary ? Object.keys(Game.bestiary).length : 0;
-
-    ph += '<details style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">';
-    ph += '<summary style="cursor:pointer;list-style:none;color:var(--text-bright);font-size:12px"><span class="tri"></span> Lifetime Stats</summary>';
-    ph += '<div style="padding-top:8px">';
-
-    function statRow(label, value, color) { return '<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--text-dim)">' + label + '</span><span style="color:' + (color||'var(--text-bright)') + '">' + value + '</span></div>'; }
-    function statSection(title, color) { return '<div style="font-size:11px;color:' + color + ';margin-top:8px;margin-bottom:3px;border-bottom:1px solid var(--border);padding-bottom:2px">' + title + '</div>'; }
-
-    // Combat
-    ph += statSection('Combat', 'var(--fizzle)');
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:11px">';
-    ph += statRow('Encounters', st.encountersCleared||0);
-    ph += statRow('Enemies Defeated', st.enemiesDefeated||0);
-    ph += statRow('Bosses Defeated', st.bossesDefeated||0, 'var(--cast)');
-    ph += statRow('Spells Cast', st.spellsCast||0);
-    ph += statRow('Critical Hits', st.crits||0, '#ffab00');
-    ph += statRow('Fizzles', st.fizzles||0, '#e53935');
-    ph += statRow('Deaths', st.deathCount||0, '#e53935');
-    ph += statRow('Accuracy Rate', st.spellsCast > 0 ? Math.round((1 - (st.fizzles||0) / st.spellsCast) * 100) + '%' : '—');
+    // Training Points + Rival
+    ph += '<div style="margin-top:8px;display:flex;justify-content:space-between;font-size:11px;font-family:Courier New,monospace;border-top:1px solid var(--border);padding-top:6px">';
+    ph += '<span style="color:var(--text-dim)">Training Points: <span style="color:var(--cast)">' + (w.trainingPoints || 0) + '</span></span>';
     ph += '</div>';
 
-    // Economy
-    ph += statSection('Economy', 'var(--gold)');
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:11px">';
-    ph += statRow('Gold Earned', (st.goldEarned||0).toLocaleString(), 'var(--gold)');
-    ph += statRow('Current Gold', Game.gold.toLocaleString(), 'var(--gold)');
-    ph += statRow('Crafting Rank', typeof CRAFTING_RANKS !== 'undefined' ? CRAFTING_RANKS[Game.crafting.rank] : 'Novice');
-    ph += statRow('Assignments Done', assignStats.completed||0);
-    ph += '</div>';
-
-    // Collection
-    ph += statSection('Collection', 'var(--cast)');
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:11px">';
-    ph += statRow('Bestiary', bestiaryCount + ' species');
-    ph += statRow('Fish Tome', tomeCount + '/' + totalFishSpecies);
-    ph += statRow('Fish Caught', fishStats.totalCaught||0);
-    ph += statRow('Animus Collected', totalAnimus);
-    ph += statRow('Treasure Cards', (monStats.treasureCards||[]).length);
-    ph += statRow('Summon Cards', (monStats.summonCards||[]).length);
-    ph += '</div>';
-
-    // Activities
-    ph += statSection('Activities', 'var(--heal)');
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:11px">';
-    ph += statRow('Spire Best', spireStats.highestFloor ? 'Floor ' + spireStats.highestFloor : '—');
-    ph += statRow('Duel Wins', (duelStats.totalWins||0) + '-' + (duelStats.totalLosses||0));
-    ph += statRow('Best Streak', duelStats.bestStreak||0);
-    ph += statRow('Expeditions', expStats.completed||0);
-    if (Game.rival) ph += statRow('vs ' + Game.rival.name, Game.rival.lossesToPlayer + '-' + Game.rival.winsAgainstPlayer);
-    ph += '</div>';
-
-    // Progression
-    ph += statSection('Progression', 'var(--myth)');
-    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:11px">';
-    ph += statRow('Enrollments', Game.enrollmentCount||0);
-    ph += statRow('Schools Graduated', Game.graduatedSchools ? Game.graduatedSchools.length + '/6' : '0/6');
-    ph += statRow('Auras Active', Game.graduatedSchools ? Game.graduatedSchools.length : 0);
-    ph += statRow('Spiral Cycle', Game.wizard.school === 'balance' ? Game.spiralCycle||1 : '—');
-    ph += statRow('Achievements', Game.achievements ? Object.keys(Game.achievements).length + '/' + Object.keys(typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS : {}).length : '0');
-    var wcCores = Game.wandCraft ? (Game.wandCraft.cores.length + (Game.wandCraft.equippedCore?1:0)) : 0;
-    var wcWoods = Game.wandCraft ? (Game.wandCraft.woods.length + (Game.wandCraft.equippedWood?1:0)) : 0;
-    if (wcCores + wcWoods > 0) ph += statRow('Wand Parts', wcCores + ' cores, ' + wcWoods + ' woods');
-    ph += '</div>';
-
-    // Achievements preview
-    if (Game.achievements && Object.keys(Game.achievements).length > 0) {
-      ph += statSection('Recent Achievements', '#ffab00');
-      var achKeys = Object.keys(Game.achievements);
-      var recentAch = achKeys.slice(-4);
-      for (var rai = 0; rai < recentAch.length; rai++) {
-        var ach = typeof ACHIEVEMENTS !== 'undefined' ? ACHIEVEMENTS[recentAch[rai]] : null;
-        if (ach) ph += '<div style="font-size:10px;color:var(--text-dim);padding:1px 0">★ ' + ach.name + ' — <span style="color:var(--text)">' + ach.desc + '</span></div>';
-      }
-    }
-
+    // Stat Sources — inside profile
+    ph += '<details style="margin-top:8px"><summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Stat Sources</summary>';
+    ph += '<div style="padding-top:6px;font-size:11px;font-family:Courier New,monospace;line-height:1.8">';
+    var _schoolAcc = (SCHOOL_STATS[w.school]||SCHOOL_STATS.storm).baseAccuracy;
+    var _rank = RANKS[w.rankIndex]||RANKS[0];
+    var _hpParts = ['Base: ' + _rank.baseHp]; var _manaParts = ['Base: ' + _rank.baseMana]; var _dmgParts = []; var _resParts = []; var _accParts = ['School: ' + _schoolAcc + '%']; var _ppParts = []; var _critParts = ['Base: 5%']; var _pierceParts = []; var _cbParts = [];
+    if (gearB.hp) _hpParts.push('Gear: +' + gearB.hp);
+    if (gearB.mana) _manaParts.push('Gear: +' + gearB.mana);
+    if (gearB.damage) _dmgParts.push('Gear: +' + gearB.damage + '%');
+    if (gearB.resist) _resParts.push('Gear: +' + gearB.resist + '%');
+    if (gearB.accuracy) _accParts.push('Gear: +' + gearB.accuracy + '%');
+    if (gearB.powerPip) _ppParts.push('Gear: +' + gearB.powerPip + '%');
+    if (_rank.powerPipBase) _ppParts.push('Rank: +' + _rank.powerPipBase + '%');
+    if (gearB.crit) _critParts.push('Gear: +' + gearB.crit + '%');
+    if (gearB.pierce) _pierceParts.push('Gear: +' + gearB.pierce + '%');
+    if (gearB.critBlock) _cbParts.push('Gear: +' + gearB.critBlock + '%');
+    if (w._eventDmgBuff) _dmgParts.push('Event: +' + w._eventDmgBuff + '%');
+    if (w._eventAccBuff) _accParts.push('Event: +' + w._eventAccBuff + '%');
+    ph += '<div><span style="color:#c04030">HP ' + w.maxHp + ':</span> ' + _hpParts.join(' | ') + '</div>';
+    ph += '<div><span style="color:#ff6d00">Damage +' + w.damage + '%:</span> ' + (_dmgParts.length ? _dmgParts.join(' | ') : '—') + '</div>';
+    ph += '<div><span style="color:#26a69a">Resist ' + w.resist + '%:</span> ' + (_resParts.length ? _resParts.join(' | ') : '—') + '</div>';
+    ph += '<div><span style="color:var(--text-bright)">Accuracy ' + w.accuracy + '%:</span> ' + _accParts.join(' | ') + '</div>';
+    ph += '<div><span style="color:#ffab00">Critical ' + (w.crit||5) + '%:</span> ' + _critParts.join(' | ') + '</div>';
+    ph += '<div><span style="color:#ab47bc">Pierce ' + (w.pierce||0) + '%:</span> ' + (_pierceParts.length ? _pierceParts.join(' | ') : '—') + '</div>';
+    ph += '<div><span style="color:#c8a84e">Power Pip ' + w.powerPipChance + '%:</span> ' + (_ppParts.length ? _ppParts.join(' | ') : '—') + '</div>';
+    ph += '<div><span style="color:#4090c0">Mana ' + w.maxMana + ':</span> ' + _manaParts.join(' | ') + '</div>';
     ph += '</div></details>';
+
+    // Damage Preview
+    ph += '<details style="margin-top:8px"><summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Damage Preview</summary>';
+    ph += '<div style="padding-top:6px;font-size:11px;font-family:Courier New,monospace;line-height:1.8">';
+    var _dmgMult = 1 + (w.damage || 0) / 100;
+    var _critMult = 2;
+    var _previewSpells = [];
+    var _db = Game.deckBuild || {};
+    for (var _pid in _db) {
+      if (_db[_pid] > 0 && SPELLS[_pid] && SPELLS[_pid].effect && SPELLS[_pid].effect.damage) _previewSpells.push(_pid);
+    }
+    _previewSpells.sort(function(a,b){ return (SPELLS[b].pips === 'X' ? 99 : SPELLS[b].pips) - (SPELLS[a].pips === 'X' ? 99 : SPELLS[a].pips); });
+    for (var _psi = 0; _psi < Math.min(5, _previewSpells.length); _psi++) {
+      var _psp = SPELLS[_previewSpells[_psi]];
+      var _lo = Math.floor(_psp.effect.damage[0] * _dmgMult);
+      var _hi = Math.floor(_psp.effect.damage[1] * _dmgMult);
+      var _clo = Math.floor(_lo * _critMult);
+      var _chi = Math.floor(_hi * _critMult);
+      ph += '<div><span style="color:var(--' + _psp.school + ')">' + _psp.name + '</span> <span style="color:var(--text-dim)">(' + _psp.pips + ' pips):</span> ' + _lo + '-' + _hi + ' | <span style="color:var(--gold)">Crit: ' + _clo + '-' + _chi + '</span></div>';
+    }
+    if (_previewSpells.length === 0) ph += '<div style="color:var(--text-dim)">No damage spells in deck.</div>';
+    ph += '<div style="color:var(--text-dim);margin-top:4px">Multiplier: x' + _dmgMult.toFixed(2) + ' | Crit: x' + _critMult + '</div>';
+    ph += '</div></details>';
+
+    // Lifetime Stats
+    var _s = Game.stats || {};
+    var _accRate = _s.spellsCast > 0 ? (100 - (_s.fizzles||0) / _s.spellsCast * 100).toFixed(1) + '%' : '—';
+    var _bestiary = Game.bestiary ? Object.keys(Game.bestiary).length : 0;
+    var _fishCt = Game.fishing && Game.fishing.totalCaught ? Game.fishing.totalCaught : 0;
+    var _fishTank = Game.fishing && Game.fishing.tome ? Object.keys(Game.fishing.tome).length : 0;
+    var _fishMax = 50;
+    var _animusCt = 0; if (Game.monstrology && Game.monstrology.animus) { for (var _ak in Game.monstrology.animus) _animusCt += Game.monstrology.animus[_ak]; }
+    var _tcCt = Game.monstrology && Game.monstrology.treasureCards ? Game.monstrology.treasureCards.length : 0;
+    var _summonCt = Game.monstrology && Game.monstrology.summonCards ? Game.monstrology.summonCards.length : 0;
+    var _spireHigh = Game.spire ? Game.spire.highestFloor : 0;
+    var _duelW = Game.dueling && Game.dueling.wins ? Object.values(Game.dueling.wins).reduce(function(a,b){return a+b;},0) : 0;
+    var _duelL = Game.dueling && Game.dueling.losses ? Object.values(Game.dueling.losses).reduce(function(a,b){return a+b;},0) : 0;
+    var _duelStreak = Game.dueling ? (Game.dueling.bestStreak||0) : 0;
+    var _expCt = Game.pet && Game.pet.expeditions ? Game.pet.expeditions.completed || 0 : 0;
+    var _achCount = 0; var _achTotal = 0; if (typeof ACHIEVEMENTS !== 'undefined') { var _achKeys = Object.keys(ACHIEVEMENTS); _achTotal = _achKeys.length; for (var _aci = 0; _aci < _achKeys.length; _aci++) { if (Game.achievements && Game.achievements[_achKeys[_aci]]) _achCount++; } }
+    var _craftRanks = typeof CRAFTING_RANKS !== 'undefined' ? CRAFTING_RANKS : ['Novice Crafter'];
+    var _craftRankName = Game.crafting ? (_craftRanks[Game.crafting.rank] || 'Novice Crafter') : 'Novice Crafter';
+    ph += '<details style="margin-top:8px"><summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Lifetime Stats</summary>';
+    ph += '<div style="padding-top:6px;font-size:11px;font-family:Courier New,monospace">';
+    ph += '<div style="color:var(--cast);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Combat</div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:10px">';
+    ph += '<div>Encounters: <span style="color:var(--text-bright)">' + ((_s.encountersCleared||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Enemies Defeated: <span style="color:var(--text-bright)">' + ((_s.enemiesDefeated||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Bosses Defeated: <span style="color:var(--text-bright)">' + ((_s.bossesDefeated||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Spells Cast: <span style="color:var(--text-bright)">' + ((_s.spellsCast||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Critical Hits: <span style="color:var(--gold)">' + ((_s.crits||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Fizzles: <span style="color:var(--fizzle)">' + ((_s.fizzles||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Deaths: <span style="color:var(--fizzle)">' + ((_s.deathCount||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Accuracy Rate: <span style="color:var(--text-bright)">' + _accRate + '</span></div>';
+    ph += '</div>';
+    ph += '<div style="color:var(--cast);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Economy</div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:10px">';
+    ph += '<div>Gold Earned: <span style="color:var(--gold)">' + ((_s.goldEarned||0).toLocaleString()) + '</span></div>';
+    ph += '<div>Current Gold: <span style="color:var(--gold)">' + (Game.gold||0).toLocaleString() + '</span></div>';
+    ph += '<div>Crafting Rank: <span style="color:var(--text-bright)">' + _craftRankName + '</span></div>';
+    ph += '<div>Assignments Done: <span style="color:var(--text-bright)">' + ((_s.assignmentsCompleted||0).toLocaleString()) + '</span></div>';
+    ph += '</div>';
+    ph += '<div style="color:var(--cast);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Collection</div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:10px">';
+    ph += '<div>Bestiary: <span style="color:var(--text-bright)">' + _bestiary + ' species</span></div>';
+    ph += '<div>Fish Tank: <span style="color:var(--ice)">' + _fishTank + '/' + _fishMax + '</span></div>';
+    ph += '<div>Fish Caught: <span style="color:var(--text-bright)">' + _fishCt.toLocaleString() + '</span></div>';
+    ph += '<div>Animus Collected: <span style="color:var(--text-bright)">' + _animusCt.toLocaleString() + '</span></div>';
+    ph += '<div>Treasure Cards: <span style="color:var(--text-bright)">' + _tcCt + '</span></div>';
+    ph += '<div>Summon Cards: <span style="color:var(--text-bright)">' + _summonCt + '</span></div>';
+    ph += '</div>';
+    ph += '<div style="color:var(--cast);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Activities</div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:10px">';
+    ph += '<div>Spire Best: <span style="color:var(--text-bright)">' + (_spireHigh > 0 ? 'Floor ' + _spireHigh : '—') + '</span></div>';
+    ph += '<div>Duel Wins: <span style="color:var(--text-bright)">' + _duelW + '-' + _duelL + '</span></div>';
+    ph += '<div>Best Streak: <span style="color:var(--text-bright)">' + _duelStreak + '</span></div>';
+    ph += '<div>Expeditions: <span style="color:var(--text-bright)">' + _expCt + '</span></div>';
+    if (Game.rival) ph += '<div>vs ' + Game.rival.name + ': <span style="color:var(--' + Game.rival.school + ')">' + Game.rival.lossesToPlayer + '-' + Game.rival.winsAgainstPlayer + '</span></div>';
+    ph += '</div>';
+    ph += '<div style="color:var(--cast);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Progression</div>';
+    ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">';
+    ph += '<div>Enrollments: <span style="color:var(--text-bright)">' + (Game.enrollmentCount||0) + '</span></div>';
+    ph += '<div>Schools Graduated: <span style="color:var(--text-bright)">' + (Game.graduatedSchools?Game.graduatedSchools.length:0) + '/6</span></div>';
+    ph += '<div>Auras Active: <span style="color:var(--text-bright)">' + (Game.graduatedSchools?Game.graduatedSchools.length:0) + '</span></div>';
+    ph += '<div>Spiral Cycle: <span style="color:var(--text-bright)">' + (Game.spiralCycle > 1 ? Game.spiralCycle : '—') + '</span></div>';
+    ph += '<div>Achievements: <span style="color:var(--text-bright)">' + _achCount + '/' + _achTotal + '</span></div>';
+    ph += '</div>';
+    ph += '</div></details>';
+
+    // Enrollment History
+    if (Game.enrollmentCount > 0) {
+      ph += '<details style="margin-top:8px"><summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Enrollment History (' + Game.enrollmentCount + ' runs)</summary>';
+      ph += '<div style="padding-top:6px;font-size:11px;font-family:Courier New,monospace">';
+      for (var gsi = 0; gsi < Game.graduatedSchools.length; gsi++) {
+        var gsc = Game.graduatedSchools[gsi];
+        var aura = MASTERY_AURAS[gsc];
+        ph += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 8px;margin-bottom:2px;border-left:2px solid var(--' + gsc + ')">';
+        ph += '<span style="color:var(--' + gsc + ');text-transform:capitalize">' + gsc + ' ✓</span>';
+        if (aura) ph += '<span style="color:var(--text-dim);font-size:10px">' + aura.name + '</span>';
+        ph += '</div>';
+      }
+      var _ungrad = ['storm','fire','ice','life','death','myth'].filter(function(s){ return !Game.graduatedSchools || Game.graduatedSchools.indexOf(s) === -1; });
+      for (var _ugi = 0; _ugi < _ungrad.length; _ugi++) {
+        ph += '<div style="padding:3px 8px;margin-bottom:2px;border-left:2px solid var(--border);color:var(--text-dim);font-size:10px;text-transform:capitalize">' + _ungrad[_ugi] + '</div>';
+      }
+      ph += '<div style="color:var(--text-dim);font-size:10px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px">Carries over: mastery auras, familiars, crafting rank, jewels<br>Resets: gear, spells, gold, reagents, world progress, deck</div>';
+      ph += '</div></details>';
+    }
     ph += '</div>';
     prof.innerHTML = ph;
   }
@@ -1577,7 +1627,7 @@ function renderGear() {
     var hasAnyCoreOrWood = wc.cores.length > 0 || wc.woods.length > 0 || wc.equippedCore || wc.equippedWood;
     if (hasAnyCoreOrWood) {
       wch += '<details style="margin-top:8px">';
-      wch += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--cast);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Wand Customization</summary>';
+      wch += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--cast);padding-bottom:3px"><span class="tri"></span> Wand Customization</summary>';
       wch += '<div style="padding-top:6px">';
       wch += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">Socket a core (offense) and wood (defense) into your equipped wand for bonus stats. Drops from bosses and enemies.</div>';
 
@@ -1653,7 +1703,7 @@ function renderGear() {
     var ih = '';
 
     // Gear items
-    ih += '<details style="margin-bottom:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Gear (' + w.inventory.length + ')</summary><div style="padding-top:6px">';
+    ih += '<details style="margin-bottom:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Gear (' + w.inventory.length + ')</summary><div style="padding-top:6px">';
     if (w.inventory.length > 0) {
       ih += '<div style="display:flex;gap:4px;margin-bottom:6px">';
       ih += '<button class="btn primary" onclick="equipBest();_gearDirty=true;updateUI();" style="font-size:10px;padding:2px 10px" title="Equip the strongest item for each slot based on your school scaling.">Equip Best</button>';
@@ -1677,7 +1727,7 @@ function renderGear() {
     ih += '</div></details>';
 
     // Consumables (potions + snacks)
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Consumables</summary><div style="padding-top:6px">';
+    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Consumables</summary><div style="padding-top:6px">';
     ih += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">';
     migratePotions();
     var hasConsumable = false;
@@ -1704,7 +1754,7 @@ function renderGear() {
     ih += '</div></div></details>';
 
     // Reagents
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Reagents</summary><div style="padding-top:6px">';
+    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Reagents</summary><div style="padding-top:6px">';
     ih += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
     var hasReagent = false;
     for (var rgi = 0; rgi < REAGENT_IDS.length; rgi++) {
@@ -1724,7 +1774,7 @@ function renderGear() {
     var hasSeed = false;
     for (var si = 0; si < seedKeys.length; si++) { if ((Game.garden.seeds[seedKeys[si]]||0) > 0) hasSeed = true; }
     if (hasSeed) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Seeds</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Seeds</summary><div style="padding-top:6px">';
       ih += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
       for (var si2 = 0; si2 < seedKeys.length; si2++) {
         var sCount = Game.garden.seeds[seedKeys[si2]];
@@ -1740,7 +1790,7 @@ function renderGear() {
     var enchInv = Game.crafting.inventory.enchantments;
     var jwlInv = Game.crafting.inventory.jewels;
     if (enchInv.length + jwlInv.length > 0) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Crafted Items (' + enchInv.length + ' enchants, ' + jwlInv.length + ' jewels)</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Crafted Items (' + enchInv.length + ' enchants, ' + jwlInv.length + ' jewels)</summary><div style="padding-top:6px">';
       if (enchInv.length > 0) {
         var enchCount = {};
         for (var ei = 0; ei < enchInv.length; ei++) enchCount[enchInv[ei]] = (enchCount[enchInv[ei]]||0) + 1;
@@ -1766,7 +1816,7 @@ function renderGear() {
     var wcTotalCores = wcInv.cores.length + (wcInv.equippedCore ? 1 : 0);
     var wcTotalWoods = wcInv.woods.length + (wcInv.equippedWood ? 1 : 0);
     if (wcTotalCores + wcTotalWoods > 0) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Wand Parts (' + wcTotalCores + ' cores, ' + wcTotalWoods + ' woods)</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Wand Parts (' + wcTotalCores + ' cores, ' + wcTotalWoods + ' woods)</summary><div style="padding-top:6px">';
       if (wcInv.equippedCore) {
         var eqCore = WAND_CORES[wcInv.equippedCore];
         if (eqCore) ih += '<div style="font-size:11px;padding:2px 0;color:var(--' + eqCore.school + ')">Core: ' + eqCore.name + ' <span style="color:var(--text-dim)">(equipped)</span></div>';
@@ -1797,7 +1847,7 @@ function renderGear() {
     initFishing();
     var rodList = Game.fishing.rods || ['starter_rod'];
     if (rodList.length > 0) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Fishing Rods (' + rodList.length + ')</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Fishing Rods (' + rodList.length + ')</summary><div style="padding-top:6px">';
       for (var fri = 0; fri < rodList.length; fri++) {
         var frd = FISHING_RODS[rodList[fri]];
         if (!frd) continue;
@@ -1824,7 +1874,7 @@ function renderGear() {
     var scInv = monInv.summonCards || [];
     var tcSlots = Game.tcSlots || [];
     if (tcInv.length + scInv.length + tcSlots.length > 0) {
-      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Monstrology Cards (' + (tcInv.length + tcSlots.length) + ' TC, ' + scInv.length + ' summon)</summary><div style="padding-top:6px">';
+      ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Monstrology Cards (' + (tcInv.length + tcSlots.length) + ' TC, ' + scInv.length + ' summon)</summary><div style="padding-top:6px">';
       if (tcSlots.length > 0) {
         for (var tsi = 0; tsi < tcSlots.length; tsi++) {
           ih += '<div style="font-size:11px;padding:2px 0;color:var(--' + tcSlots[tsi].school + ')">* ' + tcSlots[tsi].name + ' <span style="color:var(--text-dim)">(slotted)</span></div>';
@@ -1842,12 +1892,12 @@ function renderGear() {
     }
 
     // Training Points
-    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Training Points (' + (w.trainingPoints||0) + ')</summary><div style="padding-top:6px">';
+    ih += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Training Points (' + (w.trainingPoints||0) + ')</summary><div style="padding-top:6px">';
     ih += '<div style="font-size:11px;color:var(--text-dim)">' + (w.trainingPoints||0) + ' TP available — spend in the Spellbook tab</div>';
     ih += '</div></details>';
 
     // Achievements
-    ih += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Achievements (' + Object.keys(Game.achievements||{}).length + '/' + Object.keys(ACHIEVEMENTS).length + ')</summary><div style="padding-top:6px">';
+    ih += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> Achievements (' + Object.keys(Game.achievements||{}).length + '/' + Object.keys(ACHIEVEMENTS).length + ')</summary><div style="padding-top:6px">';
     var achKeys = Object.keys(ACHIEVEMENTS);
     for (var achi = 0; achi < achKeys.length; achi++) {
       var ach = ACHIEVEMENTS[achKeys[achi]];
@@ -1864,6 +1914,8 @@ function renderGear() {
 function renderCraft() {
   var el = document.getElementById('craft-content');
   if (!el) return;
+  var _craftOpen = []; var _craftDet = el.querySelectorAll('details');
+  for (var _coi = 0; _coi < _craftDet.length; _coi++) _craftOpen.push(_craftDet[_coi].open);
   var ch = '';
   ch += '<div style="font-style:italic;font-size:11px;color:var(--text-dim);margin-bottom:10px">"Measure twice, transmute once. Reagents don\'t grow on — well, some do. But still." — Tilly Brasswick</div>';
 
@@ -1877,7 +1929,7 @@ function renderCraft() {
   }
 
   // Reagent display — grouped by tier
-  ch += '<details><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);list-style:none;margin-bottom:6px"><span class="tri"></span> Reagents</summary>';
+  ch += '<details><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;list-style:none;margin-bottom:6px"><span class="tri"></span> Reagents</summary>';
   ch += '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:12px">';
   for (var tier = 1; tier <= 5; tier++) {
     ch += '<div style="margin-bottom:' + (tier<5?'6px':'0') + '"><span style="color:' + REAGENT_TIER_COLORS[tier] + ';font-size:10px">' + REAGENT_TIER_NAMES[tier] + ':</span> ';
@@ -1894,7 +1946,7 @@ function renderCraft() {
   ch += '</div></details>';
 
   // Transmutation
-  ch += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);list-style:none;margin-bottom:6px"><span class="tri"></span> Transmutation</summary>';
+  ch += '<details style="margin-top:4px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;list-style:none;margin-bottom:6px"><span class="tri"></span> Transmutation</summary>';
   ch += '<p style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Convert 10 of one reagent into 1 of the next tier (50g).</p>';
   ch += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">';
   for (var ti = 0; ti < REAGENT_IDS.length; ti++) {
@@ -1952,7 +2004,7 @@ function renderCraft() {
     });
     if (catRecipes.length === 0) continue;
 
-    ch += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> ' + cat.label + ' (' + catRecipes.length + ')</summary><div style="padding-top:6px">';
+    ch += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;list-style:none"><span class="tri"></span> ' + cat.label + ' (' + catRecipes.length + ')</summary><div style="padding-top:6px">';
     for (var rci = 0; rci < catRecipes.length; rci++) {
       var rec = RECIPES[catRecipes[rci]];
       var canC = canCraft(catRecipes[rci]) && !Game.crafting.queue;
@@ -2007,9 +2059,11 @@ function renderCraft() {
   }
 
   el.innerHTML = ch;
-}
-
-var _activeBazaarTab = 'reagents';
+  var _craftDetNew = el.querySelectorAll('details');
+  for (var _cri = 0; _cri < _craftDetNew.length && _cri < _craftOpen.length; _cri++) {
+    if (_craftOpen[_cri]) _craftDetNew[_cri].open = true;
+  }
+}var _activeBazaarTab = 'reagents';
 function switchBazaarTab(tab) {
   _activeBazaarTab = tab;
   var panels = document.querySelectorAll('.bazaar-panel');
@@ -2223,7 +2277,7 @@ function renderShop() {
       migratePotions();
       var POTION_WORLD_REQ = {mana_potion:0,health_potion:0,mana_elixir:2,health_elixir:2,restorative:3,wisps_brew:5};
       var fwp = Game.furthestWorld || 0;
-      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none;margin-bottom:6px"><span class="tri"></span> Potions</summary><div>';
+      ch2 += '<details><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none;margin-bottom:6px"><span class="tri"></span> Potions</summary><div>';
       for (var cpi = 0; cpi < POTION_IDS.length; cpi++) {
         var cpId = POTION_IDS[cpi];
         if ((POTION_WORLD_REQ[cpId]||0) > fwp) continue;
@@ -2239,7 +2293,7 @@ function renderShop() {
 
       // Snacks second
       migrateSnacks();
-      ch2 += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none;margin-bottom:6px"><span class="tri"></span> Familiar Snacks</summary><div>';
+      ch2 += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none;margin-bottom:6px"><span class="tri"></span> Familiar Snacks</summary><div>';
       var SNACK_SELL_UI = {breadcrumb:3,herb_cake:8,honey_bun:20,iron_biscuit:35,crystal_treat:80,arcane_truffle:160,starfruit:320,spiral_morsel:700};
       var SNACK_WORLD_REQ = {breadcrumb:0,herb_cake:0,honey_bun:1,iron_biscuit:2,crystal_treat:3,arcane_truffle:4,starfruit:5,spiral_morsel:6};
       var fwc = Game.furthestWorld || 0;
@@ -2403,7 +2457,7 @@ function renderGarden() {
   // Rare seeds (drop only)
   var dropOnlySeeds = Object.keys(SEEDS).filter(function(k){return SEEDS[k].dropOnly;});
   if (dropOnlySeeds.length > 0) {
-    h += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> Rare Seeds</summary><div style="padding-top:6px">';
+    h += '<details style="margin-top:12px"><summary style="cursor:pointer;font-size:13px;color:var(--text-bright);padding-bottom:4px;list-style:none"><span class="tri"></span> Rare Seeds</summary><div style="padding-top:6px">';
     h += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">These seeds only drop from enemies. They cannot be purchased.</div>';
     for (var dsi = 0; dsi < dropOnlySeeds.length; dsi++) {
       var dSeed = SEEDS[dropOnlySeeds[dsi]];
@@ -2419,6 +2473,9 @@ function renderGarden() {
 function renderPet() {
   var el = document.getElementById('pet-content');
   if (!el) return;
+  var _petOpenState = [];
+  var _petDetails = el.querySelectorAll('details');
+  for (var _poi = 0; _poi < _petDetails.length; _poi++) _petOpenState.push(_petDetails[_poi].open);
 
   if (!Game.pet && Game.petRoster.length === 0) {
     el.innerHTML = '<div class="section-head">Familiar</div><div style="font-style:italic;font-size:11px;color:var(--text-dim);margin-bottom:8px">"Every wizard needs a companion. Yours is out there — probably hiding in a boss\'s treasure hoard."<br>— ' + getProfessorName() + '</div><div style="color:var(--text-dim);font-size:12px">Defeat the boss of Spindlewood (World 1) to get your first familiar.</div>';
@@ -2488,7 +2545,7 @@ function renderPet() {
       var isActive = Game.pet && Game.pet.id === p.id;
       h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid '+(isActive?'var(--cast)':'var(--border)')+';border-radius:4px;font-size:12px">';
       h += '<span><span style="color:var(--text-bright)">'+p.name+'</span> <span style="color:var(--text-dim)">'+PET_STAGES[p.stageIndex]+' | '+p.innate+' | '+p.manifested.length+'/5 talents</span></span>';
-      if (!isActive) h += '<button class="btn" onclick="setActivePet(\''+p.id+'\')" style="font-size:10px;padding:2px 8px">Set Active</button>';
+      if (!isActive) h += '<button class="btn" onclick="setActivePet(\''+p.id+'\');_petDirty=true;updateUI();" style="font-size:10px;padding:2px 8px">Set Active</button>';
       else h += '<span style="color:var(--cast);font-size:10px">Active</span>';
       h += '</div>';
     }
@@ -2534,7 +2591,7 @@ function renderPet() {
     var activeExps = Game.expeditions.active || [];
 
     h += '<details style="margin-top:12px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Expeditions <span style="color:var(--text-dim);font-size:10px">(' + activeExps.length + '/' + maxSlots + ' active)</span></summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px"><span class="tri"></span> Expeditions <span style="color:var(--text-dim);font-size:10px">(' + activeExps.length + '/' + maxSlots + ' active)</span></summary>';
     h += '<div style="padding-top:6px">';
     h += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">Send idle familiars to explore locations and bring back reagents, fish, animus, and more. School-matched familiars are 30% faster and find better rewards. Higher-stage familiars travel faster.</div>';
 
@@ -2602,6 +2659,10 @@ function renderPet() {
   }
 
   el.innerHTML = h;
+  var _petDetailsNew = el.querySelectorAll('details');
+  for (var _pri = 0; _pri < _petDetailsNew.length && _pri < _petOpenState.length; _pri++) {
+    if (_petOpenState[_pri]) _petDetailsNew[_pri].open = true;
+  }
 }
 
 function renderMap() {
@@ -2682,7 +2743,7 @@ function renderMap() {
     // Milestone timeline
     var milestones = Object.keys(ENTROPY_ASPECTS).map(Number).sort(function(a,b){return a-b;});
     h += '<details style="margin-bottom:12px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Aspect Timeline</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Aspect Timeline</summary>';
     h += '<div style="padding-top:6px">';
     for (var mti = 0; mti < milestones.length; mti++) {
       var mc = milestones[mti];
@@ -2699,7 +2760,7 @@ function renderMap() {
     h += '</div></details>';
 
     // Zone progress
-    h += '<div style="font-size:12px;color:var(--text-bright);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:3px">Zones</div>';
+    h += '<div style="font-size:12px;color:var(--text-bright);margin-bottom:6px;padding-bottom:3px">Zones</div>';
     for (var sz = 0; sz < sw.zones.length; sz++) {
       var szone = sw.zones[sz];
       var sstatus = sz < Game.currentZone ? 'completed' : sz === Game.currentZone ? 'current' : 'locked';
@@ -2901,7 +2962,7 @@ function renderFishing() {
   // Bucket (current catches)
   var bucketCount = getTotalFishInBucket();
   h += '<details style="margin-bottom:12px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Bucket <span style="color:var(--text-dim);font-size:11px">(' + bucketCount + ' fish)</span></summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px"><span class="tri"></span> Bucket <span style="color:var(--text-dim);font-size:11px">(' + bucketCount + ' fish)</span></summary>';
   h += '<div style="padding-top:6px">';
   if (bucketCount > 0) {
     h += '<button class="btn" onclick="sellAllFish();_fishDirty=true;updateUI();" style="font-size:10px;padding:2px 8px;margin-bottom:6px;float:right">Sell All</button>';
@@ -2927,7 +2988,7 @@ function renderFishing() {
 
   // Fish Tome
   h += '<details style="margin-bottom:12px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Fish Tome <span style="color:var(--text-dim);font-size:11px">(' + (f.tome ? Object.keys(f.tome).length : 0) + '/' + Object.keys(FISH).length + ')</span></summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--text-bright);padding-bottom:4px"><span class="tri"></span> Fish Tome <span style="color:var(--text-dim);font-size:11px">(' + (f.tome ? Object.keys(f.tome).length : 0) + '/' + Object.keys(FISH).length + ')</span></summary>';
   h += '<div style="padding-top:6px">';
 
   for (var tw = 0; tw <= 7; tw++) {
@@ -2985,7 +3046,7 @@ function renderBestiary() {
   // Summon Cards section
   if (mon.summonCards && mon.summonCards.length > 0) {
     h += '<details style="margin-bottom:12px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--cast);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Summon Cards <span style="color:var(--text-dim);font-size:10px">(' + mon.summonCards.length + ')</span></summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--cast);padding-bottom:4px"><span class="tri"></span> Summon Cards <span style="color:var(--text-dim);font-size:10px">(' + mon.summonCards.length + ')</span></summary>';
     h += '<div style="padding-top:6px">';
     for (var sci = 0; sci < mon.summonCards.length; sci++) {
       var sc = mon.summonCards[sci];
@@ -3030,7 +3091,7 @@ function renderBestiary() {
     var wLocked = w > (Game.furthestWorld||0);
 
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> ' + WORLDS[w].name + ' <span style="color:var(--text-dim);font-size:10px">(' + wDiscovered + '/' + wEnemies.length + ')</span></summary>';
+    h += '<summary style="cursor:pointer;font-size:12px;color:var(--text-bright);padding-bottom:3px;list-style:none"><span class="tri"></span> ' + WORLDS[w].name + ' <span style="color:var(--text-dim);font-size:10px">(' + wDiscovered + '/' + wEnemies.length + ')</span></summary>';
     h += '<div style="padding-top:6px">';
 
     for (var bei = 0; bei < wEnemies.length; bei++) {
@@ -3084,7 +3145,7 @@ function renderBestiary() {
 
   // Spiral section — always show, locked or not
   var spiralEntries = Object.keys(bestiary).filter(function(k){ return k.startsWith('_spiral_'); });
-  h += '<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:12px;color:var(--balance);padding-bottom:3px;border-bottom:1px solid var(--border);list-style:none"><span class="tri"></span> The Spiral <span style="color:var(--text-dim);font-size:10px">(' + spiralEntries.length + ' encountered)</span></summary>';
+  h += '<details style="margin-bottom:8px"><summary style="cursor:pointer;font-size:12px;color:var(--balance);padding-bottom:3px;list-style:none"><span class="tri"></span> The Spiral <span style="color:var(--text-dim);font-size:10px">(' + spiralEntries.length + ' encountered)</span></summary>';
   h += '<div style="padding-top:6px">';
   if (spiralEntries.length > 0) {
     for (var si = 0; si < spiralEntries.length; si++) {
@@ -3116,7 +3177,7 @@ function renderBestiary() {
 
   // Animus summary (crafting moved to Spellbook)
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--cast);padding-bottom:4px;border-bottom:1px solid var(--border)"><span class="tri"></span> Animus <span style="color:var(--text-dim);font-size:10px">(' + totalAnimus + ' total)</span></summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:13px;color:var(--cast);padding-bottom:4px"><span class="tri"></span> Animus <span style="color:var(--text-dim);font-size:10px">(' + totalAnimus + ' total)</span></summary>';
   h += '<div style="padding-top:6px">';
   h += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px">Animus is extracted from defeated enemies. Use it to craft Treasure Cards in the <span style="color:var(--cast);cursor:pointer" onclick="switchTab(\'deck\');updateUI();">Spellbook</span> tab.</div>';
   var allSchoolsB = ['storm','fire','ice','life','death','myth','balance'];
@@ -3150,7 +3211,7 @@ function renderGrimoire() {
 
   // Schools of Magic
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Schools of Magic</summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Schools of Magic</summary>';
   h += '<div style="padding-top:6px">';
   for (var si = 0; si < g.schools.length; si++) {
     var sch = g.schools[si];
@@ -3171,7 +3232,7 @@ function renderGrimoire() {
 
   // Worlds
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Worlds</summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Worlds</summary>';
   h += '<div style="padding-top:6px">';
   var worldColors2 = ['var(--cast)','#e6c34d','#cd7f32','var(--storm)','var(--fire)','#26a69a','var(--death)','var(--balance)'];
   for (var wi = 0; wi < g.worlds.length; wi++) {
@@ -3205,7 +3266,7 @@ function renderGrimoire() {
 
   // People
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> People</summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> People</summary>';
   h += '<div style="padding-top:6px">';
   for (var pi = 0; pi < g.people.length; pi++) {
     var p = g.people[pi];
@@ -3229,7 +3290,7 @@ function renderGrimoire() {
   // Spiral Voice (collected lines)
   if (Game.wizard && Game.wizard.school === 'balance' && Game.spiralCycle > 1) {
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--balance);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> The Spiral\'s Voice</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--balance);padding-bottom:3px"><span class="tri"></span> The Spiral\'s Voice</summary>';
     h += '<div style="padding-top:6px">';
     var voiceKeys = Object.keys(SPIRAL_VOICE).map(Number).sort(function(a,b){return a-b;});
     for (var vi = 0; vi < voiceKeys.length; vi++) {
@@ -3248,7 +3309,7 @@ function renderGrimoire() {
     var beatenDuelists = Game.dueling.wins ? Object.keys(Game.dueling.wins) : [];
     if (beatenDuelists.length > 0) {
       h += '<details style="margin-bottom:8px">';
-      h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Dueling Club (' + beatenDuelists.length + '/' + g.duelists.length + ')</summary>';
+      h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Dueling Club (' + beatenDuelists.length + '/' + g.duelists.length + ')</summary>';
       h += '<div style="padding-top:6px">';
       for (var di = 0; di < g.duelists.length; di++) {
         var d = g.duelists[di];
@@ -3268,7 +3329,7 @@ function renderGrimoire() {
   if (Game.wizard && Game.wizard.school === 'balance' && Game.spiralCycle > 1) {
     var aspectKeys = Object.keys(ENTROPY_ASPECTS).map(Number).sort(function(a,b){return a-b;});
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--balance);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Entropy Aspects</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--balance);padding-bottom:3px"><span class="tri"></span> Entropy Aspects</summary>';
     h += '<div style="padding-top:6px">';
     for (var eai = 0; eai < aspectKeys.length; eai++) {
       var ac = aspectKeys[eai];
@@ -3287,7 +3348,7 @@ function renderGrimoire() {
   // Mastery Auras lore
   if (Game.graduatedSchools && Game.graduatedSchools.length > 0 && g.auras) {
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Mastery Auras (' + Game.graduatedSchools.length + '/6)</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Mastery Auras (' + Game.graduatedSchools.length + '/6)</summary>';
     h += '<div style="padding-top:6px">';
     var allAuraSchools = ['storm','fire','ice','life','death','myth'];
     for (var mai = 0; mai < allAuraSchools.length; mai++) {
@@ -3312,7 +3373,7 @@ function renderGrimoire() {
   // Enrollment Arc
   if (g.enrollmentArc) {
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> The Grand Enrollment</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> The Grand Enrollment</summary>';
     h += '<div style="padding-top:6px">';
     h += '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;line-height:1.5">Each graduation weaves another thread. Each enrollment brings you closer to The Spiral.</div>';
     var runLabels = ['First Enrollment','Second School','Third School','Fourth School','Fifth School','Sixth School','The Spiral'];
@@ -3330,7 +3391,7 @@ function renderGrimoire() {
 
   // Reagents compendium
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Reagents</summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Reagents</summary>';
   h += '<div style="padding-top:6px">';
   var tierNames = {1:'Common',2:'Uncommon',3:'Rare',4:'Epic',5:'Legendary'};
   for (var rt = 1; rt <= 5; rt++) {
@@ -3353,7 +3414,7 @@ function renderGrimoire() {
   var ownedWoods = wcData.woods.concat(wcData.equippedWood ? [wcData.equippedWood] : []);
   if (ownedCores.length > 0 || ownedWoods.length > 0) {
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Wand Compendium (' + ownedCores.length + ' cores, ' + ownedWoods.length + ' woods)</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Wand Compendium (' + ownedCores.length + ' cores, ' + ownedWoods.length + ' woods)</summary>';
     h += '<div style="padding-top:6px">';
     if (ownedCores.length > 0) {
       h += '<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">Cores (Offense)</div>';
@@ -3388,7 +3449,7 @@ function renderGrimoire() {
   // Fishing Rod compendium
   if (Game.fishing && Game.fishing.rods && Game.fishing.rods.length > 1) {
     h += '<details style="margin-bottom:8px">';
-    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Fishing Rods (' + Game.fishing.rods.length + '/' + Object.keys(FISHING_RODS).length + ')</summary>';
+    h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Fishing Rods (' + Game.fishing.rods.length + '/' + Object.keys(FISHING_RODS).length + ')</summary>';
     h += '<div style="padding-top:6px">';
     var allRodKeys = Object.keys(FISHING_RODS);
     for (var gfri = 0; gfri < allRodKeys.length; gfri++) {
@@ -3406,7 +3467,7 @@ function renderGrimoire() {
 
   // Seed compendium
   h += '<details style="margin-bottom:8px">';
-  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px;border-bottom:1px solid var(--border)"><span class="tri"></span> Seed Index</summary>';
+  h += '<summary style="cursor:pointer;list-style:none;font-size:12px;color:var(--text-bright);padding-bottom:3px"><span class="tri"></span> Seed Index</summary>';
   h += '<div style="padding-top:6px">';
   var seedKeys3 = Object.keys(SEEDS);
   for (var gsdi = 0; gsdi < seedKeys3.length; gsdi++) {

@@ -350,16 +350,20 @@ function discardFromHand(index) {
   if (!Game.combat || index < 0 || index >= Game.combat.hand.length) return;
   var card = Game.combat.hand.splice(index, 1)[0];
   Game.combat.discardPile.push(card);
-  // If draw pile is empty, reshuffle discard back in
-  if (Game.combat.drawPile.length === 0 && Game.combat.discardPile.length > 0) {
-    Game.combat.drawPile = shuffleArray(Game.combat.discardPile.slice());
-    Game.combat.discardPile = [];
-  }
-  // Draw replacement
   if (Game.combat.drawPile.length > 0) {
     Game.combat.hand.push(Game.combat.drawPile.pop());
   }
   addLog('Discarded ' + (SPELLS[card]?SPELLS[card].name:card), 'info');
+}
+
+function clearDeck() {
+  Game.deckBuild = {};
+  if (Game.combat) {
+    Game.combat.drawPile = [];
+    Game.combat.hand = [];
+    Game.combat.discardPile = [];
+  }
+  saveGame();
 }
 
 function setDeckSpellCount(spellId, count) {
@@ -800,9 +804,9 @@ const WORLDS = [
   ]},
   // W3 Pendleton
   { name:'Pendleton', rank:'Initiate', zones:[
-    {name:'The Brass Quarter',encounters:[['cogs_worker'],['cogs_worker','chimney_wisp'],['brass_patrol']]},
-    {name:'The Steam Works',encounters:[['chimney_wisp','chimney_wisp'],['brass_patrol','cogs_worker'],['steam_spinner'],['cogs_foreman']]},
-    {name:'Cogsworth Row',encounters:[['cogs_foreman','cogs_worker'],['chimney_blaze','chimney_wisp'],['brass_alpha'],['piston_guard','cogs_worker']]},
+    {name:'The Brass Quarter',encounters:[['cogs_worker'],['cogs_worker','chimney_wisp'],['brass_patrol'],['chimney_wisp','chimney_wisp'],['cogs_worker','cogs_worker']]},
+    {name:'The Steam Works',encounters:[['chimney_wisp','chimney_wisp'],['brass_patrol','cogs_worker'],['steam_spinner'],['cogs_foreman'],['brass_patrol','chimney_wisp']]},
+    {name:'Cogsworth Row',encounters:[['cogs_foreman','cogs_worker'],['chimney_blaze','chimney_wisp'],['brass_alpha'],['piston_guard','cogs_worker'],['cogs_foreman','chimney_wisp']]},
     {name:'The Gear Factory',encounters:[['piston_guard','brass_patrol'],['steam_spinner','cogs_foreman'],['chimney_blaze','brass_alpha'],['piston_captain','cogs_worker'],['steam_queen']]},
     {name:"The Inventor's Wing",encounters:[['piston_captain','brass_patrol'],['steam_queen','chimney_blaze'],['brass_alpha','brass_alpha'],['piston_guard','piston_guard'],['steam_queen','cogs_foreman']]},
     {name:'The Clock Core',encounters:[['piston_captain','steam_spinner'],['brass_alpha','chimney_blaze'],['steam_queen','piston_guard'],['piston_captain','piston_captain'],['steam_queen','brass_alpha']]},
@@ -810,9 +814,9 @@ const WORLDS = [
   ]},
   // W4 Mistral
   { name:'Mistral', rank:'Journeyman', zones:[
-    {name:'The Bamboo Path',encounters:[['jade_monk'],['bamboo_stalker','jade_monk'],['paper_sentinel']]},
-    {name:'The Lower Monastery',encounters:[['paper_sentinel','jade_monk'],['bamboo_stalker','bamboo_stalker'],['cloud_serpent']]},
-    {name:'The Spirit Garden',encounters:[['stonewarden','jade_monk'],['paper_master','paper_sentinel'],['bamboo_ronin'],['jade_elder']]},
+    {name:'The Bamboo Path',encounters:[['jade_monk'],['bamboo_stalker','jade_monk'],['paper_sentinel'],['jade_monk','jade_monk'],['bamboo_stalker','paper_sentinel']]},
+    {name:'The Lower Monastery',encounters:[['paper_sentinel','jade_monk'],['bamboo_stalker','bamboo_stalker'],['cloud_serpent'],['paper_sentinel','paper_sentinel'],['jade_monk','bamboo_stalker']]},
+    {name:'The Spirit Garden',encounters:[['stonewarden','jade_monk'],['paper_master','paper_sentinel'],['bamboo_ronin'],['jade_elder'],['cloud_serpent','jade_monk']]},
     {name:'The Jade Mines',encounters:[['jade_elder','bamboo_stalker'],['cloud_serpent','paper_sentinel'],['stonewarden','stonewarden'],['bamboo_ronin','jade_monk']]},
     {name:'The Wind Shrine',encounters:[['cloud_wyrm','paper_master'],['bamboo_ronin','bamboo_stalker'],['jade_elder','stonewarden'],['cloud_serpent','cloud_serpent']]},
     {name:'The Upper Monastery',encounters:[['stonewarden_elder','jade_elder'],['cloud_wyrm','bamboo_ronin'],['paper_master','paper_master'],['stonewarden_elder','cloud_serpent']]},
@@ -821,8 +825,8 @@ const WORLDS = [
   ]},
   // W5 Pyralis
   { name:'Pyralis', rank:'Adept', zones:[
-    {name:'The Lava Bridge',encounters:[['ash_knight'],['slag_crawler','slag_crawler'],['cinder_wolf']]},
-    {name:'The Outer Fortress',encounters:[['ash_knight','slag_crawler'],['glassborn','cinder_wolf'],['forge_wraith']]},
+    {name:'The Lava Bridge',encounters:[['ash_knight'],['slag_crawler','slag_crawler'],['cinder_wolf'],['ash_knight','slag_crawler'],['cinder_wolf','slag_crawler']]},
+    {name:'The Outer Fortress',encounters:[['ash_knight','slag_crawler'],['glassborn','cinder_wolf'],['forge_wraith'],['ash_knight','ash_knight'],['glassborn','slag_crawler']]},
     {name:'The Ash Barracks',encounters:[['ash_champion','ash_knight'],['cinder_alpha','slag_crawler'],['glassborn_shaper'],['forge_wraith','ash_knight']]},
     {name:'The Obsidian Halls',encounters:[['obsidian_golem','slag_crawler'],['glassborn_shaper','glassborn'],['ash_champion','cinder_wolf'],['forge_specter']]},
     {name:'The Forge of Ruin',encounters:[['forge_wraith','forge_wraith'],['obsidian_golem','ash_champion'],['cinder_alpha','glassborn_shaper'],['slag_horror']]},
@@ -833,9 +837,9 @@ const WORLDS = [
   ]},
   // W6 Abyssia
   { name:'Abyssia', rank:'Master', zones:[
-    {name:'The Shallows',encounters:[['coral_warden'],['tide_crawler','coral_warden'],['kelp_horror']]},
-    {name:'The Coral Gate',encounters:[['coral_sentinel','tide_crawler'],['kelp_horror','coral_warden'],['pressure_drone']]},
-    {name:'The Sunken Plaza',encounters:[['pearl_shaper','coral_sentinel'],['tide_ravager','kelp_horror'],['lantern_angler']]},
+    {name:'The Shallows',encounters:[['coral_warden'],['tide_crawler','coral_warden'],['kelp_horror'],['coral_warden','coral_warden'],['tide_crawler','kelp_horror']]},
+    {name:'The Coral Gate',encounters:[['coral_sentinel','tide_crawler'],['kelp_horror','coral_warden'],['pressure_drone'],['coral_sentinel','coral_warden'],['tide_crawler','tide_crawler']]},
+    {name:'The Sunken Plaza',encounters:[['pearl_shaper','coral_sentinel'],['tide_ravager','kelp_horror'],['lantern_angler'],['pearl_shaper','tide_crawler'],['coral_sentinel','kelp_horror']]},
     {name:'The Trench',encounters:[['pressure_drone','tide_crawler'],['kelp_leviathan','coral_warden'],['lantern_angler','kelp_horror'],['tide_ravager']]},
     {name:'The Luminous Caves',encounters:[['pearl_oracle','pearl_shaper'],['lantern_abyssal','pressure_drone'],['kelp_leviathan','tide_crawler'],['pressure_engine']]},
     {name:'The Pressure Corridor',encounters:[['pressure_engine','pressure_drone'],['tide_ravager','tide_ravager'],['lantern_abyssal','kelp_horror'],['coral_sentinel','coral_sentinel']]},
@@ -846,10 +850,10 @@ const WORLDS = [
   ]},
   // W7 Penumbra
   { name:'Penumbra', rank:'Grandmaster', zones:[
-    {name:'The Fracture Point',encounters:[['echo_shade'],['void_mote','echo_shade'],['rift_stalker']]},
-    {name:'The Shifting Wastes',encounters:[['rift_stalker','void_mote'],['echo_wraith','echo_shade'],['memory_wisp']]},
-    {name:'The Echo Fields',encounters:[['echo_wraith','rift_stalker'],['memory_wisp','void_mote'],['fractured_golem']]},
-    {name:'The Time Scar',encounters:[['fractured_golem','echo_shade'],['rift_predator','void_mote'],['unraveler']]},
+    {name:'The Fracture Point',encounters:[['echo_shade'],['void_mote','echo_shade'],['rift_stalker'],['echo_shade','echo_shade'],['void_mote','rift_stalker']]},
+    {name:'The Shifting Wastes',encounters:[['rift_stalker','void_mote'],['echo_wraith','echo_shade'],['memory_wisp'],['rift_stalker','rift_stalker'],['echo_wraith','void_mote']]},
+    {name:'The Echo Fields',encounters:[['echo_wraith','rift_stalker'],['memory_wisp','void_mote'],['fractured_golem'],['echo_wraith','echo_wraith'],['memory_wisp','rift_stalker']]},
+    {name:'The Time Scar',encounters:[['fractured_golem','echo_shade'],['rift_predator','void_mote'],['unraveler'],['fractured_golem','rift_stalker'],['rift_predator','echo_shade']]},
     {name:'The Gravity Well',encounters:[['unraveler','echo_wraith'],['rift_predator','memory_wisp'],['void_devourer'],['fractured_golem','rift_stalker']]},
     {name:'The Mirror Maze',encounters:[['void_devourer','unraveler'],['memory_torment','echo_wraith'],['rift_predator','rift_predator'],['fractured_titan']]},
     {name:'The Void Sanctum',encounters:[['fractured_titan','void_mote'],['memory_torment','rift_predator'],['unraveler_prime','echo_shade'],['void_devourer','void_devourer']]},
@@ -860,13 +864,13 @@ const WORLDS = [
   ]},
   // W8 Grand Practicum
   { name:'The Grand Practicum', rank:'Archmage', zones:[
-    {name:'Spindlewood Reprise',encounters:[['prac_inkling','prac_inkling'],['prac_mander'],['prac_inkling','prac_mander']]},
-    {name:'Solara Gauntlet',encounters:[['prac_mander','prac_cogsworth'],['prac_monk'],['prac_mander','prac_mander']]},
-    {name:'Pendleton Trial',encounters:[['prac_cogsworth','prac_cogsworth'],['prac_knight','prac_inkling'],['prac_cogsworth','prac_monk']]},
-    {name:'Mistral Challenge',encounters:[['prac_monk','prac_monk'],['prac_warden','prac_knight'],['prac_monk','prac_knight']]},
-    {name:'Pyralis Crucible',encounters:[['prac_knight','prac_knight'],['prac_shade','prac_warden'],['prac_elite','prac_knight']]},
-    {name:'Abyssia Descent',encounters:[['prac_warden','prac_warden'],['prac_shade','prac_elite'],['prac_warden','prac_shade']]},
-    {name:'Penumbra Breach',encounters:[['prac_shade','prac_shade'],['prac_elite','prac_elite'],['prac_shade','prac_elite','prac_inkling']]},
+    {name:'Spindlewood Reprise',encounters:[['prac_inkling','prac_inkling'],['prac_mander'],['prac_inkling','prac_mander'],['prac_inkling','prac_inkling','prac_inkling'],['prac_mander','prac_inkling']]},
+    {name:'Solara Gauntlet',encounters:[['prac_mander','prac_cogsworth'],['prac_monk'],['prac_mander','prac_mander'],['prac_cogsworth','prac_mander'],['prac_monk','prac_inkling']]},
+    {name:'Pendleton Trial',encounters:[['prac_cogsworth','prac_cogsworth'],['prac_knight','prac_inkling'],['prac_cogsworth','prac_monk'],['prac_knight','prac_cogsworth'],['prac_monk','prac_mander']]},
+    {name:'Mistral Challenge',encounters:[['prac_monk','prac_monk'],['prac_warden','prac_knight'],['prac_monk','prac_knight'],['prac_warden','prac_monk'],['prac_knight','prac_cogsworth']]},
+    {name:'Pyralis Crucible',encounters:[['prac_knight','prac_knight'],['prac_shade','prac_warden'],['prac_elite','prac_knight'],['prac_shade','prac_knight'],['prac_warden','prac_warden']]},
+    {name:'Abyssia Descent',encounters:[['prac_warden','prac_warden'],['prac_shade','prac_elite'],['prac_warden','prac_shade'],['prac_elite','prac_warden'],['prac_shade','prac_shade']]},
+    {name:'Penumbra Breach',encounters:[['prac_shade','prac_shade'],['prac_elite','prac_elite'],['prac_shade','prac_elite','prac_inkling'],['prac_elite','prac_shade','prac_mander'],['prac_elite','prac_elite','prac_knight']]},
     {name:'The Final Threshold',encounters:[['the_culmination']]},
   ]},
 ];
@@ -2330,7 +2334,7 @@ function startCraft(recipeId) {
   if (!r || !canCraft(recipeId)) { addLog('Cannot craft: missing reagents or rank.', 'info'); return; }
   for (var t in r.cost) Game.reagents[t] -= r.cost[t];
   Game.crafting.queue = {recipeId: recipeId, ticksLeft: r.time, totalTicks: r.time};
-  addLog('Started crafting: ' + r.name + ' (' + r.time + ' ticks)', 'system');
+  addLog('Started crafting: ' + r.name + ' (' + Math.ceil(r.time * Game.TICK_MS / 1000) + 's)', 'system');
   saveGame();
 }
 
@@ -2416,39 +2420,39 @@ function getSpellEnchantBonus(spellId, stat) {
 const EVENT_TYPES = [
   {id:'professor_summons',name:'Summons',desc:'A reward awaits you.',instant:true,effect:function(){
     var prof = getProfessorName();
-    var g = (getEffectiveWorldIndex()+1)*25; Game.gold += g; addLog(prof + ' gives you ' + g + ' gold!', 'crit'); addHubLog(prof + ': +' + g + ' gold', 'crit');}},
-  {id:'magical_surge',name:'Magical Surge',desc:'Wild magic surges — +15% damage for 50 ticks!',instant:false,buff:{damage:15},duration:50},
-  {id:'accuracy_surge',name:'Clarity Wave',desc:'The air sharpens — +10% accuracy for 50 ticks!',instant:false,buff:{accuracy:10},duration:50},
+    var g = (getEffectiveWorldIndex()+1)*25; Game.gold += g; addLog(prof + ' gives you ' + g + ' gold!', 'crit');}},
+  {id:'magical_surge',name:'Magical Surge',desc:'Wild magic surges — +15% damage for 40s!',instant:false,buff:{damage:15},duration:50},
+  {id:'accuracy_surge',name:'Clarity Wave',desc:'The air sharpens — +10% accuracy for 40s!',instant:false,buff:{accuracy:10},duration:50},
   {id:'treasure',name:'Treasure Discovery',desc:'You stumble upon a hidden cache!',instant:true,effect:function(){
     var worldReagents = getReagentDropsForWorld(getEffectiveWorldIndex());
     var t = worldReagents[Math.floor(Math.random()*worldReagents.length)];
     var amt = Math.floor(Math.random()*3)+2;
     Game.reagents[t] = (Game.reagents[t]||0) + amt;
-    addLog('Found ' + amt + ' ' + ALL_REAGENTS[t].name + '!', 'crit'); addHubLog('Treasure: +' + amt + ' ' + ALL_REAGENTS[t].name, 'crit');}},
+    addLog('Found ' + amt + ' ' + ALL_REAGENTS[t].name + '!', 'crit');}},
   {id:'traveling_merchant',name:'Traveling Merchant',desc:'A wandering vendor offers rare seeds at a discount.',instant:true,effect:function(){
     var seeds = ['lazy_tuber','jade_lotus','magma_root','pearl_kelp','deep_kelp','echo_moss'];
     var pick = seeds[Math.min(getEffectiveWorldIndex()-1, seeds.length-1)] || 'dandelweed';
     Game.garden.seeds[pick] = (Game.garden.seeds[pick]||0) + 2;
-    addLog('Merchant gives you 2x ' + SEEDS[pick].name + ' seeds!', 'crit'); addHubLog('Merchant: +2 ' + SEEDS[pick].name + ' seeds', 'crit');}},
+    addLog('Merchant gives you 2x ' + SEEDS[pick].name + ' seeds!', 'crit');}},
   {id:'snack_bonus',name:'Kitchen Surplus',desc:'The Spindlewood kitchen had leftovers.',instant:true,effect:function(){
     migrateSnacks();
     var tierSnacks = ['breadcrumb','breadcrumb','herb_cake','honey_bun','iron_biscuit','crystal_treat','arcane_truffle','starfruit'];
     var pick = tierSnacks[Math.min(getEffectiveWorldIndex(), tierSnacks.length-1)];
     var qty = 2 + Math.floor(Math.random()*3);
     addSnack(pick, qty);
-    addLog('Received ' + qty + 'x ' + SNACKS[pick].name + '!', 'crit'); addHubLog('Kitchen Surplus: +' + qty + ' ' + SNACKS[pick].name, 'crit');}},
-  {id:'disruption',name:'Magical Disruption',desc:'An arcane disturbance — -10% accuracy for 40 ticks.',instant:false,buff:{accuracy:-10},duration:40},
+    addLog('Received ' + qty + 'x ' + SNACKS[pick].name + '!', 'crit');}},
+  {id:'disruption',name:'Magical Disruption',desc:'An arcane disturbance — -10% accuracy for 32s.',instant:false,buff:{accuracy:-10},duration:40},
   {id:'garden_bloom',name:'Garden Bloom',desc:'Your garden plants grow faster for a while!',instant:true,effect:function(){
     if (!Game.garden || !Game.garden.unlocked) return;
     for (var i=0;i<Game.garden.plots.length;i++){
       var p=Game.garden.plots[i];
       if(p.seedId&&p.stage&&!p.wilting&&!p.needsTending) p.ticks+=20;
     }
-    addLog('Garden bloom: all plants advance 20 ticks!', 'crit'); addHubLog('Garden Bloom: all plants +20 ticks', 'crit');}},
+    addLog('Garden bloom: all plants advanced!', 'crit');}},
   {id:'fishing_frenzy',name:'Fishing Frenzy',desc:'The waters churn with activity! +15 fishing energy.',instant:true,effect:function(){
     initFishing();
     Game.fishing.energy = Math.min(Game.fishing.maxEnergy, Game.fishing.energy + 15);
-    addLog('Fishing Frenzy: +15 energy!', 'crit'); addHubLog('Fishing Frenzy: +15 energy', 'crit');}},
+    addLog('Fishing Frenzy: +15 energy!', 'crit');}},
   {id:'animus_resonance',name:'Animus Resonance',desc:'The air hums with creature essence. +2 random animus.',instant:true,effect:function(){
     if (!Game.monstrology) Game.monstrology = {animus:{},summonCards:[],treasureCards:[]};
     var bKeys = Object.keys(Game.bestiary||{}).filter(function(k){return !k.startsWith('_spiral_');});
@@ -2457,13 +2461,13 @@ const EVENT_TYPES = [
       var aKey = bKeys[Math.floor(Math.random() * bKeys.length)];
       Game.monstrology.animus[aKey] = (Game.monstrology.animus[aKey] || 0) + 1;
     }
-    addLog('Animus Resonance: +2 creature animus!', 'crit'); addHubLog('Animus Resonance: +2 animus', 'crit');}},
+    addLog('Animus Resonance: +2 creature animus!', 'crit');}},
   {id:'dueling_challenge',name:'Dueling Challenge',desc:'A rival wizard challenges you! Win a duel for double gold.',instant:true,effect:function(){
     var bonus = (getEffectiveWorldIndex() + 1) * 40;
     Game.gold += bonus;
     Game.stats.goldEarned = (Game.stats.goldEarned||0) + bonus;
     trackAssignment('goldEarned', null, bonus);
-    addLog('Dueling Challenge accepted! +' + bonus + 'g!', 'crit'); addHubLog('Dueling Challenge: +' + bonus + 'g', 'crit');}},
+    addLog('Dueling Challenge accepted! +' + bonus + 'g!', 'crit');}},
   {id:'familiar_gift',name:'Familiar\'s Gift',desc:'Your familiar found something while you weren\'t looking.',instant:true,effect:function(){
     if (!Game.pet) return;
     var gifts = ['reagent','gold','snack'];
@@ -2480,13 +2484,12 @@ const EVENT_TYPES = [
       if (sIds.length>0){var si=sIds[Math.floor(Math.random()*sIds.length)]; addSnack(si,2);
       addLog(Game.pet.name + ' found 2x ' + (SNACKS[si]?SNACKS[si].name:si) + '!', 'crit');}
     }
-    addHubLog(Game.pet.name + '\'s Gift: found items!', 'crit');}},
+    }},
   {id:'headmaster_visit',name:'Headmaster\'s Visit',desc:'"I don\'t usually leave my study. Consider this an exception."',instant:true,effect:function(){
     var xpBonus = (getEffectiveWorldIndex()+1) * 12;
     Game.wizard.xp = (Game.wizard.xp||0) + xpBonus;
     checkLevelUp();
-    addLog('"Keep this up and I\'ll have to find harder tests." — Headmaster Duskhollow (+' + xpBonus + ' XP)', 'crit');
-    addHubLog('Headmaster\'s Visit: +' + xpBonus + ' XP', 'crit');}},
+    addLog('"Keep this up and I\'ll have to find harder tests." — Headmaster Duskhollow (+' + xpBonus + ' XP)', 'crit');}},
   // === CHOICE EVENTS ===
   {id:'wandering_trader',name:'Wandering Trader',desc:'A hooded figure offers a deal.',instant:true,isChoice:true,
    choiceA:'Trade 150g for 8 reagents',choiceB:'Decline',
@@ -2519,67 +2522,67 @@ const EVENT_TYPES = [
   // === WORLD-SPECIFIC EVENTS ===
   // W1 Spindlewood
   {id:'ws_ink_spill',name:'Ink Spill',desc:'A bottle of enchanted ink shatters on the library floor.',world:0,instant:true,effect:function(){
-    var g=25;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('You help clean up. Grimsworth pays you '+g+'g.','crit');addHubLog('Ink Spill: +'+g+'g','crit');}},
+    var g=25;Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;addLog('You help clean up. Grimsworth pays you '+g+'g.','crit');}},
   {id:'ws_bell_chime',name:'Bell Tower Resonance',desc:'The bell tower rings with unusual clarity.',world:0,instant:false,buff:{accuracy:8},duration:40},
   {id:'ws_lost_page',name:'Lost Textbook Page',desc:'A page from an advanced spellbook flutters past.',world:0,instant:true,effect:function(){
-    var xp=12;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog('You study the page. +'+xp+' XP!','crit');addHubLog('Lost Page: +'+xp+' XP','crit');}},
+    var xp=12;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();addLog('You study the page. +'+xp+' XP!','crit');}},
   // W2 Solara
   {id:'ws_sandstorm',name:'Sandstorm',desc:'A sudden sandstorm sweeps the dunes.',world:1,instant:false,buff:{accuracy:-12},duration:30},
   {id:'ws_buried_cache',name:'Buried Cache',desc:'The wind uncovers something half-buried in the sand.',world:1,instant:true,effect:function(){
-    var g=60+Math.floor(Math.random()*40);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Ancient coins! +'+g+' gold!','crit');addHubLog('Buried Cache: +'+g+'g','crit');}},
+    var g=60+Math.floor(Math.random()*40);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);addLog('Ancient coins! +'+g+' gold!','crit');}},
   {id:'ws_scarab_swarm',name:'Scarab Swarm',desc:'Golden scarabs surge from the tombs — the Bazaar will pay well.',world:1,instant:true,effect:function(){
-    Game.reagents.scarab_shell=(Game.reagents.scarab_shell||0)+5;addLog('Collected 5 Scarab Shells!','crit');addHubLog('Scarab Swarm: +5 shells','crit');}},
+    Game.reagents.scarab_shell=(Game.reagents.scarab_shell||0)+5;addLog('Collected 5 Scarab Shells!','crit');}},
   // W3 Pendleton
   {id:'ws_steam_leak',name:'Steam Leak',desc:'A pipe bursts, flooding the corridor with hot steam.',world:2,instant:true,effect:function(){
     var dmg=Math.floor(Game.wizard.maxHp*0.08);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);addLog('Scalding steam! -'+dmg+' HP. The workers apologize.','fizzle');}},
   {id:'ws_clockwork_gift',name:'Clockwork Gift',desc:'A small automaton delivers a package from Magnus.',world:2,instant:true,effect:function(){
     for(var i=0;i<4;i++){var wr=getReagentDropsForWorld(2);var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}
-    addLog('The package contains 4 Pendleton reagents!','crit');addHubLog('Clockwork Gift: +4 reagents','crit');}},
+    addLog('The package contains 4 Pendleton reagents!','crit');}},
   // W4 Mistral
   {id:'ws_wind_blessing',name:'Wind Blessing',desc:'The mountain wind carries ancient power.',world:3,instant:false,buff:{damage:12,accuracy:5},duration:45},
   {id:'ws_tea_ceremony',name:'Tea Ceremony',desc:'A jade monk invites you to rest.',world:3,instant:true,effect:function(){
     Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Math.min(Game.wizard.maxMana,Game.wizard.mana+Math.floor(Game.wizard.maxMana*0.3));
-    addLog('You share tea. Fully healed, +30% mana restored.','crit');addHubLog('Tea Ceremony: healed','crit');}},
+    addLog('You share tea. Fully healed, +30% mana restored.','crit');}},
   // W5 Pyralis
   {id:'ws_eruption_warning',name:'Eruption Warning',desc:'The ground trembles. Lava rises.',world:4,instant:true,effect:function(){
     var dmg=Math.floor(Game.wizard.maxHp*0.1);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);
     for(var i=0;i<3;i++){var wr=getReagentDropsForWorld(4);var r=wr[Math.floor(Math.random()*wr.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}
-    addLog('Volcanic eruption! -'+dmg+' HP, but rare minerals surface. +3 reagents.','cast');addHubLog('Eruption: -HP, +reagents','cast');}},
+    addLog('Volcanic eruption! -'+dmg+' HP, but rare minerals surface. +3 reagents.','cast');}},
   {id:'ws_forge_flames',name:'Forge Flames',desc:'The old forges flare with residual power.',world:4,instant:false,buff:{damage:18},duration:35},
   // W6 Abyssia
   {id:'ws_tidal_surge',name:'Tidal Surge',desc:'A massive wave crashes through the corridors.',world:5,instant:true,effect:function(){
     Game.wizard.hp=Math.max(1,Game.wizard.hp-Math.floor(Game.wizard.maxHp*0.05));initFishing();Game.fishing.energy=Math.min(Game.fishing.maxEnergy,Game.fishing.energy+10);
-    addLog('The surge knocks you back but brings fish! -5% HP, +10 fishing energy.','cast');addHubLog('Tidal Surge: +10 energy','cast');}},
+    addLog('The surge knocks you back but brings fish! -5% HP, +10 fishing energy.','cast');}},
   {id:'ws_deep_pressure',name:'Deep Pressure',desc:'The crushing pressure of the deep strengthens your resolve.',world:5,instant:false,buff:{damage:10,accuracy:-5},duration:50},
   {id:'ws_pearl_deposit',name:'Pearl Deposit',desc:'Luminescent pearls embedded in the cave wall.',world:5,instant:true,effect:function(){
     var g=180+Math.floor(Math.random()*60);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;trackAssignment('goldEarned',null,g);
-    addLog('Harvested pearls worth '+g+' gold!','crit');addHubLog('Pearl Deposit: +'+g+'g','crit');}},
+    addLog('Harvested pearls worth '+g+' gold!','crit');}},
   // W7 Penumbra
   {id:'ws_reality_flicker',name:'Reality Flicker',desc:'Everything shifts sideways for a moment. When it settles, something is different.',world:6,instant:true,effect:function(){
     if(!Game.monstrology)Game.monstrology={animus:{},summonCards:[],treasureCards:[]};
     var bKeys=Object.keys(Game.bestiary||{}).filter(function(k){return !k.startsWith('_spiral_');});
     if(bKeys.length>0){for(var i=0;i<3;i++){var aKey=bKeys[Math.floor(Math.random()*bKeys.length)];Game.monstrology.animus[aKey]=(Game.monstrology.animus[aKey]||0)+1;}}
-    addLog('Reality reassembles. +3 creature animus from the gap between.','crit');addHubLog('Reality Flicker: +3 animus','crit');}},
+    addLog('Reality reassembles. +3 creature animus from the gap between.','crit');}},
   {id:'ws_memory_echo',name:'Memory Echo',desc:'You remember a spell you haven\'t learned yet.',world:6,instant:true,effect:function(){
     var xp=(getEffectiveWorldIndex()+1)*18;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();
-    addLog('The memory fades, but the knowledge stays. +'+xp+' XP.','crit');addHubLog('Memory Echo: +'+xp+' XP','crit');}},
+    addLog('The memory fades, but the knowledge stays. +'+xp+' XP.','crit');}},
   // The Spiral — endgame events
   {id:'ws_thread_snap',name:'Thread Snap',desc:'A thread of reality snaps. The feedback courses through you.',world:7,instant:true,effect:function(){
     var dmg=Math.floor(Game.wizard.maxHp*0.12);Game.wizard.hp=Math.max(1,Game.wizard.hp-dmg);
     Game.wizard._shardDmg=(Game.wizard._shardDmg||0)+1;recalcStats();
-    addLog('A thread snaps — '+dmg+' HP lost, but +1% permanent damage from the resonance.','cast');addHubLog('Thread Snap: +1% perm damage','cast');}},
+    addLog('A thread snaps — '+dmg+' HP lost, but +1% permanent damage from the resonance.','cast');}},
   {id:'ws_entropy_tide',name:'Entropy Tide',desc:'A wave of unraveling sweeps through. Enemies weaken, and so do you.',world:7,instant:false,buff:{damage:20,accuracy:-8},duration:55},
   {id:'ws_loom_fragment',name:'Loom Fragment',desc:'A piece of the old Loom surfaces. It still hums with purpose.',world:7,instant:true,effect:function(){
     var g=300+Math.floor((Game.spiralCycle||1)*25);Game.gold+=g;Game.stats.goldEarned=(Game.stats.goldEarned||0)+g;
     for(var i=0;i<5;i++){var r=REAGENT_IDS[Math.floor(Math.random()*REAGENT_IDS.length)];Game.reagents[r]=(Game.reagents[r]||0)+1;}
-    addLog('The Loom Fragment dissolves into +'+g+'g and 5 reagents.','crit');addHubLog('Loom Fragment: +'+g+'g, +5 reagents','crit');}},
+    addLog('The Loom Fragment dissolves into +'+g+'g and 5 reagents.','crit');}},
   {id:'ws_mote_whisper',name:'Mote\'s Whisper',desc:'Mote presses against you and glows faintly.',world:7,instant:true,effect:function(){
     Game.wizard.hp=Game.wizard.maxHp;Game.wizard.mana=Game.wizard.maxMana;
-    addLog('Mote glows. You feel whole again. Full HP and mana restored.','crit');addHubLog('Mote\'s Whisper: fully healed','crit');}},
+    addLog('Mote glows. You feel whole again. Full HP and mana restored.','crit');}},
   {id:'ws_void_pocket',name:'Void Pocket',desc:'A pocket of nothing. Time skips forward inside it.',world:7,instant:true,effect:function(){
     if(Game.pet){Game.pet.xp+=60;addLog('Your familiar absorbs void energy. +60 familiar XP.','crit');}
     var xp=(Game.spiralCycle||1)*8;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();
-    addLog('The void pocket collapses. +'+xp+' XP from the displaced time.','crit');addHubLog('Void Pocket: +'+xp+' XP','crit');}},
+    addLog('The void pocket collapses. +'+xp+' XP from the displaced time.','crit');}},
   {id:'ws_convergence_echo',name:'Convergence Echo',desc:'For a moment, all schools exist simultaneously.',world:7,instant:false,buff:{damage:25,accuracy:10},duration:30},
   {id:'ws_thread_harvest',name:'Thread Harvest',desc:'Loose threads drift by. You gather what you can.',world:7,instant:true,isChoice:true,
    choiceA:'Weave into shards (small chance of Spiral Shard)',choiceB:'Sell as raw thread (+gold)',
@@ -2589,7 +2592,7 @@ const EVENT_TYPES = [
     var quotes=['"I tried to hold it together once. The Spiral showed me I was already part of the weave." — Duskhollow','"The threads don\'t break. They just find new shapes. Remember that." — Duskhollow','"Mote found me first, you know. I wasn\'t ready. You might be." — Duskhollow','"Cycle 47. That\'s where I stopped. Not because I couldn\'t go further." — Duskhollow'];
     var q=quotes[Math.floor(Math.random()*quotes.length)];
     var xp=(Game.spiralCycle||1)*12;Game.wizard.xp=(Game.wizard.xp||0)+xp;checkLevelUp();
-    addLog(q,'system');addLog('+'+xp+' XP from the memory.','crit');addHubLog('Duskhollow\'s Memory: +'+xp+' XP','crit');}},
+    addLog(q,'system');addLog('+'+xp+' XP from the memory.','crit');}},
 ];
 
 function generateEvent() {
@@ -2607,9 +2610,9 @@ function generateEvent() {
   });
   var evt = available[Math.floor(Math.random()*available.length)];
   if (!evt) return;
-  var newEvt = Object.assign({}, evt, {startTick: Game.tick, ticksLeft: evt.duration||0, expireTicks: 120, claimed: false});
+  var newEvt = Object.assign({}, evt, {startTick: Game.tick, ticksLeft: evt.duration||0, expireTicks: 120, _expireAt: Date.now() + 120 * Game.TICK_MS, claimed: false});
   Game.events.active.push(newEvt);
-  addLog('📜 Event: ' + evt.name + ' — ' + evt.desc, 'crit');
+  if (!evt.instant) addHubLog('Event: ' + evt.name, 'crit');
 }
 
 function respondToEvent(eventIndex) {
@@ -2624,8 +2627,7 @@ function respondToEvent(eventIndex) {
     if (evt.buff.damage) buffDesc.push((evt.buff.damage>0?'+':'') + evt.buff.damage + '% damage');
     if (evt.buff.accuracy) buffDesc.push((evt.buff.accuracy>0?'+':'') + evt.buff.accuracy + '% accuracy');
     var durSecs = Math.ceil(evt.duration * Game.TICK_MS / 1000);
-    addLog('Activated: ' + evt.name + ' — ' + buffDesc.join(', ') + ' (' + durSecs + 's)', 'crit');
-    addHubLog(evt.name + ': ' + buffDesc.join(', ') + ' (' + durSecs + 's)', 'crit');
+    addLog(evt.name + ': ' + buffDesc.join(', ') + ' (' + durSecs + 's)', 'crit');
   }
   // Remove from banners immediately — buffs tick down silently, expiry logged
   Game.events.active.splice(eventIndex, 1);
@@ -2783,6 +2785,17 @@ function buyTPSpell(tpId) {
   var tpMax = getDeckSize();
   if (tpTotal + tpCopies > tpMax) tpCopies = Math.max(0, tpMax - tpTotal);
   if (tpCopies > 0) Game.deckBuild[realId] = tpCopies;
+  if (Game.combat) {
+    Game.combat.drawPile = buildDrawPile();
+    for (var hi = 0; hi < Game.combat.hand.length; hi++) {
+      var hIdx = Game.combat.drawPile.indexOf(Game.combat.hand[hi]);
+      if (hIdx !== -1) Game.combat.drawPile.splice(hIdx, 1);
+    }
+    for (var dpi = 0; dpi < Game.combat.discardPile.length; dpi++) {
+      var dpIdx = Game.combat.drawPile.indexOf(Game.combat.discardPile[dpi]);
+      if (dpIdx !== -1) Game.combat.drawPile.splice(dpIdx, 1);
+    }
+  }
   addLog('★ Learned ' + tp.name + ' (' + tp.tpCost + ' TP)!', 'crit');
   addHubLog('Learned ' + tp.name + ' (' + tp.school + ', ' + tp.tpCost + ' TP)', 'crit');
   saveGame();
@@ -2800,6 +2813,15 @@ function saveDeckSlot(slotIndex, name) {
   };
   addLog('Saved deck: ' + Game.savedDecks[slotIndex].name, 'system');
   saveGame();
+}
+
+function renameDeckSlot(slotIndex) {
+  if (!Game.savedDecks || !Game.savedDecks[slotIndex]) return;
+  var newName = prompt('Rename deck:', Game.savedDecks[slotIndex].name);
+  if (newName && newName.trim()) {
+    Game.savedDecks[slotIndex].name = newName.trim().substring(0, 24);
+    saveGame();
+  }
 }
 
 function loadDeckSlot(slotIndex) {
@@ -3619,13 +3641,19 @@ function castSpell(spell, targetIndex) {
 
   // Fizzle check BEFORE spending pips (utility spells never fizzle)
   const noFizzle = ['blade','trap','shield','charm','prism','global','debuff','detonate','absorb','heal','summon'].includes(spell.type);
-  if (!noFizzle && !rollAccuracy(spell.accuracy, Game.wizard.accuracyCharm)) {
+  var spellAcc = spell.accuracy;
+  if (Game.wizard.school === 'myth' && Game.wizard._livingStory) spellAcc = Math.min(100, spellAcc + Game.wizard._livingStory);
+  if (!noFizzle && !rollAccuracy(spellAcc, Game.wizard.accuracyCharm)) {
     // Fizzle costs mana but NOT pips (like W101)
     var fizzMana = spell.mana || 0;
     if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('draining') !== -1) fizzMana += 1;
     Game.wizard.mana = Math.max(0, Game.wizard.mana - fizzMana);
     addLog('R' + Game.round + ': ' + spell.name + ' → FIZZLE ✗', 'fizzle');
     if (typeof SFX !== 'undefined') SFX.fizzle();
+    if (Game.wizard.school === 'storm' && Game.wizard._voltage > 0) {
+      addLog('  Voltage reset!', 'info');
+      Game.wizard._voltage = 0;
+    }
     if (Game._spiralWorld && Game._spiralWorld.modifiers && Game._spiralWorld.modifiers.indexOf('volatile') !== -1) {
       var volDmg = Math.floor(Game.wizard.maxHp * 0.05);
       Game.wizard.hp = Math.max(1, Game.wizard.hp - volDmg);
@@ -3638,6 +3666,20 @@ function castSpell(spell, targetIndex) {
   if (Game.wizard.accuracyCharm && !noFizzle) Game.wizard.accuracyCharm = null;
   if (!Game.stats) Game.stats = {}; Game.stats.spellsCast = (Game.stats.spellsCast||0) + 1;
   trackAssignment('spellsCast', null, 1);
+
+  // Voltage (Storm solo mechanic) — increment on successful cast
+  if (Game.wizard.school === 'storm' && !noFizzle) {
+    Game.wizard._voltage = (Game.wizard._voltage||0) + 5;
+    if (Game.wizard._voltage % 15 === 0) addLog('  Voltage: +' + Game.wizard._voltage + '% damage', 'cast');
+  }
+  // Convergence (Balance solo mechanic) — track schools used in this fight
+  if (Game.wizard.school === 'balance') {
+    if (!Game.wizard._convergenceSchools) Game.wizard._convergenceSchools = [];
+    if (Game.wizard._convergenceSchools.indexOf(spell.school) === -1) {
+      Game.wizard._convergenceSchools.push(spell.school);
+      addLog('  Convergence: ' + spell.school + ' thread woven (+' + (Game.wizard._convergenceSchools.length * 5) + '% total)', 'cast');
+    }
+  }
 
   // Spend pips/mana only on successful cast
   var xPipVal = 0;
@@ -3661,11 +3703,16 @@ function castSpell(spell, targetIndex) {
       var targets = isAoe ? getAliveEnemies() : (target ? [target] : []);
       if (targets.length === 0) return true;
 
-      // Base multiplier (includes enchantment damage bonus)
+      // Base multiplier (includes enchantment damage bonus + school mechanics)
       var enchDmgBonus = getSpellEnchantBonus(spell.id, 'damage');
       var glacialBonus = (Game.wizard.school === 'ice' && Game.wizard._glacialMomentum) ? Game.wizard._glacialMomentum : 0;
       var overhealBonus = Game.wizard._overhealBuff || 0;
-      var mult = 1 + ((Game.wizard.damage + enchDmgBonus + glacialBonus + overhealBonus)/100);
+      var voltageBonus = (Game.wizard.school === 'storm' && Game.wizard._voltage) ? Game.wizard._voltage : 0;
+      var burndownBonus = (Game.wizard.school === 'fire' && Game.wizard._burndown) ? Game.wizard._burndown : 0;
+      var livingStoryBonus = (Game.wizard.school === 'myth' && Game.wizard._livingStory) ? Game.wizard._livingStory : 0;
+      var convergenceBonus = (Game.wizard.school === 'balance' && Game.wizard._convergenceSchools) ? Game.wizard._convergenceSchools.length * 5 : 0;
+      var mechBonus = glacialBonus + voltageBonus + burndownBonus + livingStoryBonus + convergenceBonus;
+      var mult = 1 + ((Game.wizard.damage + enchDmgBonus + mechBonus + overhealBonus)/100);
       if (overhealBonus > 0) { Game.wizard._overhealBuff = 0; addLog('  Overheal buff consumed: +' + overhealBonus + '%', 'crit'); }
       if (Game.combat.global && Game.combat.global.stormDmgBonus) mult += Game.combat.global.stormDmgBonus/100;
       if (Game.combat.global && Game.combat.global.mythDmgBonus) mult += Game.combat.global.mythDmgBonus/100;
@@ -3758,7 +3805,7 @@ function castSpell(spell, targetIndex) {
         if (isCrit && typeof SFX !== 'undefined') SFX.crit();
         else if (typeof SFX !== 'undefined') SFX.hit();
         if (dmg > 500 && typeof screenShake === 'function') screenShake();
-        if (tgt.hp <= 0 && typeof showEnemyDeath === 'function') showEnemyDeath(i);
+        if (tgt.hp <= 0 && typeof showEnemyDeath === 'function') showEnemyDeath(ti);
         if (tgt.hp <= 0 && typeof SFX !== 'undefined') SFX.kill();
 
         // Multi-hit (Manticore, Chimera — extra hits that pierce shields)
@@ -3884,8 +3931,17 @@ function castSpell(spell, targetIndex) {
       // Drain: heal half of damage dealt
       if (spell.effect.drain && totalDmgDealt > 0) {
         var drainHeal = Math.floor(totalDmgDealt * 0.5);
+        var actualDrainHeal = Math.min(drainHeal, Game.wizard.maxHp - Game.wizard.hp);
         Game.wizard.hp = Math.min(Game.wizard.maxHp, Game.wizard.hp + drainHeal);
         addLog('  Drain: +' + drainHeal + ' HP', 'heal');
+        // Siphon Shield (Death solo mechanic) — drain excess becomes absorb
+        if (Game.wizard.school === 'death') {
+          var drainExcess = drainHeal - actualDrainHeal;
+          if (drainExcess > 0) {
+            Game.wizard.absorb = (Game.wizard.absorb||0) + drainExcess;
+            addLog('  Siphon Shield: +' + drainExcess + ' absorb (' + Game.wizard.absorb + ' total)', 'cast');
+          }
+        }
       }
       // HoT application (from Singe etc.)
       if (spell.effect.hot) {
@@ -4302,13 +4358,13 @@ const GRIMOIRE = {
     {name:'Mote',school:'balance',role:'The Headmaster\'s Fox',desc:'A small fox that lives in Duskhollow\'s coat pocket. Does not look at new students. Follows Balance wizards into The Spiral. Glows faintly at high cycle counts. No one knows what Mote actually is. Duskhollow won\'t say.'},
   ],
   schools: [
-    {school:'storm',title:'Stormcaller',prof:'Professor Galesworth',desc:'The school of raw power. Highest damage, lowest accuracy, lowest HP. Storm wizards accept that half their spells will fizzle. The other half end fights.',philosophy:'"If it fizzles, cast it again. If it lands, nothing else matters."'},
-    {school:'fire',title:'Pyromancer',prof:'Professor Ashveil',desc:'The school of sustained damage. Fire spells burn over time — applying DoTs that tick round after round. Patient destruction.',philosophy:'"Let it burn slow. Patience is a kind of heat."'},
-    {school:'ice',title:'Frostbinder',prof:'Professor Rimward',desc:'The school of endurance. Highest HP and resist. Ice wizards outlast their enemies through sheer stubbornness. Their damage is low but their patience is infinite.',philosophy:'"Endure first. Win second."'},
-    {school:'life',title:'Verdancer',prof:'Professor Fernsby',desc:'The school of restoration. Highest accuracy, powerful healing. When a Verdancer heals more than they need, the excess becomes violence. Healing is not passive.',philosophy:'"Healing is not passive. It is the most aggressive thing you can do."'},
-    {school:'death',title:'Wraith',prof:'Professor Marrowick',desc:'The school of balance through theft. Drain spells deal damage and heal the caster simultaneously. Self-sustaining, efficient, and deeply unsettling to fight against.',philosophy:'"Take only what you need. Leave the rest."'},
-    {school:'myth',title:'Fabulist',prof:'Professor Thornscribe',desc:'The school of stories. Myth wizards summon minions and tell them what to do. Multi-hit spells punch through shields. If you can imagine it, it fights for you.',philosophy:'"The story is the weapon. Tell it well."'},
-    {school:'balance',title:'Threadweaver',prof:'Headmaster Duskhollow',desc:'The school of everything. Unlocked after mastering all six schools. Universal blades, universal traps, every spell. Balance does not specialize. Balance weaves.',philosophy:'"All threads. One weave. No favorites."'},
+    {school:'storm',title:'Stormcaller',prof:'Professor Galesworth',desc:'The school of raw power. Highest damage, lowest accuracy, lowest HP. Storm wizards accept that half their spells will fizzle. The other half end fights. Voltage builds with each successful cast — consecutive hits stack +5% damage, but a single fizzle resets it to zero.',philosophy:'"If it fizzles, cast it again. If it lands, nothing else matters."'},
+    {school:'fire',title:'Pyromancer',prof:'Professor Ashveil',desc:'The school of sustained damage. Fire spells burn over time — applying DoTs that tick round after round. The Burndown mechanic rewards patience: each active DoT on any enemy adds +1% damage to your spells. The longer things burn, the harder you hit.',philosophy:'"Let it burn slow. Patience is a kind of heat."'},
+    {school:'ice',title:'Frostbinder',prof:'Professor Rimward',desc:'The school of endurance. Highest HP and resist. Ice wizards outlast their enemies through sheer stubbornness. Glacial Momentum builds +3% damage per round while you maintain a shield or absorb — but drops the moment you\'re unprotected.',philosophy:'"Endure first. Win second."'},
+    {school:'life',title:'Verdancer',prof:'Professor Fernsby',desc:'The school of restoration. Highest accuracy, powerful healing. When a Verdancer heals more than they need, the Overheal excess converts into a damage buff on their next attack. Healing is not passive — it\'s stored aggression.',philosophy:'"Healing is not passive. It is the most aggressive thing you can do."'},
+    {school:'death',title:'Wraith',prof:'Professor Marrowick',desc:'The school of balance through theft. Drain spells deal damage and heal the caster simultaneously. The Siphon Shield mechanic converts excess drain healing (when already at full HP) into absorb, making Death wizards increasingly hard to kill the more damage they deal.',philosophy:'"Take only what you need. Leave the rest."'},
+    {school:'myth',title:'Fabulist',prof:'Professor Thornscribe',desc:'The school of stories. Myth wizards summon minions and tell them what to do. The Living Story mechanic rewards keeping your minion alive — +3% damage and accuracy per round while a summon stands. Losing the minion resets the bonus entirely.',philosophy:'"The story is the weapon. Tell it well."'},
+    {school:'balance',title:'Threadweaver',prof:'Headmaster Duskhollow',desc:'The school of everything. Unlocked after mastering all six schools. Balance has access to every spell in the game. The Convergence mechanic rewards using that breadth — each different school of spell cast in a fight adds +5% damage, up to +35% for weaving all seven threads.',philosophy:'"All threads. One weave. No favorites."'},
   ],
   duelists: [
     {id:'duel_penna',name:'Penna Inksworth',school:'myth',desc:'The librarian\'s apprentice. Read every book in Spindlewood and decided knowledge was a weapon. Fights with recited passages and smug corrections.'},
@@ -4738,6 +4794,11 @@ function startEncounter() {
   };
   if (!reuseCards) drawCards();
   Game.round = 0; Game.state = 'fighting'; Game.phase = 'round_start';
+  // Reset per-encounter school mechanics
+  Game.wizard._voltage = 0;
+  Game.wizard._convergenceSchools = [];
+  Game.wizard._livingStory = 0;
+  Game.wizard._burndown = 0;
   addLog('', 'info');
   const world = getCurrentWorld();
   addLog('━━━ ' + world.name + ' · ' + zone.name + ': Encounter ' + (Game.currentEncounter+1) + '/' + zone.encounters.length + ' ━━━', 'system');
@@ -4808,6 +4869,26 @@ function combatTick() {
         } else {
           if (Game.wizard._glacialMomentum > 0) addLog('  Glacial Momentum reset (no shield)', 'info');
           Game.wizard._glacialMomentum = 0;
+        }
+      }
+      // Burndown (Fire solo mechanic) — count active DoT ticks across all enemies
+      if (Game.wizard.school === 'fire') {
+        var totalDots = 0;
+        var aliveEn = getAliveEnemies();
+        for (var bdi = 0; bdi < aliveEn.length; bdi++) {
+          if (aliveEn[bdi].dots) totalDots += aliveEn[bdi].dots.length;
+        }
+        Game.wizard._burndown = totalDots;
+        if (totalDots > 0 && Game.round % 4 === 0) addLog('  Burndown: +' + totalDots + '% damage (' + totalDots + ' active DoTs)', 'cast');
+      }
+      // Living Story (Myth solo mechanic) — stacks while minion alive
+      if (Game.wizard.school === 'myth') {
+        if (Game.wizard.minion && Game.wizard.minion.hp > 0) {
+          Game.wizard._livingStory = (Game.wizard._livingStory||0) + 3;
+          if (Game.round % 4 === 0) addLog('  Living Story: +' + Game.wizard._livingStory + '% damage/accuracy (minion alive)', 'cast');
+        } else {
+          if (Game.wizard._livingStory > 0) addLog('  Living Story reset (no minion)', 'info');
+          Game.wizard._livingStory = 0;
         }
       }
       processBossCheats();
@@ -4920,6 +5001,87 @@ function advanceEncounter() {
       ];
       addLog('  ' + spiralFlavor[Math.floor(Math.random() * spiralFlavor.length)], 'info');
     }
+
+    // Grand Practicum zone-clear narration
+    if (Game.currentWorld === 7 && !Game._spiralWorld && !Game.farming) {
+      var pracZone = Game.currentZone;
+      var pracQuotes = [
+        '"You remember Spindlewood differently now, don\'t you? Good. That means it worked." — Headmaster Duskhollow',
+        '"' + getProfessorName() + ' is watching. They won\'t say it, but they\'re nervous for you." — Headmaster Duskhollow',
+        '"The gears, the steam, the noise — Pendleton was never about precision. It was about pressure." — Headmaster Duskhollow',
+        '"The monks tested patience. The Practicum tests whether you learned it." — Headmaster Duskhollow',
+        '"Everything burns here. Including doubt. Let it." — Headmaster Duskhollow',
+        '"The deep doesn\'t forgive mistakes. Neither does this." — Headmaster Duskhollow',
+        '"Reality bent for you in Penumbra. Now you\'re bending it back." — Headmaster Duskhollow',
+        '"What waits ahead is everything you\'ve faced, compressed into one shape. I designed it that way." — Headmaster Duskhollow',
+      ];
+      if (pracQuotes[pracZone]) {
+        addLog('  ' + pracQuotes[pracZone], 'system');
+      }
+      var pracGold = 50 * (pracZone + 1);
+      Game.gold += pracGold;
+      if (!Game.stats) Game.stats = {};
+      Game.stats.goldEarned = (Game.stats.goldEarned || 0) + pracGold;
+      addLog('  +' + pracGold + ' gold', 'crit');
+      if (pracZone >= 3) {
+        var pracReagents = 1 + Math.floor(pracZone / 2);
+        for (var pri = 0; pri < pracReagents; pri++) {
+          var prId = REAGENT_IDS[Math.floor(Math.random() * REAGENT_IDS.length)];
+          Game.reagents[prId] = (Game.reagents[prId] || 0) + 1;
+        }
+        addLog('  +' + pracReagents + ' reagents', 'crit');
+      }
+    }
+
+    // World ambient flavor on zone clear (W1-W7, non-Spiral, non-Practicum, non-farming)
+    if (!Game._spiralWorld && Game.currentWorld < 7 && !Game.farming) {
+      var _worldFlavors = {
+        0: [
+          'The campus bell tolls somewhere distant.',
+          'You hear students practicing in the next courtyard.',
+          'Dust settles on old textbooks. The library feels quieter now.',
+          'A faint smell of parchment and candle wax lingers.',
+        ],
+        1: [
+          'Sand shifts underfoot. The tombs whisper behind you.',
+          'Hieroglyphs on the wall glow faintly, then fade.',
+          'The heat is relentless. Even the shadows feel warm.',
+          'A scarab skitters across the stone and vanishes into a crack.',
+        ],
+        2: [
+          'Steam hisses from a cracked pipe overhead.',
+          'The gears keep turning whether anyone watches or not.',
+          'Oil-stained blueprints flutter in the draft.',
+          'Somewhere below, a furnace roars.',
+        ],
+        3: [
+          'Wind chimes ring from a temple you can\'t see.',
+          'The mountain air clears your head. Briefly.',
+          'Monks watch silently from the upper walkways.',
+          'Bamboo creaks in the wind. It sounds like breathing.',
+        ],
+        4: [
+          'The ground cracks beneath your feet. Heat rises.',
+          'Ash falls like snow. It doesn\'t melt.',
+          'The forge ahead glows orange. It hasn\'t cooled in centuries.',
+          'Obsidian shards crunch underfoot.',
+        ],
+        5: [
+          'Bioluminescent life drifts past in the dark.',
+          'The pressure is heavier here. Your ears pop.',
+          'A distant whale call echoes through the corridors.',
+          'Bubbles rise from cracks in the stone floor.',
+        ],
+        6: [
+          'Your shadow moves half a second after you.',
+          'The light here has no source.',
+          'Something ahead doesn\'t exist yet. You can feel it forming.',
+          'Time skips. You\'re already three steps further than you remember.',
+        ],
+      };
+      var _wf = _worldFlavors[Game.currentWorld];
+      if (_wf) addLog('  ' + _wf[Math.floor(Math.random() * _wf.length)], 'info');
+    }
     rivalZoneClear();
 
     // TP from zone completion
@@ -5027,6 +5189,9 @@ function advanceEncounter() {
         if (worldFlavor[Game.currentWorld]) {
           addLog(worldFlavor[Game.currentWorld], 'info');
         }
+        if (Game.currentWorld === 7) {
+          addLog(getProfessorName() + ' stands at the entrance. They nod once and step aside.', 'info');
+        }
         rivalWorldEnter();
         if (Game.currentWorld >= 1 && Game.garden && !Game.garden.unlocked) {
           Game.garden.unlocked = true;
@@ -5055,7 +5220,16 @@ function advanceEncounter() {
         startEncounter();
         return;
       } else {
-        // Campaign complete — graduate and show enrollment
+        // Campaign complete — professor farewell + graduate
+        var _profFarewell = {
+          storm: '"You were the loudest student I ever had. Also the best." — Professor Galesworth',
+          fire: '"You burned through every wall I put in front of you. I expected nothing less." — Professor Ashveil',
+          ice: '"I told you patience would win. I was right. As usual." — Professor Rimward',
+          life: '"You grew into something I couldn\'t have planted. That\'s the highest compliment I know." — Professor Fernsby',
+          death: '"You took everything this school offered and made it yours. That\'s what we do." — Professor Marrowick',
+          myth: '"Every story needs an ending. Yours, I suspect, is just beginning." — Professor Thornscribe',
+        };
+        if (_profFarewell[Game.wizard.school]) addLog(_profFarewell[Game.wizard.school], 'system');
         graduate();
         addLog('"I\'ve waited a very long time for you. Longer than you know." — Harlan Duskhollow', 'system');
         Game.state = 'complete'; Game.phase = 'none';
@@ -5469,6 +5643,11 @@ function processOfflineProgress() {
     addLog(msg, 'system');
     addHubLog(msg, 'crit');
 
+    // Show welcome-back popup
+    if (details.length > 0 && typeof showOfflinePopup === 'function') {
+      showOfflinePopup(timeStr, summary);
+    }
+
     Game.wizard.hp = Math.max(1, Game.wizard.hp);
     saveGame();
   } catch(e) { console.error('Offline progress error:', e); }
@@ -5624,11 +5803,8 @@ function initGame(school, wizardName) {
   var ss = SCHOOL_STATS[s] || SCHOOL_STATS.storm;
   applySchoolTheme(s);
   if (s !== 'balance') {
-    addLog('Welcome to Spiralbound.','system');
-    addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design."','system');
-    addLog('  — Headmaster Harlan Duskhollow','info');
-    addLog('A small fox watches from the headmaster\'s coat pocket. It doesn\'t look at you.', 'info');
-    addLog(getWizardTitle() + ' | Accuracy: ' + ss.baseAccuracy + '%','info');
+    addLog('"Welcome to Spindlewood. You\'ll find it confusing at first. That\'s by design." — Headmaster Duskhollow','system');
+    addLog(getWizardTitle() + ' | Accuracy: ' + ss.baseAccuracy + '% — Your first encounter awaits in the Battle tab.','info');
     initRival();
   }
   if (s === 'balance') {
@@ -7585,12 +7761,8 @@ function initRival() {
   if (!Game.rival) {
     Game.rival = generateRival();
     if (Game.rival) {
-      addLog('', 'info');
-      addLog('━━━ YOUR RIVAL ━━━', 'system');
-      addLog(Game.rival.name + ' — ' + Game.rival.title + ' (' + Game.rival.school + ')', 'cast');
       var intro = RIVAL_QUOTES.intro[Math.floor(Math.random() * RIVAL_QUOTES.intro.length)];
-      addLog(intro, 'info');
-      addLog('  — ' + Game.rival.name, 'info');
+      addLog('Rival: ' + Game.rival.name + ' — ' + Game.rival.title + '. ' + intro, 'rival');
     }
   }
 }
@@ -7620,27 +7792,27 @@ function rivalZoneClear() {
   // 30% chance of rival commentary on zone clear
   if (Math.random() < 0.3) {
     var q = getRivalQuote('zone_clear');
-    addLog(q + ' — ' + Game.rival.name, 'info');
+    addLog(q + ' — ' + Game.rival.name, 'rival');
   }
 }
 
 function rivalBossPre() {
   if (!Game.rival) return;
   var q = getRivalQuote('boss_pre');
-  addLog(q + ' — ' + Game.rival.name, 'info');
+  addLog(q + ' — ' + Game.rival.name, 'rival');
 }
 
 function rivalBossPost() {
   if (!Game.rival) return;
   rivalProgress();
   var q = getRivalQuote('boss_post');
-  addLog(q + ' — ' + Game.rival.name, 'info');
+  addLog(q + ' — ' + Game.rival.name, 'rival');
 }
 
 function rivalWorldEnter() {
   if (!Game.rival) return;
   var q = getRivalQuote('world_enter');
-  addLog(q + ' — ' + Game.rival.name, 'info');
+  addLog(q + ' — ' + Game.rival.name, 'rival');
 }
 
 function getRivalDuelistData() {
@@ -7677,7 +7849,7 @@ function getRivalDuelistData() {
 function rivalDuelWon() {
   if (!Game.rival) return;
   Game.rival.lossesToPlayer++;
-  addLog('"' + getRivalQuote('duel_win').replace(/"/g,'') + '" — ' + Game.rival.name, 'info');
+  addLog('"' + getRivalQuote('duel_win').replace(/"/g,'') + '" — ' + Game.rival.name, 'rival');
 }
 
 function rivalDuelLost() {
@@ -7688,9 +7860,7 @@ function rivalDuelLost() {
 function rivalGraduation() {
   if (!Game.rival) return;
   var q = getRivalQuote('graduation');
-  addLog('', 'info');
-  addLog(q, 'info');
-  addLog('  — ' + Game.rival.name + ', ' + SCHOOL_STATS[Game.rival.school].title, 'info');
+  addLog(q + ' — ' + Game.rival.name + ', ' + SCHOOL_STATS[Game.rival.school].title, 'rival');
 }
 
 // ===== EXPORTS =====
@@ -7725,7 +7895,7 @@ window.canCraft=canCraft; window.startCraft=startCraft; window.enchantSpell=ench
 window.removeEnchant=removeEnchant; window.socketJewel=socketJewel; window.getSpellEnchantBonus=getSpellEnchantBonus;
 window.EVENT_TYPES=EVENT_TYPES; window.respondToEvent=respondToEvent; window.respondToEventChoice=respondToEventChoice; window.generateEvent=generateEvent;
 window.TP_SPELLS=TP_SPELLS; window.buyTPSpell=buyTPSpell;
-window.saveDeckSlot=saveDeckSlot; window.loadDeckSlot=loadDeckSlot; window.getMaxDecks=getMaxDecks;
+window.saveDeckSlot=saveDeckSlot; window.loadDeckSlot=loadDeckSlot; window.renameDeckSlot=renameDeckSlot; window.getMaxDecks=getMaxDecks;
 window.processOfflineProgress=processOfflineProgress;
 window.enterSpiral=enterSpiral; window.SPIRAL_VOICE=SPIRAL_VOICE; window.SPIRAL_SHARDS=SPIRAL_SHARDS; window.awardSpiralShard=awardSpiralShard;
 window.SPIRAL_MODIFIERS=SPIRAL_MODIFIERS; window.ENTROPY_ASPECTS=ENTROPY_ASPECTS; window.SPIRAL_GEAR=SPIRAL_GEAR;
@@ -7739,7 +7909,7 @@ window.getBazaarTimeLeft=getBazaarTimeLeft; window.BAZAAR_REAGENT_BASE_PRICES=BA
 window.BAZAAR_SEED_PRICES=BAZAAR_SEED_PRICES;
 window.applySchoolTheme=applySchoolTheme;
 window.getDeckSize=getDeckSize; window.getHandSize=getHandSize; window.getDeckCardCount=getDeckCardCount;
-window.setDeckSpellCount=setDeckSpellCount; window.discardFromHand=discardFromHand;
+window.setDeckSpellCount=setDeckSpellCount; window.clearDeck=clearDeck; window.discardFromHand=discardFromHand;
 window.DECK_SIZES=DECK_SIZES; window.HAND_SIZES=HAND_SIZES;
 window.manualReshuffle=manualReshuffle;
 window.SNACKS=SNACKS; window.SNACK_IDS=SNACK_IDS; window.feedPetSnack=feedPetSnack;
